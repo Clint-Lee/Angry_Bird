@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angry Birds Remastered - 经典弹弓物理对决 (超清重制版)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Top Arcade HUD Bar -->
+        <header class="header-bar">
+            <div class="title-section">
+                <h1 class="logo-text">ANGRY BIRDS</h1>
+                <div class="level-meta">
+                    <span class="level-badge" id="currentLevel">1-1 初试锋芒</span>
+                    <span class="level-sub" id="levelSubtitle">瞄准承重木柱，一击摧毁双子木塔</span>
+                </div>
+            </div>
+
+            <div class="scoreboard">
+                <div class="score-box">
+                    <span class="label">本关得分</span>
+                    <span class="val" id="currentScore">0</span>
+                </div>
+                <div class="score-box star-progress-box" title="达到目标分数即可解锁三星评价">
+                    <div class="star-row" id="hudStars">☆☆☆</div>
+                    <div class="star-bar-track">
+                        <div class="star-bar-fill" id="starProgressFill"></div>
+                    </div>
+                </div>
+                <div class="score-box">
+                    <span class="label">历史最佳</span>
+                    <span class="val" id="highScore">0</span>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <button class="btn btn-secondary" id="levelSelectBtn">🗺️ 选关</button>
+                <button class="btn btn-secondary" id="bgmBtn">🎵 音乐: 关</button>
+                <button class="btn btn-secondary" id="soundBtn">🔊 音效: 开</button>
+                <button class="btn btn-restart" id="restartBtn">↻ 重玩</button>
+            </div>
+        </header>
+
+        <!-- Canvas Viewport with Camera System -->
+        <main class="canvas-wrapper">
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- Level Cleared / Level Failed Modal -->
+            <div class="modal-overlay hidden" id="gameOverModal">
+                <div class="modal-content">
+                    <h2 id="modalTitle">LEVEL CLEARED!</h2>
+                    <div class="modal-stars" id="modalStars">⭐⭐⭐</div>
+                    <p id="modalDesc">本关得分: 35000</p>
+                    <button class="btn btn-primary" id="modalBtn">下一关 ➔</button>
+                </div>
+            </div>
+
+            <!-- Level Selection Modal -->
+            <div class="modal-overlay hidden" id="levelSelectModal">
+                <div class="modal-content level-select-content">
+                    <h2>🗺️ 关卡选择 (三大章节)</h2>
+                    <div class="level-select-grid" id="levelSelectList">
+                        <!-- Populated dynamically by game.js -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Clean Status Bar -->
+        <footer class="footer-bar">
+            <span class="hint-text">💡 <strong>操作提示:</strong> 拖拽小鸟瞄准发射（拉回中心可取消） · 飞行中点击屏幕或按空格释放技能 · 按 <strong>R</strong> 快速重玩</span>
+        </footer>
+    </div>
+
+    <!-- Scripts in proper dependency order -->
+    <script src="matter.min.js"></script>
+    <script src="audio.js"></script>
+    <script src="sprites.js"></script>
+    <script src="levels.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
