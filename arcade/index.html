@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天枢网页小游戏平台 - Web Mini-Games Arcade</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="arcade-container">
+        <!-- Top Arcade Navigation Bar -->
+        <header class="arcade-header">
+            <div class="header-brand">
+                <span class="arcade-logo-icon">🕹️</span>
+                <div class="brand-text">
+                    <h1>天枢小游戏大厅</h1>
+                    <span class="brand-sub">TIANSHU WEB MINI-GAMES ARCADE</span>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <div class="storage-indicator" title="当前所有游戏进度已保存在浏览器本地，无需登录随开随玩">
+                    <span class="status-dot"></span>
+                    <span class="storage-text">本地免登录自动存档</span>
+                </div>
+                <a href="https://39.97.50.218:8080/" class="btn-portal-back" title="返回天枢应用门户">
+                    <span class="icon">🛡️</span> 返回天枢门户
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Arcade Content -->
+        <main class="arcade-main">
+            <!-- Hero Featured Game Card (Angry Birds Remastered) -->
+            <section class="hero-section">
+                <div class="section-badge">🔥 热门推荐 · 今日主打</div>
+                
+                <div class="featured-card">
+                    <div class="card-visual">
+                        <div class="visual-badge">🟢 官方超清重制版 · 立即开玩</div>
+                        <div class="visual-art">
+                            <span class="hero-emoji-flock">🎯 🐦 💣 🐷</span>
+                        </div>
+                        <div class="worlds-pills">
+                            <span class="pill-world meadow">🌲 翠绿牧场</span>
+                            <span class="pill-world desert">🏜️ 落日峡谷</span>
+                            <span class="pill-world snow">❄️ 冰峰极境</span>
+                            <span class="pill-world castle">🏰 暗夜王城</span>
+                        </div>
+                    </div>
+
+                    <div class="card-details">
+                        <div class="card-header">
+                            <div class="game-meta-row">
+                                <span class="tag-genre">物理弹弓对决</span>
+                                <span class="tag-version">Remastered v2.0</span>
+                                <span class="tag-levels">4大章节 · 13关</span>
+                            </div>
+                            <h2 class="game-title">愤怒的小鸟：全章节重制版</h2>
+                            <p class="game-desc">
+                                经典物理弹弓解谜对决！包含<strong>翠绿牧场、落日峡谷、冰峰极境、暗夜王城</strong>四大不同背景主题大世界。体验怒红鸟、飞镖黄、蓝弟弟、炸弹黑、白公主的独门绝技，击溃绿猪帝国的城堡防线！
+                            </p>
+                        </div>
+
+                        <!-- Live LocalStorage Saved Stats for Angry Birds -->
+                        <div class="saved-stats-panel">
+                            <div class="stats-title-row">
+                                <span class="title">💾 本机历史存档记录</span>
+                                <span class="notice">浏览器 LocalStorage 自动同步</span>
+                            </div>
+                            <div class="stats-pills-row">
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">累计星星</span>
+                                    <span class="bubble-val" id="abTotalStars">0 / 39 ⭐</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">当前进度</span>
+                                    <span class="bubble-val highlight" id="abCurrentLvl">1-1 初试锋芒</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">历史总分</span>
+                                    <span class="bubble-val" id="abTotalScore">0 分</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">已解锁关卡</span>
+                                    <span class="bubble-val" id="abUnlockedCount">1 / 13 关</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Launch Buttons -->
+                        <div class="card-actions">
+                            <a href="./angry-birds/" class="btn-play-primary" id="btnResumePlay">
+                                <span>🚀 立即开玩</span>
+                                <span class="action-sub" id="btnPlaySubtitle">(继续第 1-1 关)</span>
+                            </a>
+                            <a href="./angry-birds/" class="btn-play-secondary" id="btnFreshPlay">
+                                <span>↻ 从第一关开始</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upcoming Games Grid -->
+            <section class="upcoming-section">
+                <div class="section-header">
+                    <div class="section-title-wrap">
+                        <h3>🕹️ 更多网页小游戏</h3>
+                        <span class="section-sub">全新 HTML5 微端小游戏矩阵正在全力开发制作中，敬请期待！</span>
+                    </div>
+                    <span class="badge-pipeline">🚀 开发筹备中 (5款)</span>
+                </div>
+
+                <div class="upcoming-grid">
+                    <!-- Game Card 1: Sokoban -->
+                    <div class="arcade-card locked">
+                        <div class="card-icon-wrap">
+                            <span class="card-icon">📦</span>
+                            <span class="tag-status">敬请期待 · 研发中</span>
+                        </div>
+                        <h4 class="card-name">经典推箱子 (Sokoban)</h4>
+                        <p class="card-brief">经典益智推箱解谜游戏，还原经典复古逻辑挑战，内含 50+ 脑力关卡设计与步数最优解榜单。</p>
+                        <div class="card-footer">
+                            <span class="genre">益智解谜</span>
+                            <span class="dev-state">核心算法调优</span>
+                        </div>
+                    </div>
+
+                    <!-- Game Card 2: Tank 1990 -->
+                    <div class="arcade-card locked">
+                        <div class="card-icon-wrap">
+                            <span class="card-icon">🛡️</span>
+                            <span class="tag-status">敬请期待 · 研发中</span>
+                        </div>
+                        <h4 class="card-name">像素坦克大战 (Tank 1990 Neo)</h4>
+                        <p class="card-brief">童年经典红白机战役复刻！保卫鹰徽基地，拾取五角星火力强化、炸弹清屏与时钟定身道具。</p>
+                        <div class="card-footer">
+                            <span class="genre">复古射击</span>
+                            <span class="dev-state">地图编辑器制作</span>
+                        </div>
+                    </div>
+
+                    <!-- Game Card 3: Neon Breakout -->
+                    <div class="arcade-card locked">
+                        <div class="card-icon-wrap">
+                            <span class="card-icon">🔮</span>
+                            <span class="tag-status">敬请期待 · 研发中</span>
+                        </div>
+                        <h4 class="card-name">霓虹流光弹球 (Neon Breakout)</h4>
+                        <p class="card-brief">赛博朋克流光风格打砖块！炫酷粒子击碎效果、多重弹球分裂、激光底板与反重力磁场特技。</p>
+                        <div class="card-footer">
+                            <span class="genre">街机动作</span>
+                            <span class="dev-state">渲染管线测试</span>
+                        </div>
+                    </div>
+
+                    <!-- Game Card 4: Galaxy Striker -->
+                    <div class="arcade-card locked">
+                        <div class="card-icon-wrap">
+                            <span class="card-icon">🚀</span>
+                            <span class="tag-status">敬请期待 · 研发中</span>
+                        </div>
+                        <h4 class="card-name">太空战机 (Galaxy Striker 2D)</h4>
+                        <p class="card-brief">纵版复古卷轴飞行弹幕射击，雷电核心机体升级树、浮游僚机系统与震撼的全屏追踪导弹超武。</p>
+                        <div class="card-footer">
+                            <span class="genre">弹幕飞行</span>
+                            <span class="dev-state">关卡Boss设计</span>
+                        </div>
+                    </div>
+
+                    <!-- Game Card 5: Dungeon Runner -->
+                    <div class="arcade-card locked">
+                        <div class="card-icon-wrap">
+                            <span class="card-icon">🏰</span>
+                            <span class="tag-status">敬请期待 · 研发中</span>
+                        </div>
+                        <h4 class="card-name">地牢迷宫逃脱 (Dungeon Runner)</h4>
+                        <p class="card-brief">Roguelike 随机迷宫探险，避开地刺机关与游荡幽灵，搜寻远古水晶钥匙开启逃生传送法阵。</p>
+                        <div class="card-footer">
+                            <span class="genre">地牢探险</span>
+                            <span class="dev-state">随机迷宫生成器</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="arcade-footer">
+            <p>天枢微前端小游戏中心 · 纯客户端 HTML5/Canvas 驱动 · 存档安全存放在浏览器 LocalStorage 中</p>
+        </footer>
+    </div>
+
+    <script src="arcade.js"></script>
+</body>
+</html>

@@ -29,6 +29,99 @@ const LAUNCH_SPEED_KING = 0.086;
 // Classic Angry Birds rule: Red & Terence have NO mid-air tap skill!
 const ACTIVE_ABILITY_BIRDS = new Set(['yellow', 'blue', 'bomb', 'matilda']);
 
+// =========================================================================
+// LOCALSTORAGE PROGRESSION & SETTINGS MANAGER
+// =========================================================================
+class SaveManager {
+    static STORAGE_KEY = 'tianshu_angry_birds_save_v2';
+
+    static load() {
+        let data = null;
+        try {
+            const raw = localStorage.getItem(this.STORAGE_KEY);
+            if (raw) data = JSON.parse(raw);
+        } catch (e) {
+            console.warn('Failed to parse localStorage save data:', e);
+        }
+
+        if (!data || typeof data !== 'object') {
+            data = {
+                currentLevelIndex: 0,
+                unlockedLevels: [0],
+                levelScores: {},
+                levelStars: {},
+                settings: {
+                    sfxVolume: 0.8,
+                    bgmVolume: 0.5,
+                    sfxEnabled: true,
+                    bgmEnabled: false,
+                    trajectoryGuide: true,
+                    screenShake: true
+                }
+            };
+        }
+
+        // Migrate legacy localStorage keys if present
+        try {
+            const legacyLevel = parseInt(localStorage.getItem('ab_current_level') || '0', 10);
+            if (!isNaN(legacyLevel) && legacyLevel > 0 && !data.currentLevelIndex) {
+                data.currentLevelIndex = legacyLevel;
+            }
+            const legacyScores = JSON.parse(localStorage.getItem('ab_highscores') || '{}');
+            data.levelScores = Object.assign({}, legacyScores, data.levelScores || {});
+            const legacyStars = JSON.parse(localStorage.getItem('ab_stars') || '{}');
+            data.levelStars = Object.assign({}, legacyStars, data.levelStars || {});
+        } catch (e) {}
+
+        // Ensure unlockedLevels is valid and always contains level 0
+        if (!Array.isArray(data.unlockedLevels)) data.unlockedLevels = [0];
+        if (!data.unlockedLevels.includes(0)) data.unlockedLevels.push(0);
+
+        // If user already had stars on any level, unlock that level and its next
+        Object.keys(data.levelStars || {}).forEach(k => {
+            const idx = parseInt(k, 10);
+            if (!isNaN(idx)) {
+                if (!data.unlockedLevels.includes(idx)) data.unlockedLevels.push(idx);
+                if (!data.unlockedLevels.includes(idx + 1)) data.unlockedLevels.push(idx + 1);
+            }
+        });
+
+        // Ensure settings defaults
+        data.settings = Object.assign({
+            sfxVolume: 0.8,
+            bgmVolume: 0.5,
+            sfxEnabled: true,
+            bgmEnabled: false,
+            trajectoryGuide: true,
+            screenShake: true
+        }, data.settings || {});
+
+        return data;
+    }
+
+    static save(data) {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+            // Sync legacy keys for backward compatibility
+            localStorage.setItem('ab_current_level', String(data.currentLevelIndex || 0));
+            localStorage.setItem('ab_highscores', JSON.stringify(data.levelScores || {}));
+            localStorage.setItem('ab_stars', JSON.stringify(data.levelStars || {}));
+        } catch (e) {
+            console.warn('Failed to save to localStorage:', e);
+        }
+    }
+
+    static reset() {
+        try {
+            localStorage.removeItem(this.STORAGE_KEY);
+            localStorage.removeItem('ab_current_level');
+            localStorage.removeItem('ab_highscores');
+            localStorage.removeItem('ab_stars');
+        } catch (e) {}
+        return this.load();
+    }
+}
+
 class AngryBirdsMaster {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -56,11 +149,29 @@ class AngryBirdsMaster {
             mode: 'wide' // 'wide' (0.74x panorama) or 'close' (0.90x cinematic)
         };
 
+        // Persistent LocalStorage Progress & Settings
+        this.saveData = SaveManager.load();
+        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 13;
+        this.currentLevelIndex = Math.max(0, Math.min(this.saveData.currentLevelIndex || 0, totalLevels - 1));
+        this.unlockedLevels = this.saveData.unlockedLevels || [0];
+        this.highScores = this.saveData.levelScores || {};
+        this.starsUnlocked = this.saveData.levelStars || {};
+        this.settings = this.saveData.settings;
+        this.selectedWorldTab = (window.GAME_LEVELS && window.GAME_LEVELS[this.currentLevelIndex])
+            ? window.GAME_LEVELS[this.currentLevelIndex].world
+            : 'meadow';
+
+        // Apply audio settings to SoundFX synthesizer
+        if (window.soundFX) {
+            window.soundFX.setSFXVolume(this.settings.sfxVolume);
+            window.soundFX.setBGMVolume(this.settings.bgmVolume);
+            window.soundFX.setEnabled(this.settings.sfxEnabled);
+            window.soundFX.setBGMEnabled(this.settings.bgmEnabled);
+        }
+
         // Game State
-        this.currentLevelIndex = parseInt(localStorage.getItem('ab_current_level') || '0', 10);
         this.score = 0;
         this.levelScore = 0;
-        this.highScores = JSON.parse(localStorage.getItem('ab_highscores') || '{}');
         this.state = 'AIMING'; // AIMING, DRAGGING, VICTORY_SETTLING, WON, LOST
         this.kingSlingActive = false;
         this.timeScale = 1.0;
@@ -99,9 +210,6 @@ class AngryBirdsMaster {
         this.settleTimer = 0;
         this.lastTime = performance.now();
 
-        // Level records
-        this.starsUnlocked = JSON.parse(localStorage.getItem('ab_stars') || '{}');
-
         // Setup
         this.initBoundaries();
         this.setupPhysicsEvents();
@@ -113,6 +221,15 @@ class AngryBirdsMaster {
 
         // Run Main Loop
         requestAnimationFrame((t) => this.loop(t));
+    }
+
+    saveProgress() {
+        this.saveData.currentLevelIndex = this.currentLevelIndex;
+        this.saveData.unlockedLevels = Array.from(new Set(this.unlockedLevels));
+        this.saveData.levelScores = this.highScores;
+        this.saveData.levelStars = this.starsUnlocked;
+        this.saveData.settings = this.settings;
+        SaveManager.save(this.saveData);
     }
 
     // =========================================================================
@@ -872,9 +989,9 @@ class AngryBirdsMaster {
         this.isPanningCamera = false;
 
         this.currentLevelIndex = Math.max(0, Math.min(index, window.GAME_LEVELS.length - 1));
-        localStorage.setItem('ab_current_level', this.currentLevelIndex);
-
         const levelData = window.GAME_LEVELS[this.currentLevelIndex];
+        if (levelData) this.selectedWorldTab = levelData.world;
+        this.saveProgress();
 
         // Remove ALL level bodies (including static platforms, bouncy pads & unlaunched sling bird!)
         const allBodies = Composite.allBodies(this.world);
@@ -1296,7 +1413,15 @@ class AngryBirdsMaster {
                     window.soundFX.playWin();
                     const stars = this.computeStarsForScore(this.levelScore);
                     this.starsUnlocked[this.currentLevelIndex] = Math.max(this.starsUnlocked[this.currentLevelIndex] || 0, stars);
-                    localStorage.setItem('ab_stars', JSON.stringify(this.starsUnlocked));
+
+                    // Unlock next sequential level
+                    const nextIdx = this.currentLevelIndex + 1;
+                    if (window.GAME_LEVELS && nextIdx < window.GAME_LEVELS.length && !this.unlockedLevels.includes(nextIdx)) {
+                        this.unlockedLevels.push(nextIdx);
+                        if (window.soundFX?.playLevelUnlock) window.soundFX.playLevelUnlock();
+                    }
+
+                    this.saveProgress();
                     this.showGameOverModal(true, stars);
                 }, finishDelay);
             }, 950);
@@ -1313,7 +1438,7 @@ class AngryBirdsMaster {
         const best = this.highScores[this.currentLevelIndex] || 0;
         if (this.levelScore > best) {
             this.highScores[this.currentLevelIndex] = this.levelScore;
-            localStorage.setItem('ab_highscores', JSON.stringify(this.highScores));
+            this.saveProgress();
         }
 
         this.updateHUD();
@@ -1430,6 +1555,7 @@ class AngryBirdsMaster {
     }
 
     addCameraShake(amount) {
+        if (this.settings && this.settings.screenShake === false) return;
         this.camera.shake = Math.min(30, this.camera.shake + amount);
     }
 
@@ -1601,22 +1727,50 @@ class AngryBirdsMaster {
     }
 
     setupUI() {
+        // Navigation links
+        const arcadeBtn = document.getElementById('arcadeLobbyBtn');
+        if (arcadeBtn) {
+            if (window.location.pathname.includes('/games/arcade/angry-birds')) {
+                arcadeBtn.href = '/games/arcade/';
+            } else if (window.location.pathname.includes('angry-birds')) {
+                arcadeBtn.href = '../';
+            } else {
+                arcadeBtn.href = './arcade/index.html';
+            }
+        }
+        const badgeBtn = document.getElementById('badgePortalBtn');
+        if (badgeBtn) {
+            badgeBtn.href = window.location.origin.includes('39.97.50.218') ? '/' : 'https://39.97.50.218:8080/';
+        }
+
+        // Initial HUD button states
+        const soundBtn = document.getElementById('soundBtn');
+        if (soundBtn) soundBtn.innerText = this.settings.sfxEnabled ? '🔊 音效: 开' : '🔇 音效: 关';
+        const bgmBtn = document.getElementById('bgmBtn');
+        if (bgmBtn) {
+            bgmBtn.innerText = this.settings.bgmEnabled ? '🎵 音乐: 开' : '🎵 音乐: 关';
+            bgmBtn.classList.toggle('active', this.settings.bgmEnabled);
+        }
+
         // Restart button
         document.getElementById('restartBtn')?.addEventListener('click', () => {
+            if (window.soundFX?.playClick) window.soundFX.playClick();
             this.loadLevel(this.currentLevelIndex);
         });
 
         // Sound SFX button
-        document.getElementById('soundBtn')?.addEventListener('click', (e) => {
-            const enabled = window.soundFX.toggle();
-            e.currentTarget.innerText = enabled ? '🔊 音效: 开' : '🔇 音效: 关';
+        soundBtn?.addEventListener('click', (e) => {
+            this.settings.sfxEnabled = window.soundFX.toggle();
+            e.currentTarget.innerText = this.settings.sfxEnabled ? '🔊 音效: 开' : '🔇 音效: 关';
+            this.saveProgress();
         });
 
         // BGM Music button
-        document.getElementById('bgmBtn')?.addEventListener('click', (e) => {
-            const enabled = window.soundFX.toggleBGM();
-            e.currentTarget.innerText = enabled ? '🎵 音乐: 开' : '🎵 音乐: 关';
-            e.currentTarget.classList.toggle('active', enabled);
+        bgmBtn?.addEventListener('click', (e) => {
+            this.settings.bgmEnabled = window.soundFX.toggleBGM();
+            e.currentTarget.innerText = this.settings.bgmEnabled ? '🎵 音乐: 开' : '🎵 音乐: 关';
+            e.currentTarget.classList.toggle('active', this.settings.bgmEnabled);
+            this.saveProgress();
         });
 
         // King Sling power-up button
@@ -1649,8 +1803,88 @@ class AngryBirdsMaster {
         document.getElementById('levelSelectBtn')?.addEventListener('click', () => {
             this.showLevelSelectModal();
         });
+        document.getElementById('closeLevelSelectBtn')?.addEventListener('click', () => {
+            this.hideModal();
+        });
 
-        // Modal Action button
+        // Settings modal button & close
+        document.getElementById('settingsBtn')?.addEventListener('click', () => {
+            this.showSettingsModal();
+        });
+        document.getElementById('closeSettingsBtn')?.addEventListener('click', () => {
+            this.hideModal();
+        });
+
+        // Settings Controls Binding
+        document.getElementById('sfxVolumeSlider')?.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            this.settings.sfxVolume = val / 100;
+            window.soundFX?.setSFXVolume(this.settings.sfxVolume);
+            const numEl = document.getElementById('sfxVolumeText');
+            if (numEl) numEl.innerText = `${val}%`;
+            this.saveProgress();
+        });
+
+        document.getElementById('bgmVolumeSlider')?.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            this.settings.bgmVolume = val / 100;
+            window.soundFX?.setBGMVolume(this.settings.bgmVolume);
+            const numEl = document.getElementById('bgmVolumeText');
+            if (numEl) numEl.innerText = `${val}%`;
+            this.saveProgress();
+        });
+
+        document.getElementById('sfxToggleBtn')?.addEventListener('click', (e) => {
+            this.settings.sfxEnabled = !this.settings.sfxEnabled;
+            window.soundFX?.setEnabled(this.settings.sfxEnabled);
+            e.currentTarget.innerText = this.settings.sfxEnabled ? '开' : '关';
+            e.currentTarget.classList.toggle('active', this.settings.sfxEnabled);
+            const mainSoundBtn = document.getElementById('soundBtn');
+            if (mainSoundBtn) mainSoundBtn.innerText = this.settings.sfxEnabled ? '🔊 音效: 开' : '🔇 音效: 关';
+            this.saveProgress();
+        });
+
+        document.getElementById('bgmToggleBtn')?.addEventListener('click', (e) => {
+            this.settings.bgmEnabled = !this.settings.bgmEnabled;
+            window.soundFX?.setBGMEnabled(this.settings.bgmEnabled);
+            e.currentTarget.innerText = this.settings.bgmEnabled ? '开' : '关';
+            e.currentTarget.classList.toggle('active', this.settings.bgmEnabled);
+            const mainBgmBtn = document.getElementById('bgmBtn');
+            if (mainBgmBtn) {
+                mainBgmBtn.innerText = this.settings.bgmEnabled ? '🎵 音乐: 开' : '🎵 音乐: 关';
+                mainBgmBtn.classList.toggle('active', this.settings.bgmEnabled);
+            }
+            this.saveProgress();
+        });
+
+        document.getElementById('trajectoryToggleBtn')?.addEventListener('click', (e) => {
+            this.settings.trajectoryGuide = this.settings.trajectoryGuide === false ? true : false;
+            e.currentTarget.innerText = this.settings.trajectoryGuide ? '开启' : '关闭';
+            e.currentTarget.classList.toggle('active', this.settings.trajectoryGuide);
+            this.saveProgress();
+        });
+
+        document.getElementById('screenShakeToggleBtn')?.addEventListener('click', (e) => {
+            this.settings.screenShake = this.settings.screenShake === false ? true : false;
+            e.currentTarget.innerText = this.settings.screenShake ? '开启' : '关闭';
+            e.currentTarget.classList.toggle('active', this.settings.screenShake);
+            this.saveProgress();
+        });
+
+        document.getElementById('resetSaveDataBtn')?.addEventListener('click', () => {
+            if (confirm('确定要清除所有关卡解锁进度、通关星星与历史最高分吗？此操作无法撤销！')) {
+                this.saveData = SaveManager.reset();
+                this.currentLevelIndex = 0;
+                this.unlockedLevels = [0];
+                this.highScores = {};
+                this.starsUnlocked = {};
+                this.settings = this.saveData.settings;
+                this.hideModal();
+                this.loadLevel(0);
+            }
+        });
+
+        // Modal Action buttons
         document.getElementById('modalBtn')?.addEventListener('click', () => {
             if (this.state === 'WON') {
                 if (this.currentLevelIndex < window.GAME_LEVELS.length - 1) {
@@ -1661,6 +1895,16 @@ class AngryBirdsMaster {
             } else {
                 this.loadLevel(this.currentLevelIndex);
             }
+        });
+
+        document.getElementById('modalRetryBtn')?.addEventListener('click', () => {
+            this.hideModal();
+            this.loadLevel(this.currentLevelIndex);
+        });
+
+        document.getElementById('modalSelectBtn')?.addEventListener('click', () => {
+            this.hideModal();
+            this.showLevelSelectModal();
         });
     }
 
@@ -1734,6 +1978,7 @@ class AngryBirdsMaster {
         const desc = document.getElementById('modalDesc');
         const starsEl = document.getElementById('modalStars');
         const btn = document.getElementById('modalBtn');
+        const recordTag = document.getElementById('modalRecordTag');
         if (!modal) return;
 
         modal.classList.remove('hidden');
@@ -1744,12 +1989,14 @@ class AngryBirdsMaster {
             starsEl.innerText = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
             desc.innerText = `本关得分: ${this.levelScore} | 剩余小鸟奖励已结算！`;
             btn.innerText = this.currentLevelIndex < window.GAME_LEVELS.length - 1 ? '下一关 ➔' : '重玩全套 ↻';
+            if (recordTag) recordTag.innerText = '💾 进度与得分已自动保存至本地';
         } else {
             title.innerText = '挑战失败';
             title.style.color = '#ef4444';
             starsEl.innerText = '💀';
             desc.innerText = '弹药耗尽，绿猪们还在嘲笑你！再来一次？';
             btn.innerText = '重新挑战 ↻';
+            if (recordTag) recordTag.innerText = '💡 提示: 优先击破承重石块与TNT';
         }
     }
 
@@ -1758,35 +2005,169 @@ class AngryBirdsMaster {
         if (modal) modal.classList.add('hidden');
         const levelModal = document.getElementById('levelSelectModal');
         if (levelModal) levelModal.classList.add('hidden');
+        const settingsModal = document.getElementById('settingsModal');
+        if (settingsModal) settingsModal.classList.add('hidden');
     }
 
     showLevelSelectModal() {
         const modal = document.getElementById('levelSelectModal');
+        const tabsContainer = document.getElementById('worldTabs');
+        const introTitle = document.getElementById('worldIntroTitle');
+        const introDesc = document.getElementById('worldIntroDesc');
         const list = document.getElementById('levelSelectList');
         if (!modal || !list) return;
 
+        if (window.soundFX?.playMenuOpen) window.soundFX.playMenuOpen();
+
+        // 1. Determine active world tab
+        const currentWorld = (window.GAME_LEVELS && window.GAME_LEVELS[this.currentLevelIndex])
+            ? window.GAME_LEVELS[this.currentLevelIndex].world
+            : 'meadow';
+        if (!this.selectedWorldTab) this.selectedWorldTab = currentWorld;
+
+        // 2. Render World Tabs
+        if (tabsContainer && window.GAME_WORLDS) {
+            tabsContainer.innerHTML = '';
+            window.GAME_WORLDS.forEach(w => {
+                const worldLevels = window.GAME_LEVELS.filter(l => l.world === w.id);
+                const worldStars = worldLevels.reduce((acc, l) => {
+                    const idx = window.GAME_LEVELS.indexOf(l);
+                    return acc + (this.starsUnlocked[idx] || 0);
+                }, 0);
+                const maxStars = worldLevels.length * 3;
+
+                const tabBtn = document.createElement('button');
+                tabBtn.className = `world-tab-btn ${this.selectedWorldTab === w.id ? 'active' : ''}`;
+                tabBtn.innerHTML = `
+                    <span>${w.themeIcon || '🌍'} ${w.name}</span>
+                    <span class="tab-stars">⭐ ${worldStars}/${maxStars}</span>
+                `;
+                tabBtn.addEventListener('click', () => {
+                    if (window.soundFX?.playClick) window.soundFX.playClick();
+                    this.selectedWorldTab = w.id;
+                    this.showLevelSelectModal();
+                });
+                tabsContainer.appendChild(tabBtn);
+            });
+        }
+
+        // 3. Update World Intro Banner
+        const activeWorldObj = window.GAME_WORLDS?.find(w => w.id === this.selectedWorldTab);
+        if (introTitle && activeWorldObj) introTitle.innerText = `${activeWorldObj.themeIcon || ''} ${activeWorldObj.name}`;
+        if (introDesc && activeWorldObj) introDesc.innerText = activeWorldObj.description;
+
+        // 4. Render Level Cards for Selected World
         list.innerHTML = '';
         window.GAME_LEVELS.forEach((lvl, idx) => {
-            const card = document.createElement('div');
-            const stars = this.starsUnlocked[idx] || 0;
-            const starText = stars > 0 ? '⭐'.repeat(stars) : '未通关';
-            const world = window.GAME_WORLDS.find(w => w.id === lvl.world);
+            if (lvl.world !== this.selectedWorldTab) return;
 
-            card.className = `level-select-card ${idx === this.currentLevelIndex ? 'current' : ''}`;
+            const card = document.createElement('div');
+            const isUnlocked = this.unlockedLevels.includes(idx);
+            const stars = this.starsUnlocked[idx] || 0;
+            const starText = stars > 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : (isUnlocked ? '未通关' : '未解锁');
+            const world = window.GAME_WORLDS.find(w => w.id === lvl.world) || {};
+            const isCurrent = idx === this.currentLevelIndex;
+
+            card.className = `level-select-card ${isCurrent ? 'current' : ''} ${!isUnlocked ? 'locked' : ''}`;
             card.innerHTML = `
                 <div class="lvl-head">
-                    <span class="lvl-num" style="background:${world.accent}">${lvl.name}</span>
+                    <span class="lvl-num" style="background:${world.accent || '#facc15'}">${lvl.name}</span>
                     <span class="lvl-stars">${starText}</span>
                 </div>
                 <div class="lvl-desc">${lvl.subtitle}</div>
-                <div class="lvl-score">最高: ${this.highScores[idx] || 0}</div>
+                <div class="lvl-score">
+                    <span>${isUnlocked ? `历史最佳: ${(this.highScores[idx] || 0).toLocaleString()}` : '<span class="lvl-lock-hint">🔒 通关前一关后解锁</span>'}</span>
+                    ${isCurrent ? '<span style="color:#4ade80;font-weight:800;">[进行中]</span>' : ''}
+                </div>
             `;
-            card.addEventListener('click', () => {
-                this.hideModal();
-                this.loadLevel(idx);
-            });
+
+            if (isUnlocked) {
+                card.addEventListener('click', () => {
+                    if (window.soundFX?.playClick) window.soundFX.playClick();
+                    this.hideModal();
+                    this.loadLevel(idx);
+                });
+            } else {
+                card.title = '该关卡尚未解锁，请先通关前置关卡！';
+                card.addEventListener('click', () => {
+                    if (window.soundFX?.playCancel) window.soundFX.playCancel();
+                });
+            }
+
             list.appendChild(card);
         });
+
+        modal.classList.remove('hidden');
+    }
+
+    showSettingsModal() {
+        const modal = document.getElementById('settingsModal');
+        if (!modal) return;
+        if (window.soundFX?.playMenuOpen) window.soundFX.playMenuOpen();
+
+        // 1. Sync controls to current settings
+        const sfxSlider = document.getElementById('sfxVolumeSlider');
+        const sfxText = document.getElementById('sfxVolumeText');
+        const sfxToggle = document.getElementById('sfxToggleBtn');
+        const bgmSlider = document.getElementById('bgmVolumeSlider');
+        const bgmText = document.getElementById('bgmVolumeText');
+        const bgmToggle = document.getElementById('bgmToggleBtn');
+        const trajToggle = document.getElementById('trajectoryToggleBtn');
+        const shakeToggle = document.getElementById('screenShakeToggleBtn');
+
+        if (sfxSlider) sfxSlider.value = Math.round(this.settings.sfxVolume * 100);
+        if (sfxText) sfxText.innerText = `${Math.round(this.settings.sfxVolume * 100)}%`;
+        if (sfxToggle) {
+            sfxToggle.innerText = this.settings.sfxEnabled ? '开' : '关';
+            sfxToggle.classList.toggle('active', this.settings.sfxEnabled);
+        }
+
+        if (bgmSlider) bgmSlider.value = Math.round(this.settings.bgmVolume * 100);
+        if (bgmText) bgmText.innerText = `${Math.round(this.settings.bgmVolume * 100)}%`;
+        if (bgmToggle) {
+            bgmToggle.innerText = this.settings.bgmEnabled ? '开' : '关';
+            bgmToggle.classList.toggle('active', this.settings.bgmEnabled);
+        }
+
+        if (trajToggle) {
+            const on = this.settings.trajectoryGuide !== false;
+            trajToggle.innerText = on ? '开启' : '关闭';
+            trajToggle.classList.toggle('active', on);
+        }
+
+        if (shakeToggle) {
+            const on = this.settings.screenShake !== false;
+            shakeToggle.innerText = on ? '开启' : '关闭';
+            shakeToggle.classList.toggle('active', on);
+        }
+
+        // 2. Compute Lifetime Statistics from LocalStorage
+        let totalStars = 0;
+        let clearedCount = 0;
+        let totalScore = 0;
+        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 13;
+        const maxStars = totalLevels * 3;
+
+        Object.keys(this.starsUnlocked).forEach(k => {
+            const s = this.starsUnlocked[k] || 0;
+            if (s > 0) {
+                totalStars += s;
+                clearedCount++;
+            }
+        });
+
+        Object.keys(this.highScores).forEach(k => {
+            totalScore += (this.highScores[k] || 0);
+        });
+
+        const starEl = document.getElementById('statStarsCount');
+        if (starEl) starEl.innerText = `${totalStars} / ${maxStars} ⭐`;
+
+        const clearedEl = document.getElementById('statLevelsCleared');
+        if (clearedEl) clearedEl.innerText = `${clearedCount} / ${totalLevels}`;
+
+        const scoreEl = document.getElementById('statTotalScore');
+        if (scoreEl) scoreEl.innerText = `${totalScore.toLocaleString()} 分`;
 
         modal.classList.remove('hidden');
     }
@@ -2208,6 +2589,7 @@ class AngryBirdsMaster {
 
     drawTrajectoryDots(time = 0) {
         if (!this.currentBird) return;
+        if (this.settings && this.settings.trajectoryGuide === false) return;
 
         const stretch = Vector.sub(SLING_POS, this.currentBird.position);
         const dist = Math.hypot(stretch.x, stretch.y);

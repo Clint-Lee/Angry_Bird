@@ -65,6 +65,11 @@ class SpriteRenderer {
                 grad.addColorStop(0, '#090d1f');
                 grad.addColorStop(0.6, '#1e1b4b');
                 grad.addColorStop(1, '#4c1d95');
+            } else if (worldKey === 'snow') {
+                grad.addColorStop(0, '#0c1a30');
+                grad.addColorStop(0.35, '#073b4c');
+                grad.addColorStop(0.7, '#0ea5e9');
+                grad.addColorStop(1, '#bae6fd');
             } else {
                 grad.addColorStop(0, '#0284c7');
                 grad.addColorStop(0.65, '#7dd3fc');
@@ -74,14 +79,25 @@ class SpriteRenderer {
             ctx.fillRect(0, 0, viewW, viewH);
         }
 
-        // Subtle atmospheric floating motes / fireflies in Castle or sun-dust in Meadow
-        ctx.fillStyle = worldKey === 'castle' ? 'rgba(196, 181, 253, 0.45)' : 'rgba(255, 255, 230, 0.35)';
-        for (let i = 0; i < 14; i++) {
-            const px = ((i * 173 + time * 18 * (0.4 + (i % 3) * 0.2)) % (viewW + 40)) - 20;
-            const py = 60 + ((i * 97 + Math.sin(time * 1.5 + i) * 18) % (viewH * 0.65));
-            ctx.beginPath();
-            ctx.arc(px, py, 1.8 + (i % 3), 0, Math.PI * 2);
-            ctx.fill();
+        // Atmospheric floating motes / snowflakes
+        if (worldKey === 'snow') {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            for (let i = 0; i < 28; i++) {
+                const px = ((i * 127 + time * 32 * (0.6 + (i % 4) * 0.2)) % (viewW + 40)) - 20;
+                const py = (time * (42 + (i % 5) * 16) + i * 79) % (viewH + 20) - 10;
+                ctx.beginPath();
+                ctx.arc(px, py, 1.2 + (i % 3) * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else {
+            ctx.fillStyle = worldKey === 'castle' ? 'rgba(196, 181, 253, 0.45)' : 'rgba(255, 255, 230, 0.35)';
+            for (let i = 0; i < 14; i++) {
+                const px = ((i * 173 + time * 18 * (0.4 + (i % 3) * 0.2)) % (viewW + 40)) - 20;
+                const py = 60 + ((i * 97 + Math.sin(time * 1.5 + i) * 18) % (viewH * 0.65));
+                ctx.beginPath();
+                ctx.arc(px, py, 1.8 + (i % 3), 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         ctx.restore();
     }
@@ -100,6 +116,10 @@ class SpriteRenderer {
             soilGrad.addColorStop(0, '#334155');
             soilGrad.addColorStop(0.18, '#1e293b');
             soilGrad.addColorStop(1, '#0f172a');
+        } else if (worldKey === 'snow') {
+            soilGrad.addColorStop(0, '#1e293b');
+            soilGrad.addColorStop(0.22, '#0f172a');
+            soilGrad.addColorStop(1, '#020617');
         } else {
             soilGrad.addColorStop(0, '#5c3a21');
             soilGrad.addColorStop(0.22, '#432818');
@@ -108,7 +128,7 @@ class SpriteRenderer {
         ctx.fillStyle = soilGrad;
         ctx.fillRect(-300, groundY, worldW + 600, depth);
 
-        // Top Turf / Sandstone / Cobblestone Cap Strip
+        // Top Turf / Sandstone / Snow Crust / Cobblestone Cap Strip
         const capH = 18;
         const capGrad = ctx.createLinearGradient(0, groundY - 4, 0, groundY + capH);
         if (worldKey === 'desert') {
@@ -119,6 +139,11 @@ class SpriteRenderer {
             capGrad.addColorStop(0, '#64748b');
             capGrad.addColorStop(0.5, '#475569');
             capGrad.addColorStop(1, '#1e293b');
+        } else if (worldKey === 'snow') {
+            capGrad.addColorStop(0, '#ffffff');
+            capGrad.addColorStop(0.35, '#e0f2fe');
+            capGrad.addColorStop(0.75, '#7dd3fc');
+            capGrad.addColorStop(1, '#0284c7');
         } else {
             capGrad.addColorStop(0, '#84cc16');
             capGrad.addColorStop(0.55, '#4d7c0f');
@@ -127,8 +152,8 @@ class SpriteRenderer {
         ctx.fillStyle = capGrad;
         ctx.fillRect(-300, groundY - 2, worldW + 600, capH);
 
-        // Decorative grass tufts / pebbles / flagstones along ground surface
-        ctx.strokeStyle = worldKey === 'desert' ? '#7c2d12' : worldKey === 'castle' ? '#0f172a' : '#1a2e05';
+        // Decorative grass tufts / pebbles / icicles / flagstones along ground surface
+        ctx.strokeStyle = worldKey === 'desert' ? '#7c2d12' : (worldKey === 'castle' ? '#0f172a' : (worldKey === 'snow' ? '#0284c7' : '#1a2e05'));
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.moveTo(-300, groundY);
@@ -157,6 +182,19 @@ class SpriteRenderer {
                 ctx.fillStyle = '#7c2d12';
                 ctx.beginPath();
                 ctx.ellipse(x + 14, groundY + 24 + (x % 17), 9, 4.5, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (worldKey === 'snow') {
+                // Frosted icicles and snow powder
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(x, groundY);
+                ctx.lineTo(x + 8, groundY + 10 + (x % 9));
+                ctx.lineTo(x + 16, groundY);
+                ctx.fill();
+
+                ctx.fillStyle = '#bae6fd';
+                ctx.beginPath();
+                ctx.arc(x + 28, groundY - 4, 3, 0, Math.PI * 2);
                 ctx.fill();
             } else {
                 // Castle stone blocks trim
@@ -213,6 +251,11 @@ class SpriteRenderer {
             moundGrad.addColorStop(0, '#64748b');
             moundGrad.addColorStop(0.45, '#334155');
             moundGrad.addColorStop(1, '#1e293b');
+        } else if (worldKey === 'snow') {
+            moundGrad.addColorStop(0, '#e2e8f0');
+            moundGrad.addColorStop(0.35, '#94a3b8');
+            moundGrad.addColorStop(0.65, '#475569');
+            moundGrad.addColorStop(1, '#1e293b');
         } else {
             moundGrad.addColorStop(0, '#65a30d');
             moundGrad.addColorStop(0.32, '#4d7c0f');
@@ -221,7 +264,7 @@ class SpriteRenderer {
         }
 
         ctx.fillStyle = moundGrad;
-        ctx.strokeStyle = worldKey === 'castle' ? '#0f172a' : '#2b1708';
+        ctx.strokeStyle = worldKey === 'castle' ? '#0f172a' : (worldKey === 'snow' ? '#0284c7' : '#2b1708');
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(x - 78, groundY + 4);
@@ -231,9 +274,14 @@ class SpriteRenderer {
         ctx.fill();
         ctx.stroke();
 
-        // Lush grass cap / stone trim on hillock crest
+        // Lush grass cap / snow cap / stone trim on hillock crest
         if (worldKey === 'meadow') {
             ctx.fillStyle = '#84cc16';
+            ctx.beginPath();
+            ctx.ellipse(x, moundTopY + 4, 46, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (worldKey === 'snow') {
+            ctx.fillStyle = '#f8fafc';
             ctx.beginPath();
             ctx.ellipse(x, moundTopY + 4, 46, 7, 0, 0, Math.PI * 2);
             ctx.fill();

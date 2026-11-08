@@ -1,20 +1,54 @@
-// 10 Hand-Crafted Physics-Tested Levels Across 3 Worlds for Angry Birds Remastered
+// 13 Hand-Crafted Physics-Tested Levels Across 4 Themed Worlds for Angry Birds Remastered
 // Coordinate reference: Ground top surface is at y = GROUND_Y (660 in 2000x760 world space)
 // Battlefield is generously spaced: Slingshot at X = 240, Fortresses placed between X = 1150 and 1680
 
 window.GAME_WORLDS = [
-    { id: 'meadow', name: '第一章：翠绿牧场', subtitle: 'Poached Eggs', bgKey: 'meadow', accent: '#4ade80' },
-    { id: 'desert', name: '第二章：落日峡谷', subtitle: 'Mighty Hoax', bgKey: 'desert', accent: '#fb923c' },
-    { id: 'castle', name: '第三章：暗夜王城', subtitle: 'King\'s Citadel', bgKey: 'castle', accent: '#a78bfa' }
+    {
+        id: 'meadow',
+        name: '第一章：翠绿牧场',
+        subtitle: 'Poached Eggs · 晴空草甸',
+        bgKey: 'meadow',
+        accent: '#4ade80',
+        badge: '阳光草地',
+        desc: '在宁静的绿野丘陵中熟悉弹弓抛物线，破开木质与简易玻璃哨塔。'
+    },
+    {
+        id: 'desert',
+        name: '第二章：落日峡谷',
+        subtitle: 'Mighty Hoax · 荒漠峡谷',
+        bgKey: 'desert',
+        accent: '#fb923c',
+        badge: '炽热峡谷',
+        desc: '迎着赤红余晖深入猪群要塞，解锁炸弹黑与白公主的高空弹药库！'
+    },
+    {
+        id: 'snow',
+        name: '第三章：冰峰极境',
+        subtitle: 'Danger Above · 极光雪山',
+        bgKey: 'snow',
+        accent: '#38bdf8',
+        badge: '极寒冰原',
+        desc: '漫天飞雪与极光笼罩的冻土冰川，大量冰晶结构与高弹力跳板奇袭！'
+    },
+    {
+        id: 'castle',
+        name: '第四章：暗夜王城',
+        subtitle: 'King\'s Citadel · 王家要塞',
+        bgKey: 'castle',
+        accent: '#a78bfa',
+        badge: '决战王城',
+        desc: '夜幕下的花岗岩皇家宫殿，钟摆铁球横扫千军，直面头戴金冠的国王猪！'
+    }
 ];
 
 window.GAME_LEVELS = [
     // =========================================================================
-    // WORLD 1: MEADOW (Levels 1 - 3)
+    // WORLD 1: SUNNY MEADOW (Levels 1-1 ~ 1-3)
     // =========================================================================
     {
         id: 1,
         world: 'meadow',
+        worldLevel: '1-1',
         name: '1-1 初试锋芒',
         subtitle: '瞄准承重木柱，一击摧毁远方双子木塔',
         birds: ['red', 'blue', 'red'],
@@ -46,6 +80,7 @@ window.GAME_LEVELS = [
     {
         id: 2,
         world: 'meadow',
+        worldLevel: '1-2',
         name: '1-2 极速穿云',
         subtitle: '飞行中点击屏幕：蓝弟弟分身破冰，飞镖黄冲刺穿木！',
         birds: ['blue', 'yellow', 'yellow', 'red'],
@@ -79,6 +114,7 @@ window.GAME_LEVELS = [
     {
         id: 3,
         world: 'meadow',
+        worldLevel: '1-3',
         name: '1-3 滚石危机',
         subtitle: '击碎木楔或引爆高台TNT，让巨石碾平猪群！',
         birds: ['yellow', 'red', 'blue', 'red'],
@@ -109,11 +145,12 @@ window.GAME_LEVELS = [
     },
 
     // =========================================================================
-    // WORLD 2: SUNSET DESERT CANYON (Levels 4 - 6)
+    // WORLD 2: SUNSET DESERT CANYON (Levels 2-1 ~ 2-3)
     // =========================================================================
     {
         id: 4,
         world: 'desert',
+        worldLevel: '2-1',
         name: '2-1 爆破专家',
         subtitle: '炸弹黑登场！深入敌阵引爆峡谷军火库！',
         birds: ['bomb', 'yellow', 'bomb', 'red'],
@@ -147,6 +184,7 @@ window.GAME_LEVELS = [
     {
         id: 5,
         world: 'desert',
+        worldLevel: '2-2',
         name: '2-2 空投轰炸',
         subtitle: '白公主越顶投下爆炸蛋，本体拉升撞击高塔！',
         birds: ['matilda', 'matilda', 'yellow', 'bomb'],
@@ -181,6 +219,7 @@ window.GAME_LEVELS = [
     {
         id: 6,
         world: 'desert',
+        worldLevel: '2-3',
         name: '2-3 弹跳奇兵',
         subtitle: '利用弹力橡胶垫折射奇袭，或击断吊索坠落悬空TNT！',
         birds: ['red', 'blue', 'yellow', 'bomb'],
@@ -213,15 +252,122 @@ window.GAME_LEVELS = [
     },
 
     // =========================================================================
-    // WORLD 3: MOONLIT PIG CASTLE (Levels 7 - 10)
+    // WORLD 3: FROSTBITE PEAKS & AURORA (Levels 3-1 ~ 3-3)
     // =========================================================================
     {
         id: 7,
+        world: 'snow',
+        worldLevel: '3-1',
+        name: '3-1 寒冰水晶宫',
+        subtitle: '蓝弟弟大显身手！漫天飞雪中粉碎三重冰晶回廊！',
+        birds: ['blue', 'blue', 'yellow', 'bomb'],
+        parScore: 52000,
+        build(g, GY) {
+            const P = 1380;
+            // 3-Tier Delicate Glass & Ice Castle
+            g.addBlock(P - 110, GY - 50, 20, 100, 'glass');
+            g.addBlock(P - 35, GY - 50, 20, 100, 'glass');
+            g.addBlock(P + 35, GY - 50, 20, 100, 'glass');
+            g.addBlock(P + 110, GY - 50, 20, 100, 'glass');
+            g.addBlock(P, GY - 109, 260, 18, 'glass');
+
+            g.addPig(P - 70, GY - 22, 'normal');
+            g.addPig(P, GY - 24, 'helmet');
+            g.addPig(P + 70, GY - 22, 'normal');
+
+            // Tier 2 Ice Spire
+            g.addBlock(P - 60, GY - 165, 18, 80, 'glass');
+            g.addBlock(P + 60, GY - 165, 18, 80, 'glass');
+            g.addBlock(P, GY - 212, 160, 16, 'wood');
+            g.addPig(P, GY - 150, 'foreman');
+
+            // Tier 3 Crystal Cap
+            g.addBlock(P, GY - 255, 18, 60, 'glass');
+            g.addRoof(P, GY - 295, 80, 36, 'wood');
+            g.addPig(P, GY - 240, 'small');
+        }
+    },
+    {
+        id: 8,
+        world: 'snow',
+        worldLevel: '3-2',
+        name: '3-2 极光跳跃',
+        subtitle: '双重高弹跳板联动！高空倒挂巨石与悬空TNT连环引爆！',
+        birds: ['yellow', 'red', 'matilda', 'bomb'],
+        parScore: 64000,
+        build(g, GY) {
+            // Front & Mid Trampoline Pads
+            g.addBouncyPad(930, GY - 14, 90, 24, -0.15);
+            g.addBouncyPad(1210, GY - 14, 85, 24, 0.12);
+
+            // High suspended ice ledge holding a giant icy boulder
+            g.addStaticPlatform(1360, GY - 290, 160, 22, 0.12, 'stone');
+            g.addBlock(1430, GY - 315, 16, 40, 'glass');
+            g.addBoulder(1370, GY - 330, 28, 'stone');
+            g.addTNT(1310, GY - 318);
+
+            // Lower ice bunker under the platform
+            const B = 1520;
+            g.addBlock(B - 80, GY - 55, 24, 110, 'glass');
+            g.addBlock(B + 80, GY - 55, 24, 110, 'stone');
+            g.addBlock(B, GY - 119, 190, 18, 'wood');
+            g.addPig(B - 25, GY - 24, 'helmet');
+            g.addPig(B + 35, GY - 25, 'foreman');
+            g.addTNT(B, GY - 20);
+
+            // Upper lookout pig
+            g.addBlock(B, GY - 165, 20, 60, 'glass');
+            g.addPig(B, GY - 148, 'small');
+            g.addRoof(B, GY - 200, 100, 38, 'stone');
+        }
+    },
+    {
+        id: 9,
+        world: 'snow',
+        worldLevel: '3-3',
+        name: '3-3 冰壁雪崩',
+        subtitle: '白公主投弹震塌雪峰支柱，诱发大雪崩席卷防空掩体！',
+        birds: ['matilda', 'bomb', 'blue', 'terence'],
+        parScore: 72000,
+        build(g, GY) {
+            // High Ice Pillar supporting an avalanche mass of boulders
+            g.addStaticPlatform(1180, GY - 220, 140, 20, 0.18, 'stone');
+            g.addBlock(1240, GY - 250, 16, 40, 'glass');
+            g.addBoulder(1190, GY - 262, 25, 'stone');
+            g.addBoulder(1140, GY - 260, 22, 'stone');
+            g.addTNT(1100, GY - 240);
+
+            // Pig fortress in the valley below
+            const V = 1460;
+            g.addBlock(V - 100, GY - 60, 26, 120, 'stone');
+            g.addBlock(V, GY - 60, 22, 120, 'glass');
+            g.addBlock(V + 100, GY - 60, 26, 120, 'stone');
+            g.addBlock(V - 50, GY - 129, 120, 18, 'wood');
+            g.addBlock(V + 50, GY - 129, 120, 18, 'wood');
+
+            g.addPig(V - 50, GY - 24, 'helmet');
+            g.addPig(V + 50, GY - 24, 'foreman');
+            g.addTNT(V - 8, GY - 20);
+
+            g.addBlock(V - 45, GY - 180, 20, 75, 'glass');
+            g.addBlock(V + 45, GY - 180, 20, 75, 'glass');
+            g.addBlock(V, GY - 225, 130, 18, 'wood');
+            g.addPig(V, GY - 165, 'helmet');
+            g.addPig(V, GY - 254, 'small');
+        }
+    },
+
+    // =========================================================================
+    // WORLD 4: MOONLIT KING'S CITADEL (Levels 4-1 ~ 4-4)
+    // =========================================================================
+    {
+        id: 10,
         world: 'castle',
-        name: '3-1 钟摆铁球',
+        worldLevel: '4-1',
+        name: '4-1 钟摆铁球',
         subtitle: '撞击高空悬挂的攻城铁球，借钟摆巨力横扫城门！',
         birds: ['yellow', 'red', 'matilda', 'bomb'],
-        parScore: 62000,
+        parScore: 68000,
         build(g, GY) {
             // Overhead gallows holding a heavy swinging Iron Wrecking Ball!
             g.addStaticPlatform(1210, GY - 380, 80, 22, 0, 'stone');
@@ -250,12 +396,13 @@ window.GAME_LEVELS = [
         }
     },
     {
-        id: 8,
+        id: 11,
         world: 'castle',
-        name: '3-2 巨无霸登场',
+        worldLevel: '4-2',
+        name: '4-2 巨无霸登场',
         subtitle: '大红鸟泰伦斯出击！以绝对吨位碾碎双层花岗岩城墙！',
         birds: ['terence', 'bomb', 'yellow', 'terence'],
-        parScore: 68000,
+        parScore: 75000,
         build(g, GY) {
             // Outer heavy stone shield wall
             g.addBlock(1190, GY - 55, 32, 110, 'stone');
@@ -285,12 +432,13 @@ window.GAME_LEVELS = [
         }
     },
     {
-        id: 9,
+        id: 12,
         world: 'castle',
-        name: '3-3 连环炼狱',
+        worldLevel: '4-3',
+        name: '4-3 连环炼狱',
         subtitle: '冰桥、滚石、弹跳垫与四重连环TNT的终极物理迷宫！',
         birds: ['blue', 'yellow', 'matilda', 'bomb', 'red'],
-        parScore: 76000,
+        parScore: 82000,
         build(g, GY) {
             g.addBouncyPad(940, GY - 14, 90, 24, -0.12);
 
@@ -326,12 +474,13 @@ window.GAME_LEVELS = [
         }
     },
     {
-        id: 10,
+        id: 13,
         world: 'castle',
-        name: '3-4 猪王决战 (BOSS)',
+        worldLevel: '4-4',
+        name: '4-4 猪王决战 (BOSS)',
         subtitle: '全明星六鸟集结！攻破暗夜皇宫，击败头戴金冠的国王猪！',
         birds: ['blue', 'yellow', 'matilda', 'bomb', 'terence', 'red'],
-        parScore: 95000,
+        parScore: 98000,
         build(g, GY) {
             // Outer vanguard tower
             const V = 1160;
@@ -365,7 +514,7 @@ window.GAME_LEVELS = [
             // Second floor: KING PIG'S THRONE ROOM!
             g.addBlock(K - 95, GY - 202, 24, 100, 'wood');
             g.addBlock(K + 95, GY - 202, 24, 100, 'wood');
-            g.addBlock(K, GY - 262, 230, 20, 'glass'); // Glass skylight right under hanging TNT!
+            g.addBlock(K, GY - 262, 230, 20, 'glass');
 
             g.addPig(K, GY - 186, 'king'); // THE BOSS!
             g.addPig(K - 130, GY - 172, 'small');
