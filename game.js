@@ -2624,8 +2624,8 @@ class AngryBirdsMaster {
 
         // 3. Update World Intro Banner
         const activeWorldObj = window.GAME_WORLDS?.find(w => w.id === this.selectedWorldTab);
-        if (introTitle && activeWorldObj) introTitle.innerText = `${activeWorldObj.themeIcon || ''} ${activeWorldObj.name}`;
-        if (introDesc && activeWorldObj) introDesc.innerText = activeWorldObj.description;
+        if (introTitle && activeWorldObj) introTitle.innerText = `${activeWorldObj.themeIcon || '🌍'} ${activeWorldObj.name}`;
+        if (introDesc && activeWorldObj) introDesc.innerText = activeWorldObj.desc || activeWorldObj.description || '';
 
         // 4. Render Level Cards for Selected World
         list.innerHTML = '';

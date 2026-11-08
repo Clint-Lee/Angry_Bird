@@ -10,7 +10,9 @@ window.GAME_WORLDS = [
         bgKey: 'meadow',
         accent: '#4ade80',
         badge: '阳光草地',
-        desc: '在宁静的绿野丘陵中熟悉弹弓抛物线，破开木质与简易玻璃哨塔。'
+        themeIcon: '🌲',
+        desc: '在宁静的绿野丘陵中熟悉弹弓抛物线，破开木质与简易玻璃哨塔。',
+        description: '在宁静的绿野丘陵中熟悉弹弓抛物线，破开木质与简易玻璃哨塔。'
     },
     {
         id: 'desert',
@@ -19,7 +21,9 @@ window.GAME_WORLDS = [
         bgKey: 'desert',
         accent: '#fb923c',
         badge: '炽热峡谷',
-        desc: '迎着赤红余晖深入猪群要塞，解锁炸弹黑与白公主的高空弹药库！'
+        themeIcon: '🏜️',
+        desc: '迎着赤红余晖深入猪群要塞，解锁炸弹黑与白公主的高空弹药库！',
+        description: '迎着赤红余晖深入猪群要塞，解锁炸弹黑与白公主的高空弹药库！'
     },
     {
         id: 'snow',
@@ -28,7 +32,9 @@ window.GAME_WORLDS = [
         bgKey: 'snow',
         accent: '#38bdf8',
         badge: '极寒冰原',
-        desc: '漫天飞雪与极光笼罩的冻土冰川，大量冰晶结构与高弹力跳板奇袭！'
+        themeIcon: '❄️',
+        desc: '漫天飞雪与极光笼罩的冻土冰川，大量冰晶结构与高弹力跳板奇袭！',
+        description: '漫天飞雪与极光笼罩的冻土冰川，大量冰晶结构与高弹力跳板奇袭！'
     },
     {
         id: 'castle',
@@ -37,7 +43,9 @@ window.GAME_WORLDS = [
         bgKey: 'castle',
         accent: '#a78bfa',
         badge: '决战王城',
-        desc: '夜幕下的花岗岩皇家宫殿，钟摆铁球横扫千军，直面头戴金冠的国王猪！'
+        themeIcon: '🏰',
+        desc: '夜幕下的花岗岩皇家宫殿，钟摆铁球横扫千军，直面头戴金冠的国王猪！',
+        description: '夜幕下的花岗岩皇家宫殿，钟摆铁球横扫千军，直面头戴金冠的国王猪！'
     },
     {
         id: 'volcano',
@@ -46,7 +54,9 @@ window.GAME_WORLDS = [
         bgKey: 'volcano',
         accent: '#f97316',
         badge: '火山烈狱',
-        desc: '炽热翻滚的熔岩核心要塞，回旋鸟逆风奇袭，连锁TNT引爆终极风暴！'
+        themeIcon: '🌋',
+        desc: '炽热翻滚的熔岩核心要塞，回旋鸟逆风奇袭，连锁TNT引爆终极风暴！',
+        description: '炽热翻滚的熔岩核心要塞，回旋鸟逆风奇袭，连锁TNT引爆终极风暴！'
     }
 ];
 
