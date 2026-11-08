@@ -48,6 +48,7 @@ class SaveManager {
             data = {
                 currentLevelIndex: 0,
                 unlockedLevels: [0],
+                seenBirds: ['red'],
                 levelScores: {},
                 levelStars: {},
                 settings: {
@@ -59,6 +60,9 @@ class SaveManager {
                     screenShake: true
                 }
             };
+        }
+        if (!Array.isArray(data.seenBirds)) {
+            data.seenBirds = ['red'];
         }
 
         // Migrate legacy localStorage keys if present
@@ -132,8 +136,8 @@ class AngryBirdsMaster {
         // Matter.js 2D Physics Engine with tuned classic gravity & solver iterations
         this.engine = Engine.create({
             gravity: { x: 0, y: WORLD_GRAVITY_Y, scale: 0.001 },
-            positionIterations: 8,
-            velocityIterations: 8
+            positionIterations: 16,
+            velocityIterations: 12
         });
         this.world = this.engine.world;
 
@@ -151,12 +155,17 @@ class AngryBirdsMaster {
 
         // Persistent LocalStorage Progress & Settings
         this.saveData = SaveManager.load();
-        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 13;
+        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 60;
         this.currentLevelIndex = Math.max(0, Math.min(this.saveData.currentLevelIndex || 0, totalLevels - 1));
         this.unlockedLevels = this.saveData.unlockedLevels || [0];
         this.highScores = this.saveData.levelScores || {};
         this.starsUnlocked = this.saveData.levelStars || {};
         this.settings = this.saveData.settings;
+        this.seenBirds = new Set(Array.isArray(this.saveData.seenBirds) ? this.saveData.seenBirds : ['red']);
+        this.isTutorialActive = false;
+        this.activeTutorialBird = 'yellow';
+        this.tutorialAnimTimer = null;
+        this.tutorialStartTime = 0;
         this.selectedWorldTab = (window.GAME_LEVELS && window.GAME_LEVELS[this.currentLevelIndex])
             ? window.GAME_LEVELS[this.currentLevelIndex].world
             : 'meadow';
@@ -229,6 +238,7 @@ class AngryBirdsMaster {
         this.saveData.levelScores = this.highScores;
         this.saveData.levelStars = this.starsUnlocked;
         this.saveData.settings = this.settings;
+        this.saveData.seenBirds = Array.from(this.seenBirds);
         SaveManager.save(this.saveData);
     }
 
@@ -239,8 +249,9 @@ class AngryBirdsMaster {
         // Ground physics collider
         const ground = Bodies.rectangle(WORLD_WIDTH / 2, GROUND_Y + 50, WORLD_WIDTH + 600, 100, {
             isStatic: true,
-            friction: 0.85,
-            restitution: 0.05,
+            friction: 0.95,
+            frictionStatic: 1.0,
+            restitution: 0.01,
             label: 'ground'
         });
 
@@ -275,16 +286,25 @@ class AngryBirdsMaster {
         // Track pre-impact velocity & apply realistic structural weight to non-bird dynamic bodies
         // (Birds remain on pure WORLD_GRAVITY_Y so aiming trajectory prediction is 100.0% exact!)
         Events.on(this.engine, 'beforeUpdate', () => {
+            const now = performance.now();
+            const inSettlingGrace = (now - this.levelStartTime) < 1200 && !this.activeFlyingBirds.some(b => b.customData?.inFlight);
             const bodies = Composite.allBodies(this.world);
             for (let i = 0; i < bodies.length; i++) {
                 const b = bodies[i];
                 if (b.isStatic || !b.customData) continue;
                 b.customData.prevVel = { x: b.velocity.x, y: b.velocity.y };
 
-                if (b.customData.type !== 'bird') {
+                if (inSettlingGrace && b.customData.type !== 'bird') {
+                    // Micro-settling damping: zero out initial solver penetration jitter & stabilize towers
+                    Body.setVelocity(b, {
+                        x: b.velocity.x * 0.5,
+                        y: Math.min(b.velocity.y, 1.2)
+                    });
+                    Body.setAngularVelocity(b, b.angularVelocity * 0.4);
+                } else if (b.customData.type !== 'bird') {
                     Body.applyForce(b, b.position, {
                         x: 0,
-                        y: 0.000105 * (b.mass || 1)
+                        y: 0.000085 * (b.mass || 1)
                     });
                 }
             }
@@ -333,10 +353,10 @@ class AngryBirdsMaster {
         const relSpeedNow = Math.hypot(bodyA.velocity.x - bodyB.velocity.x, bodyA.velocity.y - bodyB.velocity.y);
         const relSpeed = Math.max(relSpeedPrev, relSpeedNow);
 
-        // Initial 650ms tower-settling grace period on level load so micro-settling never chips HP or clicks
-        const inSettlingGrace = (performance.now() - this.levelStartTime) < 650;
+        // Initial 1200ms tower-settling grace period on level load so micro-settling never chips HP or clicks
+        const inSettlingGrace = (performance.now() - this.levelStartTime) < 1200 && !this.activeFlyingBirds.some(b => b.customData?.inFlight);
         const involvesBird = bodyA.customData?.type === 'bird' || bodyB.customData?.type === 'bird';
-        if (inSettlingGrace && !involvesBird && relSpeed < 3.5) {
+        if (inSettlingGrace && !involvesBird) {
             return;
         }
 
@@ -787,24 +807,25 @@ class AngryBirdsMaster {
     addBlock(x, y, width, height, material) {
         let hp = 85;
         let density = 0.0022;
-        let friction = 0.75;
-        let restitution = 0.08;
+        let friction = 0.88;
+        let restitution = 0.02;
 
         if (material === 'glass') {
             hp = 34;
             density = 0.0014;
-            friction = 0.28;
-            restitution = 0.25;
+            friction = 0.70;
+            restitution = 0.02;
         } else if (material === 'stone') {
             hp = 260;
             density = 0.0058;
-            friction = 0.88;
-            restitution = 0.04;
+            friction = 0.95;
+            restitution = 0.01;
         }
 
         const block = Bodies.rectangle(x, y, width, height, {
             density,
             friction,
+            frictionStatic: 1.0,
             restitution,
             label: 'block',
             customData: {
@@ -832,8 +853,9 @@ class AngryBirdsMaster {
         ];
         const roof = Bodies.fromVertices(x, y, [verts], {
             density: material === 'stone' ? 0.005 : 0.0022,
-            friction: 0.78,
-            restitution: 0.06,
+            friction: 0.88,
+            frictionStatic: 1.0,
+            restitution: 0.02,
             label: 'block',
             customData: {
                 type: 'block',
@@ -892,8 +914,8 @@ class AngryBirdsMaster {
 
         const pig = Bodies.circle(x, y, radius, {
             density: 0.0028,
-            friction: 0.65,
-            restitution: 0.35,
+            friction: 0.85,
+            restitution: 0.08,
             label: 'pig',
             customData: {
                 type: 'pig',
@@ -916,8 +938,9 @@ class AngryBirdsMaster {
         const size = 42;
         const tnt = Bodies.rectangle(x, y, size, size, {
             density: 0.0032,
-            friction: 0.75,
-            restitution: 0.15,
+            friction: 0.90,
+            frictionStatic: 1.0,
+            restitution: 0.02,
             label: 'tnt',
             customData: {
                 type: 'tnt',
@@ -1075,6 +1098,12 @@ class AngryBirdsMaster {
         this.camera.targetZoom = this.camera.mode === 'close' ? 0.90 : 0.74;
 
         this.updateHUD();
+
+        // Check if any bird in this level is newly encountered!
+        const unseenBird = levelData.birds.find(b => !this.seenBirds.has(b));
+        if (unseenBird) {
+            this.showBirdTutorialModal(unseenBird, true);
+        }
     }
 
     getBirdRadius(birdType) {
@@ -1833,6 +1862,33 @@ class AngryBirdsMaster {
             }
         });
 
+        // Bird Codex / Tutorial modal buttons
+        document.getElementById('birdBookBtn')?.addEventListener('click', () => {
+            this.showBirdTutorialModal(this.activeTutorialBird || 'yellow', false);
+        });
+        document.getElementById('openTutorialFromSettingsBtn')?.addEventListener('click', () => {
+            this.hideModal();
+            this.showBirdTutorialModal(this.activeTutorialBird || 'yellow', false);
+        });
+        document.getElementById('closeTutorialBtn')?.addEventListener('click', () => {
+            this.hideBirdTutorialModal();
+        });
+        document.getElementById('confirmTutorialBtn')?.addEventListener('click', () => {
+            if (window.soundFX?.playClick) window.soundFX.playClick();
+            this.hideBirdTutorialModal();
+        });
+
+        // Tutorial Tabs switching
+        document.querySelectorAll('#tutorialTabs .tut-tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const b = e.currentTarget.dataset.bird;
+                if (b) {
+                    if (window.soundFX?.playClick) window.soundFX.playClick();
+                    this.showBirdTutorialModal(b, false);
+                }
+            });
+        });
+
         // Level Select button
         document.getElementById('levelSelectBtn')?.addEventListener('click', () => {
             this.showLevelSelectModal();
@@ -2041,6 +2097,410 @@ class AngryBirdsMaster {
         if (levelModal) levelModal.classList.add('hidden');
         const settingsModal = document.getElementById('settingsModal');
         if (settingsModal) settingsModal.classList.add('hidden');
+        this.hideBirdTutorialModal();
+    }
+
+    static BIRD_TUTORIAL_DATA = {
+        yellow: {
+            name: '飞镖黄 · 极速突刺 (Chuck)',
+            desc: '飞行途中点击屏幕，瞬间爆发超音速向前冲刺！木头材料的绝对克星，破木如切豆腐！',
+            specialty: '超音速冲刺 · 穿透推进',
+            affinity: '木质结构 (3.8x 伤害)',
+            tag: '🎉 新伙伴加入战场！'
+        },
+        blue: {
+            name: '蓝弟弟 · 三重分身 (The Blues)',
+            desc: '飞行途中点击屏幕，一分为三散成扇形箭羽！冰晶与玻璃结构的终极克星，一触即碎！',
+            specialty: '三重分身 · 扇形覆盖',
+            affinity: '冰晶与玻璃 (3.8x 伤害)',
+            tag: '🎉 新伙伴加入战场！'
+        },
+        bomb: {
+            name: '炸弹黑 · 烈焰爆破 (Bomb Bird)',
+            desc: '触碰障碍或飞行中点击屏幕，引爆毁灭性烈焰冲击波！坚硬花岗岩与密集掩体的克星！',
+            specialty: '高爆震撼波 · 范围轰炸',
+            affinity: '坚硬岩石 (2.2x 伤害)',
+            tag: '🎉 新伙伴加入战场！'
+        },
+        matilda: {
+            name: '白公主 · 空投轰炸 (Matilda)',
+            desc: '飞行中点击屏幕垂直向下投掷一颗高爆鸟蛋，同时本体向斜上方借力疾冲，实施双重打击！',
+            specialty: '下蛋轰炸 · 借力爬升',
+            affinity: '深井碉堡与双层建筑',
+            tag: '🎉 新伙伴加入战场！'
+        },
+        terence: {
+            name: '巨无霸 · 绝对重力 (Terence)',
+            desc: '拥有令人畏惧的超级吨位与恐怖惯性！无需使用任何技能，凭借纯粹重力平推一切要塞！',
+            specialty: '绝对重力 · 势不可挡',
+            affinity: '多层花岗岩与皇家壁垒 (4.5x 伤害)',
+            tag: '🎉 新伙伴加入战场！'
+        },
+        red: {
+            name: '经典怒红鸟 · 愤怒领袖 (Red)',
+            desc: '愤怒小鸟军团的忠诚领袖！拥有扎实的撞击冲力和坚毅斗志，均衡应对木头与冰晶结构。',
+            specialty: '坚毅冲击 · 扎实弹射',
+            affinity: '均衡克制 (1.35x 伤害)',
+            tag: '📖 小鸟技能图鉴'
+        }
+    };
+
+    showBirdTutorialModal(birdType = 'yellow', isFirstEncounter = true) {
+        const modal = document.getElementById('birdTutorialModal');
+        if (!modal) return;
+
+        this.isTutorialActive = true;
+        this.activeTutorialBird = birdType;
+        this.tutorialStartTime = performance.now();
+
+        // Record that user has seen this bird
+        this.seenBirds.add(birdType);
+        this.saveProgress();
+
+        if (window.soundFX?.playMenuOpen) window.soundFX.playMenuOpen();
+
+        const data = AngryBirdsMaster.BIRD_TUTORIAL_DATA[birdType] || AngryBirdsMaster.BIRD_TUTORIAL_DATA.yellow;
+
+        const tagEl = document.getElementById('tutorialTag');
+        if (tagEl) tagEl.innerText = isFirstEncounter ? '🎉 新伙伴加入战场！' : '📖 小鸟技能图鉴';
+
+        const nameEl = document.getElementById('tutorialBirdName');
+        if (nameEl) nameEl.innerText = data.name;
+
+        const descEl = document.getElementById('tutorialBirdDesc');
+        if (descEl) descEl.innerText = data.desc;
+
+        const specEl = document.getElementById('tutSpecialty');
+        if (specEl) specEl.innerHTML = `<strong>技能特性:</strong> ${data.specialty}`;
+
+        const affEl = document.getElementById('tutAffinity');
+        if (affEl) affEl.innerHTML = `<strong>克制材料:</strong> ${data.affinity}`;
+
+        const badgeEl = document.getElementById('tutorialTipBadge');
+        if (badgeEl) {
+            badgeEl.innerText = (birdType === 'terence' || birdType === 'red')
+                ? '💡 纯重力碾压，无需中途点击'
+                : '💡 飞行途中点击屏幕释放技能';
+        }
+
+        const confirmBtn = document.getElementById('confirmTutorialBtn');
+        if (confirmBtn) confirmBtn.innerText = isFirstEncounter ? '🚀 开始弹射！' : '确定';
+
+        // Update active tab button
+        document.querySelectorAll('#tutorialTabs .tut-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.bird === birdType);
+        });
+
+        modal.classList.remove('hidden');
+
+        // Launch animation loop on tutorialCanvas
+        const loopStep = (t) => {
+            if (!this.isTutorialActive) return;
+            this.renderTutorialAnimation(this.activeTutorialBird, t);
+            this.tutorialAnimTimer = requestAnimationFrame(loopStep);
+        };
+        if (this.tutorialAnimTimer) cancelAnimationFrame(this.tutorialAnimTimer);
+        this.tutorialAnimTimer = requestAnimationFrame(loopStep);
+    }
+
+    hideBirdTutorialModal() {
+        this.isTutorialActive = false;
+        if (this.tutorialAnimTimer) {
+            cancelAnimationFrame(this.tutorialAnimTimer);
+            this.tutorialAnimTimer = null;
+        }
+        const modal = document.getElementById('birdTutorialModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    renderTutorialAnimation(birdType, timestamp) {
+        const cvs = document.getElementById('tutorialCanvas');
+        if (!cvs) return;
+        const ctx = cvs.getContext('2d');
+        const W = cvs.width;
+        const H = cvs.height;
+        const GY = 172; // Ground surface on tutorial canvas
+
+        // Background: deep chalkboard blueprint
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, W, H);
+
+        // Chalkboard grid lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < W; x += 24) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+        }
+        for (let y = 0; y < H; y += 24) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+        }
+
+        // Ground strip
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, GY, W, H - GY);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(0, GY - 2, W, 4);
+
+        // Slingshot at X = 60, Y = 135
+        const slingX = 60;
+        const slingY = 135;
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(slingX - 5, slingY, 10, GY - slingY);
+        ctx.beginPath();
+        ctx.moveTo(slingX - 5, slingY + 8);
+        ctx.lineTo(slingX - 16, slingY - 14);
+        ctx.lineTo(slingX - 8, slingY - 16);
+        ctx.lineTo(slingX, slingY + 4);
+        ctx.lineTo(slingX + 8, slingY - 16);
+        ctx.lineTo(slingX + 16, slingY - 14);
+        ctx.lineTo(slingX + 5, slingY + 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // 3.8s loop cycle
+        const loopDur = 3.8;
+        const T = ((timestamp - this.tutorialStartTime) / 1000) % loopDur;
+
+        let birdX = 35;
+        let birdY = 142;
+        let birdAngle = 0;
+        let inFlight = false;
+        let abilityActive = false;
+        let targetBroken = false;
+
+        if (T < 0.45) {
+            const stretchT = Math.min(1, T / 0.35);
+            birdX = slingX - stretchT * 28;
+            birdY = slingY + stretchT * 10;
+
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(slingX - 12, slingY - 12);
+            ctx.lineTo(birdX, birdY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(slingX + 12, slingY - 12);
+            ctx.lineTo(birdX, birdY);
+            ctx.stroke();
+        } else {
+            inFlight = true;
+            const ft = T - 0.45;
+
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(slingX - 12, slingY - 12);
+            ctx.lineTo(slingX, slingY - 6);
+            ctx.lineTo(slingX + 12, slingY - 12);
+            ctx.stroke();
+
+            if (ft < 0.85) {
+                birdX = 35 + ft * 175;
+                birdY = 142 - ft * 140 + 0.5 * 180 * ft * ft;
+                birdAngle = Math.atan2(-140 + 180 * ft, 175);
+            } else {
+                abilityActive = true;
+                const at = ft - 0.85;
+
+                if (birdType === 'yellow') {
+                    birdX = 185 + at * 460;
+                    birdY = 100 + at * 20;
+                    birdAngle = 0.08;
+                    targetBroken = birdX >= 355;
+                } else if (birdType === 'blue') {
+                    birdX = 185 + at * 210;
+                    birdY = 100 + at * 30;
+                    birdAngle = 0.15;
+                    targetBroken = birdX >= 350;
+                } else if (birdType === 'bomb') {
+                    birdX = Math.min(350, 185 + at * 190);
+                    birdY = Math.min(145, 100 + at * 50);
+                    targetBroken = birdX >= 345;
+                } else if (birdType === 'matilda') {
+                    birdX = 185 + at * 140;
+                    birdY = Math.max(30, 100 - at * 95);
+                    birdAngle = -0.45;
+                    targetBroken = at >= 0.35;
+                } else if (birdType === 'terence') {
+                    birdX = 185 + at * 220;
+                    birdY = 100 + at * 45;
+                    birdAngle = 0.22;
+                    targetBroken = birdX >= 340;
+                } else {
+                    birdX = 185 + at * 180;
+                    birdY = 100 - (0.85 + at) * 120 + 0.5 * 180 * Math.pow(0.85 + at, 2);
+                    birdAngle = 0.28;
+                    targetBroken = birdX >= 345;
+                }
+            }
+        }
+
+        // Draw Target Obstacle on Right (at X = 365)
+        const targetX = 365;
+        if (!targetBroken) {
+            if (birdType === 'yellow') {
+                ctx.fillStyle = '#b45309';
+                ctx.strokeStyle = '#78350f';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(targetX - 10, GY - 75 + i * 25, 20, 22);
+                    ctx.strokeRect(targetX - 10, GY - 75 + i * 25, 20, 22);
+                }
+                if (window.gameSprites?.drawPigAt) {
+                    window.gameSprites.drawPigAt(ctx, targetX + 28, GY - 16, 'normal', 16, timestamp / 1000);
+                }
+            } else if (birdType === 'blue') {
+                ctx.fillStyle = 'rgba(125, 211, 252, 0.7)';
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 1.5;
+                ctx.fillRect(targetX - 12, GY - 80, 24, 80);
+                ctx.strokeRect(targetX - 12, GY - 80, 24, 80);
+                if (window.gameSprites?.drawPigAt) {
+                    window.gameSprites.drawPigAt(ctx, targetX + 30, GY - 16, 'small', 14, timestamp / 1000);
+                }
+            } else if (birdType === 'bomb') {
+                ctx.fillStyle = '#64748b';
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 2;
+                ctx.fillRect(targetX - 15, GY - 65, 30, 65);
+                ctx.strokeRect(targetX - 15, GY - 65, 30, 65);
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(targetX + 22, GY - 24, 24, 24);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 9px sans-serif';
+                ctx.fillText('TNT', targetX + 26, GY - 9);
+            } else if (birdType === 'matilda') {
+                ctx.fillStyle = '#78350f';
+                ctx.fillRect(230, GY - 15, 60, 15);
+                if (window.gameSprites?.drawPigAt) {
+                    window.gameSprites.drawPigAt(ctx, 260, GY - 16, 'helmet', 16, timestamp / 1000);
+                }
+            } else {
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(targetX - 12, GY - 75, 24, 75);
+                if (window.gameSprites?.drawPigAt) {
+                    window.gameSprites.drawPigAt(ctx, targetX + 28, GY - 16, 'foreman', 18, timestamp / 1000);
+                }
+            }
+        } else {
+            const breakT = T - (birdType === 'matilda' ? 1.65 : 1.7);
+            const fade = Math.max(0, 1 - breakT * 0.7);
+
+            if (birdType === 'bomb' || birdType === 'matilda') {
+                const blastX = birdType === 'matilda' ? 260 : targetX;
+                const blastR = Math.min(48, breakT * 90);
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(blastX, GY - 20, blastR, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(249, 115, 22, ${fade * 0.7})`;
+                ctx.fill();
+                ctx.strokeStyle = `rgba(254, 240, 138, ${fade})`;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            for (let i = 0; i < 7; i++) {
+                const ang = (i / 7) * Math.PI * 2;
+                const spd = 20 + i * 8;
+                const px = targetX + Math.cos(ang) * spd * breakT;
+                const py = (GY - 35) + Math.sin(ang) * spd * breakT + 0.5 * 120 * breakT * breakT;
+                ctx.fillStyle = birdType === 'blue' ? `rgba(125, 211, 252, ${fade})` :
+                                birdType === 'yellow' ? `rgba(217, 119, 6, ${fade})` : `rgba(148, 163, 184, ${fade})`;
+                ctx.fillRect(px, py, 6, 6);
+            }
+
+            ctx.save();
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillStyle = `rgba(74, 222, 128, ${fade})`;
+            ctx.fillText(birdType === 'bomb' ? '+10000!' : '+5000!', targetX - 10, Math.max(30, GY - 55 - breakT * 35));
+            ctx.restore();
+        }
+
+        // Tap Hand Indicator (Appears at T = 1.05 ~ 1.45)
+        if (birdType !== 'terence' && birdType !== 'red') {
+            if (T >= 1.05 && T < 1.45) {
+                const tapT = (T - 1.05) / 0.40;
+                const tapX = 185;
+                const tapY = 95;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(tapX, tapY, 12 + tapT * 26, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(250, 204, 21, ${1 - tapT})`;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(tapX, tapY, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.font = '900 14px sans-serif';
+                ctx.fillStyle = '#fde047';
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 3;
+                ctx.strokeText('TAP!', tapX + 12, tapY - 8);
+                ctx.fillText('TAP!', tapX + 12, tapY - 8);
+                ctx.restore();
+            }
+        }
+
+        // Matilda's Dropped Egg Bomb
+        if (birdType === 'matilda' && abilityActive) {
+            const eggT = T - 1.30;
+            if (eggT >= 0 && eggT < 0.45) {
+                const eggY = 100 + eggT * 180;
+                ctx.save();
+                ctx.fillStyle = '#f8fafc';
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.ellipse(220, eggY, 7, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // Draw The Bird (or 3 birds for Blue split!)
+        if ((inFlight && !targetBroken) || T < 1.7) {
+            if (birdType === 'blue' && abilityActive) {
+                [-18, 0, 18].forEach(dy => {
+                    if (window.gameSprites?.drawBirdAt) {
+                        window.gameSprites.drawBirdAt(ctx, birdX, birdY + dy, birdAngle, 'blue', 11, timestamp / 1000, { inFlight: true });
+                    }
+                });
+            } else {
+                if (window.gameSprites?.drawBirdAt) {
+                    const r = this.getBirdRadius ? this.getBirdRadius(birdType) : 16;
+                    const flags = {
+                        inFlight: inFlight,
+                        abilityUsed: abilityActive,
+                        fuseArmed: birdType === 'bomb' && abilityActive
+                    };
+                    window.gameSprites.drawBirdAt(ctx, birdX, birdY, birdAngle, birdType, r * 0.85, timestamp / 1000, flags);
+                }
+            }
+
+            if (birdType === 'yellow' && abilityActive && birdX < 360) {
+                ctx.strokeStyle = 'rgba(250, 204, 21, 0.7)';
+                ctx.lineWidth = 2.5;
+                for (let i = -1; i <= 1; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(birdX - 35, birdY + i * 8);
+                    ctx.lineTo(birdX - 10, birdY + i * 8);
+                    ctx.stroke();
+                }
+            }
+        }
     }
 
     showLevelSelectModal() {
@@ -2213,14 +2673,16 @@ class AngryBirdsMaster {
         const dt = Math.min(0.1, (timestamp - this.lastTime) / 1000);
         this.lastTime = timestamp;
 
-        // Smooth time-scale interpolation (for matrix slow-motion effects)
-        this.timeScale += (this.targetTimeScale - this.timeScale) * 0.15;
+        if (!this.isTutorialActive) {
+            // Smooth time-scale interpolation (for matrix slow-motion effects)
+            this.timeScale += (this.targetTimeScale - this.timeScale) * 0.15;
 
-        // Update Physics
-        Engine.update(this.engine, (1000 / 60) * this.timeScale);
+            // Update Physics
+            Engine.update(this.engine, (1000 / 60) * this.timeScale);
 
-        // Update Logic, Camera & Effects
-        this.update(dt, timestamp / 1000);
+            // Update Logic, Camera & Effects
+            this.update(dt, timestamp / 1000);
+        }
 
         // Render Everything
         this.render(timestamp / 1000);

@@ -907,45 +907,219 @@ class SoundFX {
         if (!this.enabled) return;
         this.init();
         if (!this.ctx) return;
-        const fanfare = [
-            { f: 523.25, t: 0, d: 0.13 },
-            { f: 659.25, t: 0.12, d: 0.13 },
-            { f: 783.99, t: 0.24, d: 0.13 },
-            { f: 1046.50, t: 0.38, d: 0.42 }
+        const now = this.ctx.currentTime;
+
+        // 1. Multi-voice Triumphant Brass Fanfare (Classic 5-note victory phrase with rich chords)
+        const chords = [
+            { t: 0.00, dur: 0.14, notes: [392.00, 493.88, 587.33] },          // G major pickup (G4, B4, D5)
+            { t: 0.15, dur: 0.14, notes: [523.25, 659.25, 783.99] },          // C major (C5, E5, G5)
+            { t: 0.30, dur: 0.14, notes: [587.33, 739.99, 880.00] },          // D major (D5, F#5, A5)
+            { t: 0.45, dur: 0.18, notes: [659.25, 783.99, 987.77] },          // E minor / G (E5, G5, B5)
+            { t: 0.65, dur: 0.75, notes: [523.25, 659.25, 783.99, 1046.50] }  // Grand High C6 Tutti!
         ];
-        fanfare.forEach(n => {
-            const now = this.ctx.currentTime + n.t;
+
+        chords.forEach((chord, cIdx) => {
+            const startT = now + chord.t;
+            const endT = startT + chord.dur;
+
+            chord.notes.forEach((freq, nIdx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                osc.type = nIdx === chord.notes.length - 1 ? 'sawtooth' : 'triangle';
+                osc.frequency.setValueAtTime(freq, startT);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(cIdx === 4 ? 3200 : 2200, startT);
+                filter.Q.setValueAtTime(2.0, startT);
+
+                const baseVol = cIdx === 4 ? 0.22 : 0.17;
+                gain.gain.setValueAtTime(0.001, startT);
+                gain.gain.linearRampToValueAtTime(baseVol, startT + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.003, endT);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.sfxOut);
+
+                osc.start(startT);
+                osc.stop(endT);
+            });
+        });
+
+        // 2. Cheerful Celebratory Bird Flock Chirping & Cheering (starts at +0.9s)
+        const chirpTimes = [0.90, 1.05, 1.18, 1.32, 1.48];
+        chirpTimes.forEach((del, i) => {
+            const startT = now + del;
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(n.f, now);
-            gain.gain.setValueAtTime(0.24, now);
-            gain.gain.exponentialRampToValueAtTime(0.003, now + n.d);
+
+            osc.type = 'sine';
+            const f1 = 1200 + i * 220;
+            const f2 = f1 * (i % 2 === 0 ? 1.6 : 1.3);
+            osc.frequency.setValueAtTime(f1, startT);
+            osc.frequency.exponentialRampToValueAtTime(f2, startT + 0.04);
+            osc.frequency.exponentialRampToValueAtTime(f1 * 0.9, startT + 0.09);
+
+            gain.gain.setValueAtTime(0.001, startT);
+            gain.gain.linearRampToValueAtTime(0.20, startT + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.002, startT + 0.09);
+
             osc.connect(gain);
             gain.connect(this.sfxOut);
-            osc.start(now);
-            osc.stop(now + n.d);
+
+            osc.start(startT);
+            osc.stop(startT + 0.09);
         });
+    }
+
+    // Iconic Mocking Pig Laugh ("Heh-heh-heh-heh! *SNORT* *OINK*!")
+    playPigMockLaugh() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // 1. Five rapid comedic giggles: "He-he-he-he-he!"
+        const gigglePitches = [460, 420, 490, 440, 390];
+        gigglePitches.forEach((pitch, i) => {
+            const startT = now + i * 0.11;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const formant = this.ctx.createBiquadFilter();
+
+            formant.type = 'bandpass';
+            formant.frequency.setValueAtTime(820, startT);
+            formant.Q.setValueAtTime(3.8, startT);
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(pitch, startT);
+            osc.frequency.linearRampToValueAtTime(pitch * 1.15, startT + 0.03);
+            osc.frequency.exponentialRampToValueAtTime(pitch * 0.85, startT + 0.085);
+
+            gain.gain.setValueAtTime(0.001, startT);
+            gain.gain.linearRampToValueAtTime(0.24, startT + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.004, startT + 0.085);
+
+            osc.connect(formant);
+            formant.connect(gain);
+            gain.connect(this.sfxOut);
+
+            osc.start(startT);
+            osc.stop(startT + 0.085);
+        });
+
+        // 2. Punchline: Loud nasal snort + triumphant oink ("Huuunk-oink!") at t + 0.62s
+        const snortT = now + 0.62;
+        const snortOsc = this.ctx.createOscillator();
+        const snortGain = this.ctx.createGain();
+        const snortFilter = this.ctx.createBiquadFilter();
+
+        snortFilter.type = 'bandpass';
+        snortFilter.frequency.setValueAtTime(680, snortT);
+        snortFilter.Q.setValueAtTime(3.2, snortT);
+
+        snortOsc.type = 'sawtooth';
+        snortOsc.frequency.setValueAtTime(180, snortT);
+        snortOsc.frequency.linearRampToValueAtTime(240, snortT + 0.05);
+        snortOsc.frequency.exponentialRampToValueAtTime(140, snortT + 0.22);
+
+        // Palate flutter LFO for realistic pig snort vibration
+        const lfo = this.ctx.createOscillator();
+        const lfoG = this.ctx.createGain();
+        lfo.frequency.setValueAtTime(26, snortT);
+        lfoG.gain.setValueAtTime(32, snortT);
+        lfo.connect(snortOsc.frequency);
+        lfo.start(snortT);
+        lfo.stop(snortT + 0.22);
+
+        snortGain.gain.setValueAtTime(0.001, snortT);
+        snortGain.gain.linearRampToValueAtTime(0.35, snortT + 0.03);
+        snortGain.gain.exponentialRampToValueAtTime(0.004, snortT + 0.22);
+
+        snortOsc.connect(snortFilter);
+        snortFilter.connect(snortGain);
+        snortGain.connect(this.sfxOut);
+
+        snortOsc.start(snortT);
+        snortOsc.stop(snortT + 0.22);
     }
 
     playLose() {
         if (!this.enabled) return;
         this.init();
         if (!this.ctx) return;
-        [392, 369.99, 349.23, 311.13].forEach((freq, idx) => {
-            const now = this.ctx.currentTime + idx * 0.2;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(freq, now);
-            osc.frequency.linearRampToValueAtTime(freq * 0.94, now + 0.18);
-            gain.gain.setValueAtTime(0.16, now);
-            gain.gain.exponentialRampToValueAtTime(0.004, now + 0.2);
-            osc.connect(gain);
-            gain.connect(this.sfxOut);
-            osc.start(now);
-            osc.stop(now + 0.2);
+        const now = this.ctx.currentTime;
+
+        // 1. Authentic Sad Brass Trombone Slide ("Wah-wah-wah-waaaah")
+        // 4 mournful descending steps with resonant brass plunger mute sweep
+        const notes = [
+            { f: 311.13, targetF: 293.66, dur: 0.28, t: 0.0 },    // Eb4 -> D4
+            { f: 293.66, targetF: 277.18, dur: 0.28, t: 0.32 },   // D4 -> Db4
+            { f: 277.18, targetF: 261.63, dur: 0.28, t: 0.64 },   // Db4 -> C4
+            { f: 261.63, targetF: 196.00, dur: 0.72, t: 0.96 }    // C4 -> G3 long mournful slide!
+        ];
+
+        notes.forEach((n, idx) => {
+            const startT = now + n.t;
+            const endT = startT + n.dur;
+
+            // Dual tone for warm brass trombone body (sawtooth + triangle)
+            const osc1 = this.ctx.createOscillator();
+            const osc2 = this.ctx.createOscillator();
+            const brassGain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+
+            osc1.type = 'sawtooth';
+            osc2.type = 'triangle';
+            osc1.frequency.setValueAtTime(n.f, startT);
+            osc2.frequency.setValueAtTime(n.f * 0.5, startT);
+
+            if (idx === 3) {
+                // Longest final note: expressive weeping slide + lip vibrato
+                osc1.frequency.linearRampToValueAtTime(n.f * 0.96, startT + 0.22);
+                osc1.frequency.exponentialRampToValueAtTime(n.targetF, endT);
+                osc2.frequency.exponentialRampToValueAtTime(n.targetF * 0.5, endT);
+
+                // Mournful brass lip vibrato LFO
+                const vibrato = this.ctx.createOscillator();
+                const vGain = this.ctx.createGain();
+                vibrato.frequency.setValueAtTime(6.5, startT + 0.20);
+                vGain.gain.setValueAtTime(14, startT + 0.20);
+                vibrato.connect(osc1.frequency);
+                vibrato.start(startT + 0.20);
+                vibrato.stop(endT);
+            } else {
+                osc1.frequency.linearRampToValueAtTime(n.targetF, endT);
+                osc2.frequency.linearRampToValueAtTime(n.targetF * 0.5, endT);
+            }
+
+            // Resonant Wah-wah plunger filter sweep (high Q bandpass / lowpass)
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(idx === 3 ? 650 : 780, startT);
+            filter.frequency.linearRampToValueAtTime(idx === 3 ? 320 : 420, endT);
+            filter.Q.setValueAtTime(4.2, startT);
+
+            brassGain.gain.setValueAtTime(0.001, startT);
+            brassGain.gain.linearRampToValueAtTime(idx === 3 ? 0.32 : 0.26, startT + 0.035);
+            brassGain.gain.exponentialRampToValueAtTime(0.003, endT);
+
+            osc1.connect(filter);
+            osc2.connect(filter);
+            filter.connect(brassGain);
+            brassGain.connect(this.sfxOut);
+
+            osc1.start(startT);
+            osc2.start(startT);
+            osc1.stop(endT);
+            osc2.stop(endT);
         });
+
+        // 2. Mocking Green Pigs Chuckle & Snort (starts right after the trombone finishes at 1.75s!)
+        setTimeout(() => {
+            this.playPigMockLaugh();
+        }, 1750);
     }
 }
 

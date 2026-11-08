@@ -38,10 +38,18 @@
     }
 
     const LEVEL_NAMES = [
-        '1-1 初试锋芒', '1-2 摇摇欲坠', '1-3 猪王行宫',
-        '2-1 峡谷哨站', '2-2 风滚草迷局', '2-3 金字塔要塞',
-        '3-1 极地哨卡', '3-2 冰峰雪崩', '3-3 晶簇熔炉',
-        '4-1 铁壁护城河', '4-2 攻城重锤', '4-3 皇家花岗岩棱堡', '4-4 终局决战：绿猪帝皇'
+        '1-1 初试锋芒', '1-2 极速穿云', '1-3 滚石危机', '1-4 双子木阁', '1-5 玻璃迷阵',
+        '1-6 飞镖首秀', '1-7 三重木亭', '1-8 军火木库', '1-9 阶梯哨所', '1-10 桥梁合围',
+        '1-11 坚木堡垒', '1-12 倒挂三角', '1-13 悬空木舍', '1-14 连环哨塔', '1-15 牧场总领 (BOSS)',
+        '2-1 爆破专家', '2-2 空投轰炸', '2-3 弹跳奇兵', '2-4 峡谷碉堡', '2-5 悬崖栈道',
+        '2-6 碎石金字塔', '2-7 炸药库奇袭', '2-8 巨石横梁', '2-9 鹰击长空', '2-10 拱门要塞',
+        '2-11 吊桥锁链', '2-12 峡谷双雄', '2-13 地底坑道', '2-14 乱石穿空', '2-15 峡谷总管 (BOSS)',
+        '3-1 寒冰水晶宫', '3-2 极光跳跃', '3-3 冰壁雪崩', '3-4 双重弹跳', '3-5 冰川迷宫',
+        '3-6 寒冰吊桥', '3-7 冻土巨坑', '3-8 冰柱倾颓', '3-9 逆向反弹', '3-10 冰晶双塔',
+        '3-11 雪峰重炮', '3-12 极地金字塔', '3-13 浮冰连环', '3-14 极寒要塞', '3-15 冰冠司令 (BOSS)',
+        '4-1 钟摆破城', '4-2 巨无霸登场', '4-3 连环炼狱', '4-4 皇家门楼', '4-5 护城河卫所',
+        '4-6 地牢暗室', '4-7 箭塔合围', '4-8 弹跳王廷', '4-9 钢铁重装', '4-10 皇冠吊灯',
+        '4-11 绝壁棱堡', '4-12 铁壁铜墙', '4-13 炼狱熔炉', '4-14 禁卫总督', '4-15 猪王决战 (FINAL BOSS)'
     ];
 
     function updateLobbyUI() {
@@ -51,7 +59,7 @@
         let totalStars = 0;
         let clearedCount = 0;
         let totalScore = 0;
-        const totalLevels = 13;
+        const totalLevels = 60;
         const maxStars = totalLevels * 3;
 
         Object.keys(data.levelStars || {}).forEach(k => {
@@ -67,7 +75,9 @@
         });
 
         const currentLvlIdx = Math.max(0, Math.min(data.currentLevelIndex || 0, totalLevels - 1));
-        const currentLvlName = LEVEL_NAMES[currentLvlIdx] || `第 ${currentLvlIdx + 1} 关`;
+        const wNum = Math.floor(currentLvlIdx / 15) + 1;
+        const lNum = (currentLvlIdx % 15) + 1;
+        const currentLvlName = LEVEL_NAMES[currentLvlIdx] || `${wNum}-${lNum} 关卡`;
 
         // 2. Unlocked count
         const unlockedCount = Array.isArray(data.unlockedLevels) ? data.unlockedLevels.length : Math.max(1, clearedCount + 1);

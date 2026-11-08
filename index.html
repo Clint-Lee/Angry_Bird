@@ -41,6 +41,7 @@
             <div class="controls-section">
                 <a href="../" class="btn btn-nav" id="arcadeLobbyBtn" title="返回网页小游戏大厅">🕹️ 游戏大厅</a>
                 <a href="https://39.97.50.218:8080/" class="btn btn-nav" id="badgePortalBtn" title="返回天枢应用门户">🛡️ 天枢门户</a>
+                <button class="btn btn-secondary" id="birdBookBtn" title="小鸟图鉴与技能教学演示">🐦 图鉴</button>
                 <button class="btn btn-secondary" id="levelSelectBtn">🗺️ 选关</button>
                 <button class="btn btn-secondary" id="settingsBtn">⚙️ 设置</button>
                 <button class="btn btn-secondary" id="bgmBtn">🎵 音乐: 关</button>
@@ -150,11 +151,11 @@
                             <div class="stats-card-grid">
                                 <div class="stat-card">
                                     <div class="stat-label">累计星星数</div>
-                                    <div class="stat-value" id="statStarsCount">0 / 39 ⭐</div>
+                                    <div class="stat-value" id="statStarsCount">0 / 180 ⭐</div>
                                 </div>
                                 <div class="stat-card">
                                     <div class="stat-label">已通关数量</div>
-                                    <div class="stat-value" id="statLevelsCleared">0 / 13</div>
+                                    <div class="stat-value" id="statLevelsCleared">0 / 60</div>
                                 </div>
                                 <div class="stat-card">
                                     <div class="stat-label">历史总得分</div>
@@ -165,10 +166,51 @@
                                     <div class="stat-value" style="color: #4ade80;">本地自动保存</div>
                                 </div>
                             </div>
+                            <button class="btn btn-secondary" id="openTutorialFromSettingsBtn" style="margin-top: 14px; width: 100%;">🐦 查看小鸟技能教学演示</button>
                             <div class="reset-wrap">
                                 <button class="btn btn-danger-outline" id="resetSaveDataBtn">⚠️ 重置本地进度与已解关卡</button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Bird Encounter / Bird Codex Tutorial Modal with Live Animated Skill Demo -->
+            <div class="modal-overlay hidden" id="birdTutorialModal">
+                <div class="modal-content bird-tutorial-content">
+                    <div class="modal-header">
+                        <div class="tutorial-tag" id="tutorialTag">🎉 新伙伴加入战场！</div>
+                        <button class="modal-close-btn" id="closeTutorialBtn">✕</button>
+                    </div>
+
+                    <!-- Bird Selection Tabs -->
+                    <div class="tutorial-tabs" id="tutorialTabs">
+                        <button class="tut-tab-btn" data-bird="red">🔴 经典红</button>
+                        <button class="tut-tab-btn active" data-bird="yellow">🟡 飞镖黄</button>
+                        <button class="tut-tab-btn" data-bird="blue">🔵 蓝弟弟</button>
+                        <button class="tut-tab-btn" data-bird="bomb">💣 炸弹黑</button>
+                        <button class="tut-tab-btn" data-bird="matilda">⚪ 白公主</button>
+                        <button class="tut-tab-btn" data-bird="terence">🔴 巨无霸</button>
+                    </div>
+
+                    <!-- Live Animated Blackboard Canvas -->
+                    <div class="tutorial-stage">
+                        <canvas id="tutorialCanvas" width="460" height="200"></canvas>
+                        <div class="tutorial-tip-badge" id="tutorialTipBadge">💡 飞行途中点击屏幕释放技能</div>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="tutorial-info">
+                        <h3 id="tutorialBirdName">飞镖黄 · 极速突刺</h3>
+                        <p id="tutorialBirdDesc">飞行途中点击屏幕，瞬间爆发超音速向前冲刺！木头材料的绝对克星！</p>
+                        <div class="tutorial-stats-row">
+                            <span class="tut-pill" id="tutSpecialty"><strong>技能特性:</strong> 超音速冲刺</span>
+                            <span class="tut-pill" id="tutAffinity"><strong>克制材料:</strong> 木质结构 (3.8x 伤害)</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-btn-row">
+                        <button class="btn btn-primary btn-large" id="confirmTutorialBtn">🚀 开始弹射！</button>
                     </div>
                 </div>
             </div>
