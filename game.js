@@ -27,7 +27,7 @@ const LAUNCH_SPEED_NORMAL = 0.066;
 const LAUNCH_SPEED_KING = 0.086;
 
 // Classic Angry Birds rule: Red & Terence have NO mid-air tap skill!
-const ACTIVE_ABILITY_BIRDS = new Set(['yellow', 'blue', 'bomb', 'matilda']);
+const ACTIVE_ABILITY_BIRDS = new Set(['yellow', 'blue', 'bomb', 'matilda', 'hal']);
 
 // =========================================================================
 // LOCALSTORAGE PROGRESSION & SETTINGS MANAGER
@@ -211,6 +211,7 @@ class AngryBirdsMaster {
         this.mouse = { x: 0, y: 0, worldX: 0, worldY: 0, isDown: false };
         this.isDraggingSling = false;
         this.isPanningCamera = false;
+        this.isFirstBirdLaunched = false;
         this.panStartX = 0;
         this.camStartX = 0;
         this.lastStretchDist = 0;
@@ -331,12 +332,21 @@ class AngryBirdsMaster {
             return 0.35;
         }
         if (birdType === 'yellow') {
-            if (material === 'wood') return 3.8;
-            if (material === 'glass') return 0.85;
-            return 0.45;
+            if (material === 'wood') return 5.5; // Empowered Chuck punches through multiple timber layers!
+            if (material === 'glass') return 1.5;
+            return 0.75;
+        }
+        if (birdType === 'hal') {
+            if (material === 'wood') return 3.2;
+            if (material === 'glass') return 2.6;
+            return 1.6;
         }
         if (birdType === 'bomb') {
-            if (material === 'stone') return 2.2;
+            if (material === 'stone') return 2.5;
+            return 1.6;
+        }
+        if (birdType === 'matilda') {
+            if (material === 'wood') return 2.0;
             return 1.4;
         }
         if (birdType === 'red') {
@@ -484,8 +494,10 @@ class AngryBirdsMaster {
                     const materialMult = birdType ? this.getBirdMaterialMultiplier(birdType, d.material) : 1.0;
 
                     const isTerence = birdType === 'terence';
+                    const isChuckDashed = birdType === 'yellow' && hitter.customData?.abilityUsed;
                     const massFactor = isTerence ? Math.min(18, hitter.mass || 1) : Math.min(6.5, hitter.mass || 1);
-                    const dmg = Math.pow(relSpeed, 1.36) * massFactor * 3.3 * materialMult;
+                    const abilityBoost = isChuckDashed ? 1.55 : 1.0;
+                    const dmg = Math.pow(relSpeed, 1.36) * massFactor * 3.3 * materialMult * abilityBoost;
                     const hpBefore = d.hp;
                     d.hp -= dmg;
 
@@ -513,9 +525,11 @@ class AngryBirdsMaster {
                                 const isSpecialistMatch =
                                     isTerence ||
                                     (birdType === 'blue' && d.material === 'glass') ||
-                                    (birdType === 'yellow' && d.material === 'wood');
-                                const baseCarry = isSpecialistMatch ? 0.84 : 0.62;
-                                const overkillCarry = Math.min(0.88, Math.max(0.42, (1 - hpBefore / (dmg * 1.25)) * 0.3 + baseCarry * 0.75));
+                                    (birdType === 'yellow' && d.material === 'wood') ||
+                                    (birdType === 'hal');
+                                const isChuckDashed = birdType === 'yellow' && hitter.customData?.abilityUsed;
+                                const baseCarry = isChuckDashed ? 0.94 : (isSpecialistMatch ? 0.86 : 0.62);
+                                const overkillCarry = Math.min(0.95, Math.max(0.42, (1 - hpBefore / (dmg * 1.25)) * 0.3 + baseCarry * 0.75));
                                 Body.setVelocity(hitter, {
                                     x: pv.x * overkillCarry,
                                     y: pv.y * overkillCarry
@@ -1044,6 +1058,7 @@ class AngryBirdsMaster {
         this.targetTimeScale = 1.0;
         this.isDraggingSling = false;
         this.isPanningCamera = false;
+        this.isFirstBirdLaunched = false;
 
         this.currentLevelIndex = Math.max(0, Math.min(index, window.GAME_LEVELS.length - 1));
         const levelData = window.GAME_LEVELS[this.currentLevelIndex];
@@ -1109,6 +1124,7 @@ class AngryBirdsMaster {
     getBirdRadius(birdType) {
         if (birdType === 'blue') return 13;
         if (birdType === 'yellow') return 17;
+        if (birdType === 'hal') return 19;
         if (birdType === 'bomb') return 24;
         if (birdType === 'matilda') return 23;
         if (birdType === 'terence') return 34;
@@ -1121,6 +1137,7 @@ class AngryBirdsMaster {
 
         if (birdType === 'blue') density = 0.0030;
         else if (birdType === 'yellow') density = 0.0036;
+        else if (birdType === 'hal') density = 0.0040;
         else if (birdType === 'bomb') density = 0.0062;
         else if (birdType === 'matilda') density = 0.0040;
         else if (birdType === 'terence') density = 0.018; // Massive wrecking ball mass!
@@ -1178,6 +1195,7 @@ class AngryBirdsMaster {
         const launchedBird = this.currentBird;
         this.currentBird = null;
         this.isDraggingSling = false;
+        this.isFirstBirdLaunched = true;
 
         Body.setStatic(launchedBird, false);
         Body.setVelocity(launchedBird, launchVelocity);
@@ -1267,11 +1285,21 @@ class AngryBirdsMaster {
         if (bData.birdType === 'yellow') {
             // Chuck Super Sonic Dash: sharp forward burst calibrated to slice through wood!
             window.soundFX.playDash();
-            this.addCameraShake(4);
+            this.addCameraShake(6);
             let dir = Vector.normalise(vel);
-            if (Vector.magnitude(vel) < 0.3) dir = { x: 1, y: -0.15 };
-            Body.setVelocity(bird, Vector.mult(dir, 13.8));
-            this.createSparks(pos.x, pos.y, '#fde047', 22);
+            if (Vector.magnitude(vel) < 0.3) dir = { x: 1, y: -0.12 };
+            Body.setVelocity(bird, Vector.mult(dir, 22.0));
+            this.createSparks(pos.x, pos.y, '#fde047', 28);
+
+        } else if (bData.birdType === 'hal') {
+            // Hal Boomerang Reverse: reverse horizontal direction with boomerang whip!
+            if (window.soundFX?.playBoomerang) window.soundFX.playBoomerang();
+            else window.soundFX.playDash();
+            this.addCameraShake(5);
+            const curVx = bird.velocity.x;
+            const revVx = Math.min(-15.5, -Math.abs(curVx) * 1.35 - 3.2);
+            Body.setVelocity(bird, { x: revVx, y: bird.velocity.y * 0.4 - 2.8 });
+            this.createSparks(pos.x, pos.y, '#22c55e', 24);
 
         } else if (bData.birdType === 'blue') {
             // The Blues Triple Split into 3 ice-shattering projectiles!
@@ -2101,47 +2129,54 @@ class AngryBirdsMaster {
     }
 
     static BIRD_TUTORIAL_DATA = {
+        red: {
+            name: '愤怒小鸟 (Red)',
+            desc: '鸟群的领袖！拥有扎实的撞击冲力和坚毅斗志，飞行轨迹沉稳平顺，适合均衡应对木头与玻璃结构。',
+            specialty: '坚毅冲击 · 扎实弹射',
+            affinity: '木质与玻璃结构 (1.35x 伤害)',
+            tag: '📖 小鸟技能图鉴'
+        },
         yellow: {
-            name: '飞镖黄 · 极速突刺 (Chuck)',
+            name: '极速小鸟 (Chuck)',
             desc: '飞行途中点击屏幕，瞬间爆发超音速向前冲刺！木头材料的绝对克星，破木如切豆腐！',
-            specialty: '超音速冲刺 · 穿透推进',
-            affinity: '木质结构 (3.8x 伤害)',
+            specialty: '超音速冲刺 · 强力穿透',
+            affinity: '木质结构 (5.5x 爆破伤害)',
             tag: '🎉 新伙伴加入战场！'
         },
         blue: {
-            name: '蓝弟弟 · 三重分身 (The Blues)',
+            name: '分裂鸟 (The Blues)',
             desc: '飞行途中点击屏幕，一分为三散成扇形箭羽！冰晶与玻璃结构的终极克星，一触即碎！',
             specialty: '三重分身 · 扇形覆盖',
             affinity: '冰晶与玻璃 (3.8x 伤害)',
             tag: '🎉 新伙伴加入战场！'
         },
-        bomb: {
-            name: '炸弹黑 · 烈焰爆破 (Bomb Bird)',
-            desc: '触碰障碍或飞行中点击屏幕，引爆毁灭性烈焰冲击波！坚硬花岗岩与密集掩体的克星！',
-            specialty: '高爆震撼波 · 范围轰炸',
-            affinity: '坚硬岩石 (2.2x 伤害)',
-            tag: '🎉 新伙伴加入战场！'
-        },
         matilda: {
-            name: '白公主 · 空投轰炸 (Matilda)',
+            name: '弹射鸟 (Matilda)',
             desc: '飞行中点击屏幕垂直向下投掷一颗高爆鸟蛋，同时本体向斜上方借力疾冲，实施双重打击！',
             specialty: '下蛋轰炸 · 借力爬升',
             affinity: '深井碉堡与双层建筑',
             tag: '🎉 新伙伴加入战场！'
         },
+        bomb: {
+            name: '炸弹鸟 (Bomb Bird)',
+            desc: '触碰障碍或飞行中点击屏幕，引爆毁灭性烈焰冲击波！坚硬花岗岩与密集掩体的克星！',
+            specialty: '高爆震撼波 · 范围轰炸',
+            affinity: '坚硬岩石 (2.5x 伤害)',
+            tag: '🎉 新伙伴加入战场！'
+        },
+        hal: {
+            name: '回旋鸟 (Hal)',
+            desc: '飞行途中点击屏幕，瞬间如同回旋镖一样逆向折返加速，从后方直捣猪猪防线盲区与后方弱点！',
+            specialty: '逆风回旋 · 盲区折返',
+            affinity: '回形掩体与后背死角 (3.2x 伤害)',
+            tag: '🎉 新伙伴加入战场！'
+        },
         terence: {
-            name: '巨无霸 · 绝对重力 (Terence)',
-            desc: '拥有令人畏惧的超级吨位与恐怖惯性！无需使用任何技能，凭借纯粹重力平推一切要塞！',
+            name: '愤怒愤怒小鸟 (Terence)',
+            desc: '拥有令人畏惧的超级吨位与恐怖狂怒！无需任何技能，凭借纯粹重力平推前方一切要塞！',
             specialty: '绝对重力 · 势不可挡',
             affinity: '多层花岗岩与皇家壁垒 (4.5x 伤害)',
             tag: '🎉 新伙伴加入战场！'
-        },
-        red: {
-            name: '经典怒红鸟 · 愤怒领袖 (Red)',
-            desc: '愤怒小鸟军团的忠诚领袖！拥有扎实的撞击冲力和坚毅斗志，均衡应对木头与冰晶结构。',
-            specialty: '坚毅冲击 · 扎实弹射',
-            affinity: '均衡克制 (1.35x 伤害)',
-            tag: '📖 小鸟技能图鉴'
         }
     };
 
@@ -2219,56 +2254,80 @@ class AngryBirdsMaster {
         const ctx = cvs.getContext('2d');
         const W = cvs.width;
         const H = cvs.height;
-        const GY = 172; // Ground surface on tutorial canvas
+        const GY = 165; // Ground surface on tutorial canvas
+        const spr = window.spriteRenderer || window.gameSprites;
 
-        // Background: deep chalkboard blueprint
-        ctx.fillStyle = '#090d16';
+        // 1. Cheerful, Vivid Cartoon Sky Gradient
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, GY);
+        skyGrad.addColorStop(0, '#38bdf8');
+        skyGrad.addColorStop(0.55, '#93c5fd');
+        skyGrad.addColorStop(1, '#e0f2fe');
+        ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, W, H);
 
-        // Chalkboard grid lines
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-        ctx.lineWidth = 1;
-        for (let x = 0; x < W; x += 24) {
+        // Fluffy cartoon clouds in sky
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        [
+            { x: 50, y: 35, r: 16 },
+            { x: 70, y: 30, r: 22 },
+            { x: 95, y: 35, r: 18 },
+            { x: 260, y: 40, r: 14 },
+            { x: 280, y: 34, r: 20 },
+            { x: 305, y: 40, r: 15 },
+            { x: 390, y: 28, r: 18 },
+            { x: 412, y: 22, r: 24 }
+        ].forEach(c => {
             ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, H);
-            ctx.stroke();
-        }
-        for (let y = 0; y < H; y += 24) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(W, y);
-            ctx.stroke();
-        }
+            ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+            ctx.fill();
+        });
 
-        // Ground strip
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(0, GY, W, H - GY);
-        ctx.fillStyle = '#22c55e';
-        ctx.fillRect(0, GY - 2, W, 4);
-
-        // Slingshot at X = 60, Y = 135
-        const slingX = 60;
-        const slingY = 135;
-        ctx.fillStyle = '#78350f';
-        ctx.fillRect(slingX - 5, slingY, 10, GY - slingY);
+        // Distant rolling green hills
+        ctx.fillStyle = '#86efac';
         ctx.beginPath();
-        ctx.moveTo(slingX - 5, slingY + 8);
+        ctx.moveTo(0, GY);
+        ctx.quadraticCurveTo(W * 0.25, GY - 30, W * 0.5, GY - 12);
+        ctx.quadraticCurveTo(W * 0.75, GY + 5, W, GY - 18);
+        ctx.lineTo(W, GY);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. Grassy Turf & Warm Soil Bed
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(0, GY, W, H - GY);
+        // Bright green grass blade rim
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(0, GY - 2, W, 5);
+        // Rich earth layer below
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(0, GY + 14, W, H - GY - 14);
+
+        // 3. Slingshot at X = 55, Y = 130
+        const slingX = 55;
+        const slingY = 130;
+        ctx.fillStyle = '#92400e';
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 1.8;
+        ctx.fillRect(slingX - 5, slingY, 10, GY - slingY);
+        ctx.strokeRect(slingX - 5, slingY, 10, GY - slingY);
+        ctx.beginPath();
+        ctx.moveTo(slingX - 5, slingY + 6);
         ctx.lineTo(slingX - 16, slingY - 14);
         ctx.lineTo(slingX - 8, slingY - 16);
         ctx.lineTo(slingX, slingY + 4);
         ctx.lineTo(slingX + 8, slingY - 16);
         ctx.lineTo(slingX + 16, slingY - 14);
-        ctx.lineTo(slingX + 5, slingY + 8);
+        ctx.lineTo(slingX + 5, slingY + 6);
         ctx.closePath();
         ctx.fill();
+        ctx.stroke();
 
         // 3.8s loop cycle
         const loopDur = 3.8;
         const T = ((timestamp - this.tutorialStartTime) / 1000) % loopDur;
 
         let birdX = 35;
-        let birdY = 142;
+        let birdY = 138;
         let birdAngle = 0;
         let inFlight = false;
         let abilityActive = false;
@@ -2276,10 +2335,10 @@ class AngryBirdsMaster {
 
         if (T < 0.45) {
             const stretchT = Math.min(1, T / 0.35);
-            birdX = slingX - stretchT * 28;
-            birdY = slingY + stretchT * 10;
+            birdX = slingX - stretchT * 26;
+            birdY = slingY + stretchT * 8;
 
-            ctx.strokeStyle = '#374151';
+            ctx.strokeStyle = '#991b1b';
             ctx.lineWidth = 3.5;
             ctx.beginPath();
             ctx.moveTo(slingX - 12, slingY - 12);
@@ -2293,7 +2352,7 @@ class AngryBirdsMaster {
             inFlight = true;
             const ft = T - 0.45;
 
-            ctx.strokeStyle = '#374151';
+            ctx.strokeStyle = '#991b1b';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
             ctx.moveTo(slingX - 12, slingY - 12);
@@ -2303,7 +2362,7 @@ class AngryBirdsMaster {
 
             if (ft < 0.85) {
                 birdX = 35 + ft * 175;
-                birdY = 142 - ft * 140 + 0.5 * 180 * ft * ft;
+                birdY = 138 - ft * 140 + 0.5 * 180 * ft * ft;
                 birdAngle = Math.atan2(-140 + 180 * ft, 175);
             } else {
                 abilityActive = true;
@@ -2311,31 +2370,37 @@ class AngryBirdsMaster {
 
                 if (birdType === 'yellow') {
                     birdX = 185 + at * 460;
-                    birdY = 100 + at * 20;
-                    birdAngle = 0.08;
+                    birdY = 96 + at * 18;
+                    birdAngle = 0.06;
                     targetBroken = birdX >= 355;
                 } else if (birdType === 'blue') {
                     birdX = 185 + at * 210;
-                    birdY = 100 + at * 30;
+                    birdY = 96 + at * 28;
                     birdAngle = 0.15;
                     targetBroken = birdX >= 350;
                 } else if (birdType === 'bomb') {
                     birdX = Math.min(350, 185 + at * 190);
-                    birdY = Math.min(145, 100 + at * 50);
+                    birdY = Math.min(142, 96 + at * 48);
                     targetBroken = birdX >= 345;
                 } else if (birdType === 'matilda') {
                     birdX = 185 + at * 140;
-                    birdY = Math.max(30, 100 - at * 95);
+                    birdY = Math.max(25, 96 - at * 95);
                     birdAngle = -0.45;
                     targetBroken = at >= 0.35;
+                } else if (birdType === 'hal') {
+                    // Hal Boomerang: loops past and whips back toward left!
+                    birdX = 185 + Math.cos(at * 3.8) * 75 - at * 45;
+                    birdY = 85 + Math.sin(at * 3.8) * 35 + at * 35;
+                    birdAngle = Math.PI - 0.3;
+                    targetBroken = at >= 0.72;
                 } else if (birdType === 'terence') {
                     birdX = 185 + at * 220;
-                    birdY = 100 + at * 45;
+                    birdY = 96 + at * 42;
                     birdAngle = 0.22;
                     targetBroken = birdX >= 340;
                 } else {
                     birdX = 185 + at * 180;
-                    birdY = 100 - (0.85 + at) * 120 + 0.5 * 180 * Math.pow(0.85 + at, 2);
+                    birdY = 96 - (0.85 + at) * 115 + 0.5 * 180 * Math.pow(0.85 + at, 2);
                     birdAngle = 0.28;
                     targetBroken = birdX >= 345;
                 }
@@ -2346,28 +2411,28 @@ class AngryBirdsMaster {
         const targetX = 365;
         if (!targetBroken) {
             if (birdType === 'yellow') {
-                ctx.fillStyle = '#b45309';
+                ctx.fillStyle = '#d97706';
                 ctx.strokeStyle = '#78350f';
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 1.6;
                 for (let i = 0; i < 3; i++) {
-                    ctx.fillRect(targetX - 10, GY - 75 + i * 25, 20, 22);
-                    ctx.strokeRect(targetX - 10, GY - 75 + i * 25, 20, 22);
+                    ctx.fillRect(targetX - 10, GY - 72 + i * 24, 20, 22);
+                    ctx.strokeRect(targetX - 10, GY - 72 + i * 24, 20, 22);
                 }
-                if (window.gameSprites?.drawPigAt) {
-                    window.gameSprites.drawPigAt(ctx, targetX + 28, GY - 16, 'normal', 16, timestamp / 1000);
+                if (spr && spr.drawPigAt) {
+                    spr.drawPigAt(ctx, targetX + 28, GY - 16, 'normal', 16, timestamp / 1000);
                 }
             } else if (birdType === 'blue') {
-                ctx.fillStyle = 'rgba(125, 211, 252, 0.7)';
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 1.5;
-                ctx.fillRect(targetX - 12, GY - 80, 24, 80);
-                ctx.strokeRect(targetX - 12, GY - 80, 24, 80);
-                if (window.gameSprites?.drawPigAt) {
-                    window.gameSprites.drawPigAt(ctx, targetX + 30, GY - 16, 'small', 14, timestamp / 1000);
+                ctx.fillStyle = 'rgba(125, 211, 252, 0.85)';
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 1.6;
+                ctx.fillRect(targetX - 12, GY - 78, 24, 78);
+                ctx.strokeRect(targetX - 12, GY - 78, 24, 78);
+                if (spr && spr.drawPigAt) {
+                    spr.drawPigAt(ctx, targetX + 28, GY - 16, 'small', 14, timestamp / 1000);
                 }
             } else if (birdType === 'bomb') {
                 ctx.fillStyle = '#64748b';
-                ctx.strokeStyle = '#334155';
+                ctx.strokeStyle = '#1e293b';
                 ctx.lineWidth = 2;
                 ctx.fillRect(targetX - 15, GY - 65, 30, 65);
                 ctx.strokeRect(targetX - 15, GY - 65, 30, 65);
@@ -2379,27 +2444,35 @@ class AngryBirdsMaster {
             } else if (birdType === 'matilda') {
                 ctx.fillStyle = '#78350f';
                 ctx.fillRect(230, GY - 15, 60, 15);
-                if (window.gameSprites?.drawPigAt) {
-                    window.gameSprites.drawPigAt(ctx, 260, GY - 16, 'helmet', 16, timestamp / 1000);
+                if (spr && spr.drawPigAt) {
+                    spr.drawPigAt(ctx, 260, GY - 16, 'helmet', 16, timestamp / 1000);
+                }
+            } else if (birdType === 'hal') {
+                // Hal target: Bunker with rear opening!
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(285, GY - 55, 18, 55);
+                ctx.fillRect(285, GY - 70, 75, 15);
+                if (spr && spr.drawPigAt) {
+                    spr.drawPigAt(ctx, 335, GY - 16, 'normal', 16, timestamp / 1000);
                 }
             } else {
                 ctx.fillStyle = '#64748b';
                 ctx.fillRect(targetX - 12, GY - 75, 24, 75);
-                if (window.gameSprites?.drawPigAt) {
-                    window.gameSprites.drawPigAt(ctx, targetX + 28, GY - 16, 'foreman', 18, timestamp / 1000);
+                if (spr && spr.drawPigAt) {
+                    spr.drawPigAt(ctx, targetX + 28, GY - 16, 'foreman', 18, timestamp / 1000);
                 }
             }
         } else {
-            const breakT = T - (birdType === 'matilda' ? 1.65 : 1.7);
+            const breakT = T - (birdType === 'matilda' ? 1.65 : birdType === 'hal' ? 2.0 : 1.7);
             const fade = Math.max(0, 1 - breakT * 0.7);
 
             if (birdType === 'bomb' || birdType === 'matilda') {
                 const blastX = birdType === 'matilda' ? 260 : targetX;
-                const blastR = Math.min(48, breakT * 90);
+                const blastR = Math.min(50, breakT * 95);
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(blastX, GY - 20, blastR, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(249, 115, 22, ${fade * 0.7})`;
+                ctx.fillStyle = `rgba(249, 115, 22, ${fade * 0.75})`;
                 ctx.fill();
                 ctx.strokeStyle = `rgba(254, 240, 138, ${fade})`;
                 ctx.lineWidth = 3;
@@ -2407,20 +2480,24 @@ class AngryBirdsMaster {
                 ctx.restore();
             }
 
-            for (let i = 0; i < 7; i++) {
-                const ang = (i / 7) * Math.PI * 2;
-                const spd = 20 + i * 8;
+            for (let i = 0; i < 8; i++) {
+                const ang = (i / 8) * Math.PI * 2;
+                const spd = 24 + i * 8;
                 const px = targetX + Math.cos(ang) * spd * breakT;
                 const py = (GY - 35) + Math.sin(ang) * spd * breakT + 0.5 * 120 * breakT * breakT;
                 ctx.fillStyle = birdType === 'blue' ? `rgba(125, 211, 252, ${fade})` :
-                                birdType === 'yellow' ? `rgba(217, 119, 6, ${fade})` : `rgba(148, 163, 184, ${fade})`;
+                                birdType === 'yellow' ? `rgba(245, 158, 11, ${fade})` : `rgba(148, 163, 184, ${fade})`;
                 ctx.fillRect(px, py, 6, 6);
             }
 
             ctx.save();
-            ctx.font = 'bold 16px sans-serif';
-            ctx.fillStyle = `rgba(74, 222, 128, ${fade})`;
-            ctx.fillText(birdType === 'bomb' ? '+10000!' : '+5000!', targetX - 10, Math.max(30, GY - 55 - breakT * 35));
+            ctx.font = '900 16px sans-serif';
+            ctx.fillStyle = `rgba(34, 197, 94, ${fade})`;
+            ctx.strokeStyle = `rgba(15, 23, 42, ${fade * 0.8})`;
+            ctx.lineWidth = 3;
+            const popText = birdType === 'bomb' ? '+10000!' : '+5000!';
+            ctx.strokeText(popText, targetX - 10, Math.max(30, GY - 55 - breakT * 35));
+            ctx.fillText(popText, targetX - 10, Math.max(30, GY - 55 - breakT * 35));
             ctx.restore();
         }
 
@@ -2474,19 +2551,19 @@ class AngryBirdsMaster {
         if ((inFlight && !targetBroken) || T < 1.7) {
             if (birdType === 'blue' && abilityActive) {
                 [-18, 0, 18].forEach(dy => {
-                    if (window.gameSprites?.drawBirdAt) {
-                        window.gameSprites.drawBirdAt(ctx, birdX, birdY + dy, birdAngle, 'blue', 11, timestamp / 1000, { inFlight: true });
+                    if (spr && spr.drawBirdAt) {
+                        spr.drawBirdAt(ctx, birdX, birdY + dy, birdAngle, 'blue', 11, timestamp / 1000, { inFlight: true });
                     }
                 });
             } else {
-                if (window.gameSprites?.drawBirdAt) {
+                if (spr && spr.drawBirdAt) {
                     const r = this.getBirdRadius ? this.getBirdRadius(birdType) : 16;
                     const flags = {
                         inFlight: inFlight,
                         abilityUsed: abilityActive,
                         fuseArmed: birdType === 'bomb' && abilityActive
                     };
-                    window.gameSprites.drawBirdAt(ctx, birdX, birdY, birdAngle, birdType, r * 0.85, timestamp / 1000, flags);
+                    spr.drawBirdAt(ctx, birdX, birdY, birdAngle, birdType, r * 0.85, timestamp / 1000, flags);
                 }
             }
 
@@ -2692,6 +2769,29 @@ class AngryBirdsMaster {
 
     update(dt, time) {
         const now = performance.now();
+
+        // 0. Pre-Launch Fortress Stabilization Lock
+        // Prevents premature physics jitter, sliding, or tower collapse before player fires!
+        if (!this.isFirstBirdLaunched) {
+            for (let i = 0; i < this.blocks.length; i++) {
+                const b = this.blocks[i];
+                if (!b.isStatic) {
+                    if (Math.abs(b.velocity.x) > 0.0005 || Math.abs(b.angularVelocity) > 0.0002) {
+                        Body.setVelocity(b, { x: 0, y: Math.min(0.4, b.velocity.y) });
+                        Body.setAngularVelocity(b, 0);
+                    }
+                }
+            }
+            for (let i = 0; i < this.pigs.length; i++) {
+                const p = this.pigs[i];
+                if (!p.isStatic) {
+                    if (Math.abs(p.velocity.x) > 0.0005 || Math.abs(p.angularVelocity) > 0.0002) {
+                        Body.setVelocity(p, { x: 0, y: Math.min(0.4, p.velocity.y) });
+                        Body.setAngularVelocity(p, 0);
+                    }
+                }
+            }
+        }
 
         // 1. Update Next Bird Entrance Animation (1.0s delay + anticipation squash + majestic hop)
         if (this.birdEntranceState) {
@@ -3590,10 +3690,11 @@ class AngryBirdsMaster {
             if (b) {
                 const type = b.customData.birdType;
                 let text = '';
-                if (type === 'yellow') text = '⚡ 点击屏幕 / 按空格：飞镖黄极速冲刺（破木克星）！';
-                else if (type === 'blue') text = '🔵 点击屏幕 / 按空格：蓝弟弟一分为三（破冰克星）！';
-                else if (type === 'bomb') text = '💣 点击屏幕 / 按空格：炸弹黑引爆巨型冲击波！';
-                else if (type === 'matilda') text = '🥚 点击屏幕 / 按空格：白公主垂直投弹并火箭拉升！';
+                if (type === 'yellow') text = '⚡ 点击屏幕 / 按空格：极速小鸟超音速冲刺（破木克星）！';
+                else if (type === 'blue') text = '🔵 点击屏幕 / 按空格：分裂鸟一分为三（破冰克星）！';
+                else if (type === 'bomb') text = '💣 点击屏幕 / 按空格：炸弹鸟引爆巨型烈焰波！';
+                else if (type === 'matilda') text = '🥚 点击屏幕 / 按空格：弹射鸟垂直下蛋并反冲升空！';
+                else if (type === 'hal') text = '🟢 点击屏幕 / 按空格：回旋鸟逆风折返，背击偷袭！';
 
                 if (text) {
                     this.ctx.save();

@@ -38,6 +38,15 @@ window.GAME_WORLDS = [
         accent: '#a78bfa',
         badge: '决战王城',
         desc: '夜幕下的花岗岩皇家宫殿，钟摆铁球横扫千军，直面头戴金冠的国王猪！'
+    },
+    {
+        id: 'volcano',
+        name: '第五章：炽热熔岩',
+        subtitle: 'Magma Vault · 熔岩暗窟',
+        bgKey: 'volcano',
+        accent: '#f97316',
+        badge: '火山烈狱',
+        desc: '炽热翻滚的熔岩核心要塞，回旋鸟逆风奇袭，连锁TNT引爆终极风暴！'
     }
 ];
 
@@ -1652,6 +1661,472 @@ window.GAME_LEVELS = [
             // Twin royal spires flanking the skylight
             g.addRoof(K - 95, GY - 295, 70, 46, 'stone');
             g.addRoof(K + 95, GY - 295, 70, 46, 'stone');
+        }
+    },
+    // =========================================================================
+    // CHAPTER 5: MAGMA VAULT (Levels 5-1 to 5-15, Total 75 Levels)
+    // Featuring Hal (回旋鸟), Chuck (极速小鸟), Bomb, Blues, Matilda & Terence!
+    // =========================================================================
+    {
+        id: 61,
+        world: 'volcano',
+        worldLevel: '5-1',
+        name: '5-1 熔岩前哨',
+        subtitle: '全新伙伴回旋鸟登场！飞过前哨掩体后点击屏幕，反向折返直击猪猪后方弱点！',
+        birds: ['hal', 'yellow', 'red'],
+        parScore: 32000,
+        build(g, GY) {
+            const X = 1380;
+            // Bunker facing right (open back)
+            g.addBlock(X - 50, GY - 50, 26, 100, 'stone');
+            g.addBlock(X + 50, GY - 50, 26, 100, 'wood');
+            g.addBlock(X, GY - 110, 140, 20, 'stone');
+            g.addRoof(X, GY - 140, 110, 40, 'stone');
+            g.addPig(X, GY - 22, 'helmet');
+
+            // Pig hidden behind the stone wall
+            const X2 = 1240;
+            g.addBlock(X2, GY - 40, 24, 80, 'wood');
+            g.addPig(X2, GY - 98, 'small');
+        }
+    },
+    {
+        id: 62,
+        world: 'volcano',
+        worldLevel: '5-2',
+        name: '5-2 盲区暗袭',
+        subtitle: '猪群躲在背阴的玄武岩深处，用回旋鸟弧线绕后偷袭，再用极速小鸟贯穿木栅！',
+        birds: ['hal', 'yellow', 'blue', 'red'],
+        parScore: 40000,
+        build(g, GY) {
+            const X = 1350;
+            g.addBlock(X - 70, GY - 55, 24, 110, 'stone');
+            g.addBlock(X + 70, GY - 55, 24, 110, 'wood');
+            g.addBlock(X, GY - 120, 180, 20, 'stone');
+            g.addPig(X, GY - 22, 'normal');
+            g.addPig(X - 35, GY - 22, 'small');
+
+            // Second story
+            g.addBlock(X - 45, GY - 170, 20, 80, 'wood');
+            g.addBlock(X + 45, GY - 170, 20, 80, 'glass');
+            g.addBlock(X, GY - 220, 130, 18, 'wood');
+            g.addPig(X, GY - 142, 'helmet');
+
+            // Blind spot pig behind thick barrier at X = 1530
+            g.addBlock(1530, GY - 60, 30, 120, 'stone');
+            g.addPig(1580, GY - 22, 'normal');
+        }
+    },
+    {
+        id: 63,
+        world: 'volcano',
+        worldLevel: '5-3',
+        name: '5-3 连锁爆燃',
+        subtitle: '熔岩矿坑中的高爆TNT连环陷阱，一击引燃整个熔岩回音廊！',
+        birds: ['bomb', 'hal', 'yellow'],
+        parScore: 48000,
+        build(g, GY) {
+            const X = 1360;
+            g.addBlock(X - 80, GY - 45, 24, 90, 'wood');
+            g.addBlock(X, GY - 45, 24, 90, 'wood');
+            g.addBlock(X + 80, GY - 45, 24, 90, 'wood');
+            g.addBlock(X - 40, GY - 100, 110, 18, 'wood');
+            g.addBlock(X + 40, GY - 100, 110, 18, 'wood');
+
+            g.addTNT(X - 40, GY - 22);
+            g.addTNT(X + 40, GY - 22);
+            g.addPig(X - 40, GY - 122, 'helmet');
+            g.addPig(X + 40, GY - 122, 'normal');
+
+            // Suspended TNT chamber above
+            g.addStaticPlatform(X, GY - 230, 140, 20, 0, 'stone');
+            g.addTNT(X, GY - 252);
+            g.addBoulder(X - 40, GY - 258, 24, 'stone');
+            g.addPig(X + 40, GY - 252, 'small');
+        }
+    },
+    {
+        id: 64,
+        world: 'volcano',
+        worldLevel: '5-4',
+        name: '5-4 浮岛要塞',
+        subtitle: '悬浮熔岩台上的双层黑曜石碉堡，弹射鸟高空下蛋与回旋鸟交叉夹击！',
+        birds: ['hal', 'matilda', 'yellow', 'bomb'],
+        parScore: 52000,
+        build(g, GY) {
+            const P = 1380;
+            g.addStaticPlatform(P, GY - 160, 240, 24, 0, 'stone');
+
+            // Base ground floor under platform
+            g.addPig(P - 60, GY - 22, 'normal');
+            g.addPig(P + 60, GY - 22, 'helmet');
+            g.addTNT(P, GY - 22);
+
+            // Castle on top of platform
+            g.addBlock(P - 70, GY - 215, 24, 86, 'stone');
+            g.addBlock(P + 70, GY - 215, 24, 86, 'stone');
+            g.addBlock(P, GY - 268, 175, 20, 'stone');
+            g.addPig(P, GY - 186, 'foreman');
+
+            g.addBlock(P - 40, GY - 310, 18, 64, 'wood');
+            g.addBlock(P + 40, GY - 310, 18, 64, 'wood');
+            g.addBlock(P, GY - 352, 110, 18, 'glass');
+            g.addRoof(P, GY - 380, 95, 38, 'stone');
+            g.addPig(P, GY - 290, 'small');
+        }
+    },
+    {
+        id: 65,
+        world: 'volcano',
+        worldLevel: '5-5',
+        name: '5-5 逆风回旋',
+        subtitle: '狂暴热气流席卷战场，双回旋鸟接力逆向飞旋，彻底摧毁反斜面地堡！',
+        birds: ['hal', 'hal', 'blue', 'red'],
+        parScore: 42000,
+        build(g, GY) {
+            // Target 1: Left-facing fortress
+            const X1 = 1240;
+            g.addBlock(X1 - 40, GY - 50, 24, 100, 'wood');
+            g.addBlock(X1 + 40, GY - 50, 24, 100, 'stone');
+            g.addBlock(X1, GY - 110, 115, 20, 'wood');
+            g.addPig(X1, GY - 22, 'helmet');
+            g.addPig(X1, GY - 132, 'small');
+
+            // Target 2: Deep backward bunker at X = 1520 with thick front shield
+            const X2 = 1520;
+            g.addBlock(X2 - 50, GY - 75, 32, 150, 'stone'); // Impassable front wall!
+            g.addBlock(X2 + 50, GY - 45, 22, 90, 'wood');
+            g.addBlock(X2, GY - 160, 135, 20, 'stone');
+            g.addPig(X2, GY - 22, 'foreman');
+            g.addTNT(X2, GY - 182);
+            g.addPig(X2 + 25, GY - 68, 'small');
+        }
+    },
+    {
+        id: 66,
+        world: 'volcano',
+        worldLevel: '5-6',
+        name: '5-6 熔岩阶梯',
+        subtitle: '三级阶梯式坚固要塞，极速小鸟洞穿前门，回旋鸟精准清理二层死角！',
+        birds: ['yellow', 'hal', 'bomb', 'terence'],
+        parScore: 55000,
+        build(g, GY) {
+            // Tier 1 (Low)
+            const T1 = 1200;
+            g.addBlock(T1, GY - 40, 22, 80, 'wood');
+            g.addBlock(T1 + 45, GY - 40, 22, 80, 'wood');
+            g.addBlock(T1 + 22, GY - 90, 80, 18, 'glass');
+            g.addPig(T1 + 22, GY - 22, 'normal');
+
+            // Tier 2 (Mid)
+            const T2 = 1350;
+            g.addBlock(T2 - 35, GY - 65, 24, 130, 'wood');
+            g.addBlock(T2 + 35, GY - 65, 24, 130, 'stone');
+            g.addBlock(T2, GY - 140, 110, 20, 'stone');
+            g.addPig(T2, GY - 22, 'helmet');
+            g.addPig(T2, GY - 162, 'small');
+
+            // Tier 3 (High Fortress)
+            const T3 = 1500;
+            g.addBlock(T3 - 40, GY - 95, 26, 190, 'stone');
+            g.addBlock(T3 + 40, GY - 95, 26, 190, 'stone');
+            g.addBlock(T3, GY - 200, 120, 20, 'stone');
+            g.addPig(T3, GY - 24, 'foreman');
+            g.addRoof(T3, GY - 232, 100, 42, 'stone');
+            g.addTNT(T3, GY - 120);
+        }
+    },
+    {
+        id: 67,
+        world: 'volcano',
+        worldLevel: '5-7',
+        name: '5-7 滚烫落石',
+        subtitle: '击碎玻璃承重支点，引发巨型黑曜石滚石砸向熔岩猪猪巢穴！',
+        birds: ['blue', 'hal', 'yellow'],
+        parScore: 46000,
+        build(g, GY) {
+            // Elevated ramp with boulder
+            g.addStaticPlatform(1220, GY - 210, 170, 24, 0, 'stone');
+            g.addBlock(1295, GY - 242, 18, 40, 'glass'); // Fragile pin!
+            g.addBoulder(1235, GY - 252, 28, 'stone');
+            g.addTNT(1170, GY - 245);
+
+            // Valley pit below
+            const V = 1450;
+            g.addBlock(V - 70, GY - 55, 24, 110, 'wood');
+            g.addBlock(V, GY - 55, 22, 110, 'glass');
+            g.addBlock(V + 70, GY - 55, 24, 110, 'wood');
+            g.addBlock(V, GY - 119, 180, 18, 'wood');
+            g.addPig(V - 35, GY - 22, 'helmet');
+            g.addPig(V + 35, GY - 22, 'normal');
+            g.addPig(V, GY - 142, 'small');
+        }
+    },
+    {
+        id: 68,
+        world: 'volcano',
+        worldLevel: '5-8',
+        name: '5-8 炽焰跳跃',
+        subtitle: '利用高弹力跳板让极速小鸟弹射高空，回旋鸟折返横扫吊桥！',
+        birds: ['yellow', 'hal', 'bomb', 'matilda'],
+        parScore: 50000,
+        build(g, GY) {
+            // Bouncy trampoline pad in front
+            g.addBouncyPad(1060, GY - 12, 85, 24, 0);
+
+            // Elevated fortress bridge
+            const B = 1380;
+            g.addBlock(B - 90, GY - 75, 26, 150, 'stone');
+            g.addBlock(B + 90, GY - 75, 26, 150, 'stone');
+            g.addBlock(B, GY - 160, 220, 20, 'stone');
+
+            g.addPig(B - 40, GY - 22, 'helmet');
+            g.addPig(B + 40, GY - 22, 'normal');
+            g.addTNT(B, GY - 22);
+
+            // Suspension bridge deck
+            g.addBlock(B - 45, GY - 205, 20, 70, 'glass');
+            g.addBlock(B + 45, GY - 205, 20, 70, 'glass');
+            g.addBlock(B, GY - 249, 130, 18, 'wood');
+            g.addPig(B, GY - 182, 'foreman');
+            g.addRoof(B, GY - 275, 100, 35, 'wood');
+        }
+    },
+    {
+        id: 69,
+        world: 'volcano',
+        worldLevel: '5-9',
+        name: '5-9 火山双子塔',
+        subtitle: '双座耸立的火山岩哨塔，炸弹鸟崩解底座，回旋鸟回身瓦解副塔！',
+        birds: ['bomb', 'yellow', 'hal', 'red'],
+        parScore: 58000,
+        build(g, GY) {
+            // Tower 1 (Left)
+            const T1 = 1240;
+            g.addBlock(T1 - 45, GY - 60, 24, 120, 'stone');
+            g.addBlock(T1 + 45, GY - 60, 24, 120, 'stone');
+            g.addBlock(T1, GY - 130, 125, 20, 'stone');
+            g.addPig(T1, GY - 22, 'helmet');
+
+            g.addBlock(T1 - 35, GY - 180, 20, 80, 'wood');
+            g.addBlock(T1 + 35, GY - 180, 20, 80, 'wood');
+            g.addBlock(T1, GY - 230, 105, 18, 'wood');
+            g.addRoof(T1, GY - 258, 85, 38, 'wood');
+            g.addPig(T1, GY - 152, 'small');
+
+            // Tower 2 (Right, Taller)
+            const T2 = 1480;
+            g.addBlock(T2 - 50, GY - 75, 26, 150, 'stone');
+            g.addBlock(T2 + 50, GY - 75, 26, 150, 'stone');
+            g.addBlock(T2, GY - 160, 135, 20, 'stone');
+            g.addPig(T2, GY - 24, 'foreman');
+            g.addTNT(T2, GY - 80);
+
+            g.addBlock(T2 - 40, GY - 215, 22, 90, 'glass');
+            g.addBlock(T2 + 40, GY - 215, 22, 90, 'glass');
+            g.addBlock(T2, GY - 270, 115, 18, 'stone');
+            g.addRoof(T2, GY - 300, 95, 42, 'stone');
+            g.addPig(T2, GY - 182, 'helmet');
+        }
+    },
+    {
+        id: 70,
+        world: 'volcano',
+        worldLevel: '5-10',
+        name: '5-10 硫磺深坑',
+        subtitle: '弹射鸟垂直投弹打通矿井顶部天窗，回旋鸟深入坑底完成收割！',
+        birds: ['matilda', 'hal', 'yellow', 'bomb'],
+        parScore: 60000,
+        build(g, GY) {
+            const P = 1380;
+            // Pit bunker with glass skylight on top
+            g.addBlock(P - 95, GY - 75, 30, 150, 'stone');
+            g.addBlock(P + 95, GY - 75, 30, 150, 'stone');
+            g.addBlock(P, GY - 160, 230, 20, 'stone');
+            // Fragile center glass roof
+            g.addBlock(P, GY - 182, 100, 16, 'glass');
+
+            g.addPig(P - 45, GY - 22, 'helmet');
+            g.addPig(P + 45, GY - 22, 'helmet');
+            g.addTNT(P, GY - 22);
+            g.addPig(P, GY - 110, 'foreman');
+
+            // Side guard posts
+            g.addBlock(1160, GY - 45, 22, 90, 'wood');
+            g.addPig(1160, GY - 105, 'small');
+
+            g.addBlock(1580, GY - 45, 22, 90, 'wood');
+            g.addPig(1580, GY - 105, 'small');
+        }
+    },
+    {
+        id: 71,
+        world: 'volcano',
+        worldLevel: '5-11',
+        name: '5-11 熔岩钟摆',
+        subtitle: '悬吊的熔岩巨石钟摆横贯要塞，看准时机一击解开锁链！',
+        birds: ['blue', 'hal', 'terence', 'bomb'],
+        parScore: 64000,
+        build(g, GY) {
+            const C = 1360;
+            // High anchor beam
+            g.addStaticPlatform(C, GY - 380, 120, 22, 0, 'stone');
+            g.addHangingTNT(C, GY - 369, C, GY - 265);
+
+            // Central Fortress
+            g.addBlock(C - 80, GY - 60, 26, 120, 'stone');
+            g.addBlock(C + 80, GY - 60, 26, 120, 'stone');
+            g.addBlock(C, GY - 130, 195, 20, 'stone');
+            g.addPig(C, GY - 24, 'foreman');
+            g.addPig(C - 35, GY - 22, 'helmet');
+            g.addPig(C + 35, GY - 22, 'helmet');
+
+            g.addBlock(C - 50, GY - 185, 22, 90, 'wood');
+            g.addBlock(C + 50, GY - 185, 22, 90, 'wood');
+            g.addBlock(C, GY - 240, 135, 18, 'glass');
+            g.addPig(C, GY - 152, 'small');
+            g.addRoof(C, GY - 270, 110, 42, 'stone');
+        }
+    },
+    {
+        id: 72,
+        world: 'volcano',
+        worldLevel: '5-12',
+        name: '5-12 地心穿刺',
+        subtitle: '极速小鸟爆发超音速威力，连穿五层木质排桩，回旋鸟精准点杀藏匿盔甲猪！',
+        birds: ['yellow', 'yellow', 'hal', 'red'],
+        parScore: 62000,
+        build(g, GY) {
+            // Five consecutive timber palisades
+            const startX = 1180;
+            for (let i = 0; i < 5; i++) {
+                const px = startX + i * 55;
+                g.addBlock(px, GY - 60, 20, 120, 'wood');
+                if (i % 2 === 0) g.addPig(px, GY - 135, 'small');
+            }
+
+            // Heavy bunker at back
+            const B = 1530;
+            g.addBlock(B - 45, GY - 70, 26, 140, 'stone');
+            g.addBlock(B + 45, GY - 70, 26, 140, 'stone');
+            g.addBlock(B, GY - 150, 125, 20, 'stone');
+            g.addPig(B, GY - 24, 'helmet');
+            g.addPig(B, GY - 172, 'foreman');
+            g.addRoof(B, GY - 195, 95, 38, 'wood');
+        }
+    },
+    {
+        id: 73,
+        world: 'volcano',
+        worldLevel: '5-13',
+        name: '5-13 熔岩迷宫',
+        subtitle: '多重回廊式黑曜石迷宫，回旋鸟飞越迷宫后背刺头盔指挥猪！',
+        birds: ['hal', 'bomb', 'yellow', 'terence'],
+        parScore: 68000,
+        build(g, GY) {
+            const M = 1390;
+            // Outer wall
+            g.addBlock(M - 120, GY - 70, 26, 140, 'stone');
+            g.addBlock(M + 120, GY - 70, 26, 140, 'stone');
+            g.addBlock(M, GY - 150, 275, 20, 'stone');
+
+            // Inner maze dividers
+            g.addBlock(M - 40, GY - 60, 22, 120, 'wood');
+            g.addBlock(M + 40, GY - 60, 22, 120, 'glass');
+
+            g.addPig(M - 80, GY - 22, 'normal');
+            g.addPig(M, GY - 24, 'foreman');
+            g.addPig(M + 80, GY - 22, 'helmet');
+            g.addTNT(M, GY - 172);
+
+            // Upper pavilion
+            g.addBlock(M - 60, GY - 215, 20, 90, 'stone');
+            g.addBlock(M + 60, GY - 215, 20, 90, 'stone');
+            g.addBlock(M, GY - 270, 160, 18, 'wood');
+            g.addPig(M, GY - 194, 'small');
+            g.addRoof(M, GY - 298, 130, 42, 'stone');
+        }
+    },
+    {
+        id: 74,
+        world: 'volcano',
+        worldLevel: '5-14',
+        name: '5-14 巨兽狂怒',
+        subtitle: '愤怒愤怒小鸟率先开路！以绝对吨位推平外围石墙，回旋鸟肃清残局！',
+        birds: ['terence', 'hal', 'bomb', 'yellow'],
+        parScore: 75000,
+        build(g, GY) {
+            // Massive triple-tier stone rampart
+            const W = 1380;
+            g.addBlock(W - 130, GY - 80, 32, 160, 'stone');
+            g.addBlock(W - 45, GY - 80, 28, 160, 'stone');
+            g.addBlock(W + 45, GY - 80, 28, 160, 'stone');
+            g.addBlock(W + 130, GY - 80, 32, 160, 'stone');
+
+            g.addBlock(W - 88, GY - 171, 115, 22, 'stone');
+            g.addBlock(W + 88, GY - 171, 115, 22, 'stone');
+            g.addBlock(W, GY - 171, 150, 22, 'stone');
+
+            g.addPig(W - 88, GY - 24, 'helmet');
+            g.addPig(W, GY - 26, 'foreman');
+            g.addPig(W + 88, GY - 24, 'helmet');
+            g.addTNT(W - 88, GY - 193);
+            g.addTNT(W + 88, GY - 193);
+
+            // Upper grand battlements
+            g.addBlock(W - 55, GY - 240, 24, 115, 'stone');
+            g.addBlock(W + 55, GY - 240, 24, 115, 'stone');
+            g.addBlock(W, GY - 308, 165, 20, 'stone');
+            g.addPig(W, GY - 215, 'foreman');
+            g.addRoof(W, GY - 338, 120, 46, 'stone');
+        }
+    },
+    {
+        id: 75,
+        world: 'volcano',
+        worldLevel: '5-15',
+        name: '5-15 熔岩领主决战',
+        subtitle: '终极熔岩要塞大决战！全员集结，迎战熔岩宝座上的装甲国王猪！',
+        birds: ['hal', 'bomb', 'yellow', 'matilda', 'terence'],
+        parScore: 92000,
+        build(g, GY) {
+            // Overhead lava chandelier above the throne room
+            const K = 1420;
+            g.addStaticPlatform(K, GY - 430, 110, 24, 0, 'stone');
+            g.addHangingTNT(K, GY - 418, K, GY - 315);
+
+            // Outer Gatehouses
+            g.addBlock(1170, GY - 55, 26, 110, 'stone');
+            g.addPig(1170, GY - 125, 'helmet');
+
+            // Central Grand Imperial Lava Citadel (4-Column Palace)
+            g.addBlock(K - 165, GY - 75, 32, 150, 'stone');
+            g.addBlock(K - 65, GY - 75, 28, 150, 'stone');
+            g.addBlock(K + 65, GY - 75, 28, 150, 'stone');
+            g.addBlock(K + 165, GY - 75, 32, 150, 'stone');
+
+            g.addBlock(K - 115, GY - 161, 130, 22, 'stone');
+            g.addBlock(K, GY - 161, 170, 22, 'stone');
+            g.addBlock(K + 115, GY - 161, 130, 22, 'stone');
+
+            g.addTNT(K - 115, GY - 22);
+            g.addPig(K - 24, GY - 25, 'foreman');
+            g.addPig(K + 26, GY - 24, 'helmet');
+            g.addTNT(K + 115, GY - 22);
+
+            // Second floor: THE MAGMA KING PIG BOSS!
+            g.addBlock(K - 100, GY - 225, 26, 105, 'wood');
+            g.addBlock(K + 100, GY - 225, 26, 105, 'wood');
+            g.addBlock(K, GY - 288, 245, 22, 'glass');
+
+            g.addPig(K, GY - 205, 'king'); // THE KING PIG SUPREME BOSS!
+            g.addPig(K - 135, GY - 192, 'helmet');
+            g.addPig(K + 135, GY - 192, 'helmet');
+
+            // Magma spires crowning the throne room
+            g.addRoof(K - 100, GY - 325, 75, 50, 'stone');
+            g.addRoof(K + 100, GY - 325, 75, 50, 'stone');
+            g.addRoof(K, GY - 325, 90, 50, 'stone');
         }
     }
 ];

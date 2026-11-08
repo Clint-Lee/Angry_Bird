@@ -70,6 +70,11 @@ class SpriteRenderer {
                 grad.addColorStop(0.35, '#073b4c');
                 grad.addColorStop(0.7, '#0ea5e9');
                 grad.addColorStop(1, '#bae6fd');
+            } else if (worldKey === 'volcano') {
+                grad.addColorStop(0, '#1c0705');
+                grad.addColorStop(0.35, '#450a0a');
+                grad.addColorStop(0.7, '#7f1d1d');
+                grad.addColorStop(1, '#ea580c');
             } else {
                 grad.addColorStop(0, '#0284c7');
                 grad.addColorStop(0.65, '#7dd3fc');
@@ -79,7 +84,7 @@ class SpriteRenderer {
             ctx.fillRect(0, 0, viewW, viewH);
         }
 
-        // Atmospheric floating motes / snowflakes
+        // Atmospheric floating motes / snowflakes / volcanic embers
         if (worldKey === 'snow') {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
             for (let i = 0; i < 28; i++) {
@@ -87,6 +92,15 @@ class SpriteRenderer {
                 const py = (time * (42 + (i % 5) * 16) + i * 79) % (viewH + 20) - 10;
                 ctx.beginPath();
                 ctx.arc(px, py, 1.2 + (i % 3) * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else if (worldKey === 'volcano') {
+            ctx.fillStyle = 'rgba(251, 146, 60, 0.85)';
+            for (let i = 0; i < 24; i++) {
+                const px = ((i * 149 + time * 26 * (0.6 + (i % 3) * 0.3)) % (viewW + 40)) - 20;
+                const py = (viewH + 20) - ((time * (38 + (i % 4) * 16) + i * 89) % (viewH + 30));
+                ctx.beginPath();
+                ctx.arc(px, py, 1.3 + (i % 3) * 0.9, 0, Math.PI * 2);
                 ctx.fill();
             }
         } else {
@@ -120,6 +134,10 @@ class SpriteRenderer {
             soilGrad.addColorStop(0, '#1e293b');
             soilGrad.addColorStop(0.22, '#0f172a');
             soilGrad.addColorStop(1, '#020617');
+        } else if (worldKey === 'volcano') {
+            soilGrad.addColorStop(0, '#292524');
+            soilGrad.addColorStop(0.22, '#1c1917');
+            soilGrad.addColorStop(1, '#0c0a09');
         } else {
             soilGrad.addColorStop(0, '#5c3a21');
             soilGrad.addColorStop(0.22, '#432818');
@@ -133,6 +151,10 @@ class SpriteRenderer {
         const capGrad = ctx.createLinearGradient(0, groundY - 4, 0, groundY + capH);
         if (worldKey === 'desert') {
             capGrad.addColorStop(0, '#fdba74');
+        } else if (worldKey === 'volcano') {
+            capGrad.addColorStop(0, '#f97316');
+            capGrad.addColorStop(0.3, '#ea580c');
+            capGrad.addColorStop(1, '#7c2d12');
             capGrad.addColorStop(0.5, '#ea580c');
             capGrad.addColorStop(1, '#9a3412');
         } else if (worldKey === 'castle') {
@@ -532,6 +554,9 @@ class SpriteRenderer {
             case 'matilda':
                 this._drawMatilda(ctx, r, time, flags);
                 break;
+            case 'hal':
+                this._drawHal(ctx, r, time, flags);
+                break;
         }
 
         ctx.restore();
@@ -803,6 +828,116 @@ class SpriteRenderer {
         ctx.fill();
 
         this._drawExpressiveBirdEyesAndBeak(ctx, r, '#1e293b', time, flags, 1.05);
+    }
+
+    _drawHal(ctx, r, time, flags) {
+        // Hal / Boomerang Bird: Emerald green plumage, giant curved toucan boomerang beak
+        // Black tail feathers
+        ctx.fillStyle = '#18181b';
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.85, 0);
+        ctx.lineTo(-r * 1.45, -r * 0.28);
+        ctx.lineTo(-r * 1.35, 0.05);
+        ctx.lineTo(-r * 1.5, r * 0.3);
+        ctx.closePath();
+        ctx.fill();
+
+        // Top head crest plume
+        ctx.fillStyle = '#15803d';
+        ctx.strokeStyle = '#14532d';
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.ellipse(-r * 0.15, -r * 1.1, r * 0.22, r * 0.14, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Main body: rich emerald green gradient
+        const bodyGrad = ctx.createRadialGradient(-r * 0.25, -r * 0.3, r * 0.1, 0, 0, r * 1.05);
+        bodyGrad.addColorStop(0, '#4ade80');
+        bodyGrad.addColorStop(0.55, '#16a34a');
+        bodyGrad.addColorStop(1, '#14532d');
+        ctx.fillStyle = bodyGrad;
+        ctx.strokeStyle = '#052e16';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // White belly patch
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, r - 1, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.fillStyle = '#f0fdf4';
+        ctx.beginPath();
+        ctx.ellipse(r * 0.12, r * 0.72, r * 0.75, r * 0.48, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Hal's iconic Giant Curved Toucan Beak!
+        const mouthOpen = flags.abilityUsed || (flags.inFlight && !flags.hurt);
+        ctx.save();
+        const beakGrad = ctx.createLinearGradient(0, -r * 0.2, r * 1.7, r * 0.3);
+        beakGrad.addColorStop(0, '#ea580c');
+        beakGrad.addColorStop(0.65, '#f97316');
+        beakGrad.addColorStop(1, '#fde047');
+        ctx.fillStyle = beakGrad;
+        ctx.strokeStyle = '#9a3412';
+        ctx.lineWidth = 2.2;
+
+        if (mouthOpen) {
+            // Upper beak open upwards
+            ctx.save();
+            ctx.rotate(-0.16);
+            ctx.beginPath();
+            ctx.moveTo(r * 0.3, -r * 0.15);
+            ctx.quadraticCurveTo(r * 1.2, -r * 0.55, r * 1.75, r * 0.1);
+            ctx.quadraticCurveTo(r * 1.1, -r * 0.05, r * 0.32, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // Lower beak open downwards
+            ctx.save();
+            ctx.rotate(0.18);
+            ctx.beginPath();
+            ctx.moveTo(r * 0.32, 0);
+            ctx.quadraticCurveTo(r * 1.1, r * 0.15, r * 1.6, r * 0.45);
+            ctx.quadraticCurveTo(r * 0.9, r * 0.4, r * 0.3, r * 0.28);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // Open red tongue / mouth cavity
+            ctx.fillStyle = '#dc2626';
+            ctx.beginPath();
+            ctx.ellipse(r * 0.42, r * 0.08, r * 0.22, r * 0.12, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // Closed giant curved beak
+            ctx.beginPath();
+            ctx.moveTo(r * 0.3, -r * 0.18);
+            ctx.quadraticCurveTo(r * 1.25, -r * 0.45, r * 1.75, r * 0.15);
+            ctx.quadraticCurveTo(r * 1.15, r * 0.38, r * 0.3, r * 0.28);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Beak center split line
+            ctx.strokeStyle = '#9a3412';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.3, 0.05);
+            ctx.quadraticCurveTo(r * 1.15, 0.05, r * 1.75, r * 0.15);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // Expressive eyes & brows
+        this._drawExpressiveBirdEyesAndBeak(ctx, r, '#064e3b', time, flags, 0.92);
     }
 
     _drawExpressiveBirdEyesAndBeak(ctx, r, browColor, time, flags, browScale = 1) {
@@ -1484,3 +1619,4 @@ class SpriteRenderer {
 }
 
 window.spriteRenderer = new SpriteRenderer();
+window.gameSprites = window.spriteRenderer;

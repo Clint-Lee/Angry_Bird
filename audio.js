@@ -383,6 +383,38 @@ class SoundFX {
                 osc.start(now + 0.02 + del);
                 osc.stop(now + 0.02 + del + 0.08);
             });
+        } else if (birdType === 'hal') {
+            // Hal / Boomerang: Spinning whistling avian warble: "Whoooo-weee-wheee!"
+            const voice = this.ctx.createOscillator();
+            const vGain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1250, now + 0.02);
+            filter.Q.setValueAtTime(2.4, now + 0.02);
+
+            voice.type = 'sawtooth';
+            voice.frequency.setValueAtTime(450, now + 0.02);
+            voice.frequency.exponentialRampToValueAtTime(1420, now + 0.12);
+            voice.frequency.exponentialRampToValueAtTime(680, now + 0.28);
+
+            // Fast flutter LFO
+            const lfo = this.ctx.createOscillator();
+            const lfoG = this.ctx.createGain();
+            lfo.frequency.setValueAtTime(18, now + 0.02);
+            lfoG.gain.setValueAtTime(35, now + 0.02);
+            lfo.connect(voice.frequency);
+            lfo.start(now + 0.02);
+            lfo.stop(now + 0.28);
+
+            vGain.gain.setValueAtTime(0.001, now + 0.02);
+            vGain.gain.linearRampToValueAtTime(0.28, now + 0.04);
+            vGain.gain.exponentialRampToValueAtTime(0.004, now + 0.28);
+
+            voice.connect(filter);
+            filter.connect(vGain);
+            vGain.connect(this.sfxOut);
+            voice.start(now + 0.02);
+            voice.stop(now + 0.28);
         } else if (birdType === 'terence') {
             // Terence: Guttural menacing low-pitch heavy grunt: "Grrrr-huuumph!"
             const voice = this.ctx.createOscillator();
@@ -453,6 +485,45 @@ class SoundFX {
         gain.connect(this.sfxOut);
         osc.start(now);
         osc.stop(now + 0.22);
+    }
+
+    playBoomerang() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Spinning boomerang reverse whoosh + Doppler warble
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(950, now);
+        filter.Q.setValueAtTime(2.6, now);
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(360, now);
+        osc.frequency.exponentialRampToValueAtTime(1280, now + 0.12);
+        osc.frequency.exponentialRampToValueAtTime(440, now + 0.32);
+
+        // Rapid spinning blade tremolo
+        const trem = this.ctx.createOscillator();
+        const tremG = this.ctx.createGain();
+        trem.frequency.setValueAtTime(24, now);
+        tremG.gain.setValueAtTime(0.18, now);
+        trem.connect(gain.gain);
+        trem.start(now);
+        trem.stop(now + 0.32);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.32, now + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.32);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxOut);
+        osc.start(now);
+        osc.stop(now + 0.32);
     }
 
     playSplit() {

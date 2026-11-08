@@ -59,7 +59,7 @@
         let totalStars = 0;
         let clearedCount = 0;
         let totalScore = 0;
-        const totalLevels = 60;
+        const totalLevels = 75;
         const maxStars = totalLevels * 3;
 
         Object.keys(data.levelStars || {}).forEach(k => {
