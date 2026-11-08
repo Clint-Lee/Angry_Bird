@@ -284,70 +284,156 @@ class SoundFX {
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
 
-        // Rubber snap twang
+        // 1. Rubber Slingshot Snap & Twang
         const snap = this.ctx.createOscillator();
         const snapGain = this.ctx.createGain();
         snap.type = 'triangle';
-        snap.frequency.setValueAtTime(160, now);
-        snap.frequency.exponentialRampToValueAtTime(65, now + 0.16);
-        snapGain.gain.setValueAtTime(0.28, now);
-        snapGain.gain.exponentialRampToValueAtTime(0.005, now + 0.16);
+        snap.frequency.setValueAtTime(190, now);
+        snap.frequency.exponentialRampToValueAtTime(52, now + 0.14);
+        snapGain.gain.setValueAtTime(0.32, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.005, now + 0.14);
         snap.connect(snapGain);
         snapGain.connect(this.sfxOut);
         snap.start(now);
-        snap.stop(now + 0.16);
+        snap.stop(now + 0.14);
 
-        // Signature bird battle cry!
-        const voice = this.ctx.createOscillator();
-        const vGain = this.ctx.createGain();
+        // 2. Iconic Classic Angry Birds Battle Cry Vocalization!
+        if (birdType === 'yellow') {
+            // Chuck / Yellow: Sharp energetic ninja screech: "Ha-chaaa!"
+            const voice = this.ctx.createOscillator();
+            const vGain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1400, now + 0.02);
+            filter.Q.setValueAtTime(2.8, now + 0.02);
 
-        if (birdType === 'terence') {
             voice.type = 'sawtooth';
-            voice.frequency.setValueAtTime(130, now + 0.03);
-            voice.frequency.linearRampToValueAtTime(95, now + 0.35);
-            vGain.gain.setValueAtTime(0.25, now + 0.03);
+            voice.frequency.setValueAtTime(520, now + 0.02);
+            voice.frequency.exponentialRampToValueAtTime(1650, now + 0.11);
+            voice.frequency.exponentialRampToValueAtTime(820, now + 0.24);
+
+            vGain.gain.setValueAtTime(0.001, now + 0.02);
+            vGain.gain.linearRampToValueAtTime(0.28, now + 0.04);
+            vGain.gain.exponentialRampToValueAtTime(0.004, now + 0.24);
+
+            voice.connect(filter);
+            filter.connect(vGain);
+            vGain.connect(this.sfxOut);
+            voice.start(now + 0.02);
+            voice.stop(now + 0.24);
+        } else if (birdType === 'blue') {
+            // Blues: 3 Cute rapid chirping twitter warbles: "Peep-peep-wheee!"
+            [0, 0.055, 0.11].forEach((del, i) => {
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                osc.type = 'triangle';
+                const f = 1100 + i * 280;
+                osc.frequency.setValueAtTime(f, now + 0.02 + del);
+                osc.frequency.exponentialRampToValueAtTime(f * 1.5, now + 0.02 + del + 0.04);
+                osc.frequency.exponentialRampToValueAtTime(f * 0.9, now + 0.02 + del + 0.07);
+
+                g.gain.setValueAtTime(0.001, now + 0.02 + del);
+                g.gain.linearRampToValueAtTime(0.22, now + 0.02 + del + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.003, now + 0.02 + del + 0.07);
+
+                osc.connect(g);
+                g.connect(this.sfxOut);
+                osc.start(now + 0.02 + del);
+                osc.stop(now + 0.02 + del + 0.07);
+            });
+        } else if (birdType === 'bomb') {
+            // Bomb: Low rumbling battle growl: "Rrrrr-waaagh!"
+            const voice = this.ctx.createOscillator();
+            const vGain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(750, now + 0.02);
+
+            voice.type = 'sawtooth';
+            voice.frequency.setValueAtTime(210, now + 0.02);
+            voice.frequency.linearRampToValueAtTime(460, now + 0.12);
+            voice.frequency.exponentialRampToValueAtTime(170, now + 0.32);
+
+            vGain.gain.setValueAtTime(0.001, now + 0.02);
+            vGain.gain.linearRampToValueAtTime(0.32, now + 0.05);
+            vGain.gain.exponentialRampToValueAtTime(0.005, now + 0.32);
+
+            voice.connect(filter);
+            filter.connect(vGain);
+            vGain.connect(this.sfxOut);
+            voice.start(now + 0.02);
+            voice.stop(now + 0.32);
+        } else if (birdType === 'matilda') {
+            // Matilda: Proud hen cackle cluck: "Bawk-bawk!"
+            [0, 0.09].forEach((del, i) => {
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                osc.type = 'triangle';
+                const f = i === 0 ? 460 : 580;
+                osc.frequency.setValueAtTime(f, now + 0.02 + del);
+                osc.frequency.exponentialRampToValueAtTime(f * 1.6, now + 0.02 + del + 0.04);
+                osc.frequency.exponentialRampToValueAtTime(f * 0.8, now + 0.02 + del + 0.08);
+
+                g.gain.setValueAtTime(0.001, now + 0.02 + del);
+                g.gain.linearRampToValueAtTime(0.24, now + 0.02 + del + 0.012);
+                g.gain.exponentialRampToValueAtTime(0.004, now + 0.02 + del + 0.08);
+
+                osc.connect(g);
+                g.connect(this.sfxOut);
+                osc.start(now + 0.02 + del);
+                osc.stop(now + 0.02 + del + 0.08);
+            });
+        } else if (birdType === 'terence') {
+            // Terence: Guttural menacing low-pitch heavy grunt: "Grrrr-huuumph!"
+            const voice = this.ctx.createOscillator();
+            const vGain = this.ctx.createGain();
+            voice.type = 'sawtooth';
+            voice.frequency.setValueAtTime(115, now + 0.02);
+            voice.frequency.linearRampToValueAtTime(80, now + 0.36);
+            vGain.gain.setValueAtTime(0.32, now + 0.02);
             vGain.gain.exponentialRampToValueAtTime(0.005, now + 0.36);
             voice.connect(vGain);
             vGain.connect(this.sfxOut);
-            voice.start(now + 0.03);
+            voice.start(now + 0.02);
             voice.stop(now + 0.36);
-        } else if (birdType === 'yellow') {
-            voice.type = 'square';
-            voice.frequency.setValueAtTime(520, now + 0.02);
-            voice.frequency.exponentialRampToValueAtTime(1350, now + 0.18);
-            vGain.gain.setValueAtTime(0.16, now + 0.02);
-            vGain.gain.exponentialRampToValueAtTime(0.005, now + 0.2);
-            voice.connect(vGain);
-            vGain.connect(this.sfxOut);
-            voice.start(now + 0.02);
-            voice.stop(now + 0.2);
-        } else if (birdType === 'blue') {
-            [680, 860, 1020].forEach((f, idx) => {
-                const o = this.ctx.createOscillator();
-                const g = this.ctx.createGain();
-                o.type = 'sine';
-                o.frequency.setValueAtTime(f, now + idx * 0.05);
-                o.frequency.exponentialRampToValueAtTime(f * 1.25, now + idx * 0.05 + 0.06);
-                g.gain.setValueAtTime(0.16, now + idx * 0.05);
-                g.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.05 + 0.07);
-                o.connect(g);
-                g.connect(this.sfxOut);
-                o.start(now + idx * 0.05);
-                o.stop(now + idx * 0.05 + 0.07);
-            });
         } else {
-            // Classic Red / Bomb / Matilda war-cry arc
-            voice.type = 'triangle';
-            const startF = birdType === 'bomb' ? 240 : birdType === 'matilda' ? 480 : 380;
-            voice.frequency.setValueAtTime(startF, now + 0.02);
-            voice.frequency.exponentialRampToValueAtTime(startF * 2.2, now + 0.14);
-            voice.frequency.exponentialRampToValueAtTime(startF * 1.3, now + 0.28);
-            vGain.gain.setValueAtTime(0.24, now + 0.02);
-            vGain.gain.exponentialRampToValueAtTime(0.005, now + 0.28);
-            voice.connect(vGain);
+            // Classic Red Bird: Iconic 3-syllable battle cry: "Wha-heee-ha!"
+            const voice = this.ctx.createOscillator();
+            const vGain = this.ctx.createGain();
+            const formant = this.ctx.createBiquadFilter();
+
+            formant.type = 'bandpass';
+            formant.frequency.setValueAtTime(1180, now + 0.02);
+            formant.Q.setValueAtTime(2.6, now + 0.02);
+
+            voice.type = 'sawtooth';
+            // Syllable 1 (Wha): 360 -> 640Hz
+            voice.frequency.setValueAtTime(360, now + 0.02);
+            voice.frequency.exponentialRampToValueAtTime(640, now + 0.08);
+            // Syllable 2 (Heeee soaring cry with vibrato): 640 -> 1320Hz -> 960Hz
+            voice.frequency.exponentialRampToValueAtTime(1320, now + 0.17);
+            voice.frequency.exponentialRampToValueAtTime(960, now + 0.25);
+            // Syllable 3 (Ha dip punctuation): 960 -> 480Hz
+            voice.frequency.exponentialRampToValueAtTime(480, now + 0.34);
+
+            // Vibrato LFO for realistic vocal cords flutter
+            const lfo = this.ctx.createOscillator();
+            const lfoGain = this.ctx.createGain();
+            lfo.frequency.setValueAtTime(22, now + 0.02);
+            lfoGain.gain.setValueAtTime(28, now + 0.02);
+            lfo.connect(voice.frequency);
+            lfo.start(now + 0.02);
+            lfo.stop(now + 0.34);
+
+            vGain.gain.setValueAtTime(0.001, now + 0.02);
+            vGain.gain.linearRampToValueAtTime(0.28, now + 0.05);
+            vGain.gain.exponentialRampToValueAtTime(0.004, now + 0.34);
+
+            voice.connect(formant);
+            formant.connect(vGain);
             vGain.connect(this.sfxOut);
             voice.start(now + 0.02);
-            voice.stop(now + 0.28);
+            voice.stop(now + 0.34);
         }
     }
 
@@ -426,23 +512,70 @@ class SoundFX {
         osc.stop(now + 0.26);
     }
 
+    // Bird Chirp & Slingshot Hop (Classic avian chirping & cheerful squawks)
+    playBirdChirp() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        
+        // Rapid bright avian chirps (2 cheerful syllables: "Tweet-tweet!")
+        const syllables = [
+            { startF: 2100, peakF: 3400, endF: 2600, t: 0, dur: 0.075 },
+            { startF: 2500, peakF: 4100, endF: 3000, t: 0.082, dur: 0.090 }
+        ];
+
+        syllables.forEach(s => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(3200, now + s.t);
+            filter.Q.setValueAtTime(2.2, now + s.t);
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(s.startF, now + s.t);
+            osc.frequency.exponentialRampToValueAtTime(s.peakF, now + s.t + s.dur * 0.45);
+            osc.frequency.exponentialRampToValueAtTime(s.endF, now + s.t + s.dur);
+
+            gain.gain.setValueAtTime(0.001, now + s.t);
+            gain.gain.linearRampToValueAtTime(0.24, now + s.t + 0.012);
+            gain.gain.exponentialRampToValueAtTime(0.002, now + s.t + s.dur);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.sfxOut);
+
+            osc.start(now + s.t);
+            osc.stop(now + s.t + s.dur);
+        });
+    }
+
     playBirdHop() {
         if (!this.enabled) return;
         this.init();
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
+
+        // 1. Springy hop boing
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(320, now);
-        osc.frequency.exponentialRampToValueAtTime(740, now + 0.14);
-        osc.frequency.exponentialRampToValueAtTime(560, now + 0.22);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.24);
+        osc.frequency.setValueAtTime(290, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.09);
+        osc.frequency.exponentialRampToValueAtTime(420, now + 0.17);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.17);
         osc.connect(gain);
         gain.connect(this.sfxOut);
         osc.start(now);
-        osc.stop(now + 0.24);
+        osc.stop(now + 0.17);
+
+        // 2. Play distinct bird chirp upon landing on the slingshot!
+        setTimeout(() => {
+            this.playBirdChirp();
+        }, 95);
     }
 
     playBounce() {
@@ -598,23 +731,125 @@ class SoundFX {
         osc.stop(now + 0.13);
     }
 
-    playPigSqueak() {
-        if (!this.enabled) return;
+    // Classic Angry Birds Pig Grunt & Oink System (Authentic snout flutter & nasal resonance)
+    playPigGrunt(intensity = 1.0, isHeavy = false) {
+        if (!this.enabled || !this._canPlayImpact()) return;
         this.init();
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(520, now);
-        osc.frequency.linearRampToValueAtTime(880, now + 0.07);
-        osc.frequency.linearRampToValueAtTime(590, now + 0.15);
-        gain.gain.setValueAtTime(0.16, now);
-        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.15);
-        osc.connect(gain);
-        gain.connect(this.sfxOut);
-        osc.start(now);
-        osc.stop(now + 0.15);
+
+        // Choose between 3 authentic pig vocalization variants:
+        // 0: Classic Double-Oink ("Oink-oink!")
+        // 1: Deep Guttural Snout Grunt ("Hrrrn-ggh!")
+        // 2: Startled Squeal-Oink ("Squeee-oink!")
+        const variant = isHeavy ? 1 : Math.floor(Math.random() * 3);
+
+        if (variant === 0) {
+            // Classic Double-Oink: two rapid rhythmic nasal snout snorts
+            [0, 0.095].forEach((del, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const formant = this.ctx.createBiquadFilter();
+
+                // Nasal snout bandpass cavity filter
+                formant.type = 'bandpass';
+                formant.frequency.setValueAtTime(idx === 0 ? 690 : 810, now + del);
+                formant.Q.setValueAtTime(3.4, now + del);
+
+                osc.type = 'sawtooth';
+                const baseF = idx === 0 ? 220 : 260;
+                osc.frequency.setValueAtTime(baseF + 45, now + del);
+                osc.frequency.linearRampToValueAtTime(baseF, now + del + 0.025);
+                osc.frequency.exponentialRampToValueAtTime(baseF * 0.70, now + del + 0.11);
+
+                // Snout flutter LFO (28Hz flappy vibrato)
+                const lfo = this.ctx.createOscillator();
+                const lfoGain = this.ctx.createGain();
+                lfo.frequency.setValueAtTime(28, now + del);
+                lfoGain.gain.setValueAtTime(22, now + del);
+                lfo.connect(osc.frequency);
+                lfo.start(now + del);
+                lfo.stop(now + del + 0.12);
+
+                gain.gain.setValueAtTime(0.001, now + del);
+                gain.gain.linearRampToValueAtTime(Math.min(0.40, 0.24 * intensity), now + del + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.003, now + del + 0.11);
+
+                osc.connect(formant);
+                formant.connect(gain);
+                gain.connect(this.sfxOut);
+
+                osc.start(now + del);
+                osc.stop(now + del + 0.12);
+            });
+        } else if (variant === 1) {
+            // Deep Guttural Pain Grunt: when squashed or smashed by a heavy plank/stone
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const formant = this.ctx.createBiquadFilter();
+
+            formant.type = 'bandpass';
+            formant.frequency.setValueAtTime(540, now);
+            formant.Q.setValueAtTime(2.6, now);
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(195, now);
+            osc.frequency.linearRampToValueAtTime(235, now + 0.04);
+            osc.frequency.exponentialRampToValueAtTime(130, now + 0.22);
+
+            // Guttural snout tremble LFO
+            const lfo = this.ctx.createOscillator();
+            const lfoGain = this.ctx.createGain();
+            lfo.frequency.setValueAtTime(25, now);
+            lfoGain.gain.setValueAtTime(24, now);
+            lfo.connect(osc.frequency);
+            lfo.start(now);
+            lfo.stop(now + 0.22);
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(Math.min(0.44, (isHeavy ? 0.35 : 0.26) * intensity), now + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.004, now + 0.22);
+
+            osc.connect(formant);
+            formant.connect(gain);
+            gain.connect(this.sfxOut);
+
+            osc.start(now);
+            osc.stop(now + 0.22);
+        } else {
+            // Startled High Squeal-Oink: sharp comedic pig screech
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const formant = this.ctx.createBiquadFilter();
+
+            formant.type = 'bandpass';
+            formant.frequency.setValueAtTime(1050, now);
+            formant.Q.setValueAtTime(3.2, now);
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(410, now);
+            osc.frequency.exponentialRampToValueAtTime(680, now + 0.05);
+            osc.frequency.exponentialRampToValueAtTime(210, now + 0.18);
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(Math.min(0.36, 0.22 * intensity), now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.004, now + 0.18);
+
+            osc.connect(formant);
+            formant.connect(gain);
+            gain.connect(this.sfxOut);
+
+            osc.start(now);
+            osc.stop(now + 0.18);
+        }
+    }
+
+    playPigSqueak(intensity = 1.0) {
+        this.playPigGrunt(intensity, false);
+    }
+
+    playPigCrush() {
+        this.playPigGrunt(1.4, true);
     }
 
     playPigPop() {
@@ -622,18 +857,50 @@ class SoundFX {
         this.init();
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
+
+        // 1. Balloon pop transient
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(280, now);
-        osc.frequency.exponentialRampToValueAtTime(780, now + 0.055);
-        osc.frequency.exponentialRampToValueAtTime(140, now + 0.14);
-        gain.gain.setValueAtTime(0.36, now);
-        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.14);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(58, now + 0.08);
+        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.08);
         osc.connect(gain);
         gain.connect(this.sfxOut);
         osc.start(now);
-        osc.stop(now + 0.14);
+        osc.stop(now + 0.08);
+
+        // 2. Air burst noise puff
+        try {
+            const bufLen = Math.floor(this.ctx.sampleRate * 0.08);
+            const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
+            const chan = buf.getChannelData(0);
+            for (let i = 0; i < bufLen; i++) {
+                chan[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.3));
+            }
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buf;
+            const noiseGain = this.ctx.createGain();
+            noiseGain.gain.setValueAtTime(0.24, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.004, now + 0.08);
+            noise.connect(noiseGain);
+            noiseGain.connect(this.sfxOut);
+            noise.start(now);
+        } catch (e) {}
+
+        // 3. Cute tiny dying oink squeak
+        const squeak = this.ctx.createOscillator();
+        const sGain = this.ctx.createGain();
+        squeak.type = 'sine';
+        squeak.frequency.setValueAtTime(560, now + 0.03);
+        squeak.frequency.exponentialRampToValueAtTime(240, now + 0.16);
+        sGain.gain.setValueAtTime(0.18, now + 0.03);
+        sGain.gain.exponentialRampToValueAtTime(0.004, now + 0.16);
+        squeak.connect(sGain);
+        sGain.connect(this.sfxOut);
+        squeak.start(now + 0.03);
+        squeak.stop(now + 0.16);
     }
 
     playWin() {

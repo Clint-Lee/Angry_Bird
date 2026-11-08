@@ -1,7 +1,7 @@
 // Web Mini-Games Arcade Platform Controller
 // Reads player progress from localStorage and manages dynamic shortcuts
 
-(function() {
+(function () {
     const STORAGE_KEY = 'tianshu_angry_birds_save_v2';
 
     function loadAngryBirdsData() {
@@ -32,7 +32,7 @@
             data.levelScores = Object.assign({}, legacyScores, data.levelScores || {});
             const legacyStars = JSON.parse(localStorage.getItem('ab_stars') || '{}');
             data.levelStars = Object.assign({}, legacyStars, data.levelStars || {});
-        } catch (e) {}
+        } catch (e) { }
 
         return data;
     }
@@ -95,7 +95,7 @@
         const playUrl = window.location.pathname.includes('/games/arcade')
             ? '/games/arcade/angry-birds/'
             : (window.location.pathname.includes('/arcade') ? '../index.html' : './angry-birds/');
-        
+
         const btnResume = document.getElementById('btnResumePlay');
         if (btnResume) btnResume.href = playUrl;
         const btnFresh = document.getElementById('btnFreshPlay');
@@ -109,7 +109,7 @@
                         data.currentLevelIndex = 0;
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                     }
-                } catch (err) {}
+                } catch (err) { }
             });
         }
     }

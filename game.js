@@ -387,12 +387,36 @@ class AngryBirdsMaster {
                 }
             }
 
-            // Damage to Pigs
+            // Damage to Pigs (Supports direct bird hits AND heavy materials falling from above!)
             if (d.type === 'pig' && !d.dead) {
-                if (relSpeed > 1.12) {
-                    const isTerence = hitter.customData?.birdType === 'terence';
-                    const massFactor = isTerence ? Math.min(18, hitter.mass || 1) : Math.min(6.5, hitter.mass || 1);
-                    const dmg = Math.pow(relSpeed, 1.38) * massFactor * 4.5;
+                const isBird = hitter.customData?.type === 'bird';
+                const isAbove = hitter.position.y < target.position.y - 4;
+                const downwardSpeed = Math.max(0, hitter.velocity.y - (target.velocity.y > 0 ? target.velocity.y : 0));
+                const minThreshold = (isAbove && !isBird) ? 0.42 : (isBird ? 0.95 : 0.60);
+
+                if (relSpeed > minThreshold || (isAbove && downwardSpeed > 0.32)) {
+                    let dmg = 0;
+                    if (isBird) {
+                        const isTerence = hitter.customData?.birdType === 'terence';
+                        const massFactor = isTerence ? Math.min(24, hitter.mass || 1) : Math.min(9.5, hitter.mass || 1);
+                        dmg = Math.pow(relSpeed, 1.38) * massFactor * 5.2;
+                    } else {
+                        // Falling block, timber plank, stone boulder, or roof falling on pig!
+                        const blockMass = Math.max(1, hitter.mass || 1);
+                        // Base velocity impact
+                        dmg = Math.pow(Math.max(relSpeed, downwardSpeed), 1.35) * Math.min(24, blockMass) * 4.2;
+
+                        // Gravity crushing bonus when falling from above onto the pig's head/body!
+                        if (isAbove) {
+                            const gravityCrush = blockMass * Math.max(0.65, downwardSpeed) * 6.8;
+                            dmg += gravityCrush;
+                            // Heavy block guarantee: if block has mass >= 2.2, crush heavily!
+                            if (blockMass >= 2.2 && (downwardSpeed > 0.25 || relSpeed > 0.38)) {
+                                dmg = Math.max(dmg, blockMass * 8.5);
+                            }
+                        }
+                    }
+
                     const hpBefore = d.hp;
                     d.hp -= dmg;
 
@@ -402,11 +426,20 @@ class AngryBirdsMaster {
                         this.spawnHelmetDebris(target.position.x, target.position.y - d.radius * 0.6);
                     }
 
-                    window.soundFX.playPigSqueak();
-                    this.createSparks(target.position.x, target.position.y, '#bef264', 5);
+                    // Authentic Pig Grunt & Squeal (Plays heavy pain grunt on crushed hits!)
+                    if (window.soundFX) {
+                        if (isAbove && (hitter.mass || 1) > 2.5) {
+                            window.soundFX.playPigCrush();
+                        } else {
+                            window.soundFX.playPigGrunt(Math.min(1.5, Math.max(0.7, dmg / 25)), isAbove);
+                        }
+                    }
+
+                    this.createSparks(target.position.x, target.position.y, '#bef264', 6);
+                    this.createScorePopup(`-${Math.round(dmg)}`, target.position.x, target.position.y - 18, '#bef264');
 
                     // High impact slow-motion
-                    if (relSpeed > 7.2) {
+                    if (relSpeed > 7.0 || (isAbove && (hitter.mass || 1) > 8 && downwardSpeed > 2.0)) {
                         this.triggerSlowMo(0.25, 200);
                         this.addCameraShake(6);
                     }
@@ -414,9 +447,10 @@ class AngryBirdsMaster {
                     if (d.hp <= 0) {
                         this.destroyPig(target);
                         // Carry-through momentum if bird crushed pig at speed
-                        if (hitter.customData?.type === 'bird' && hitter.customData.prevVel) {
+                        if (isBird && hitter.customData?.prevVel) {
                             const pv = hitter.customData.prevVel;
-                            const carry = isTerence ? 0.88 : Math.min(0.78, Math.max(0.45, 1 - hpBefore / (dmg * 1.4)));
+                            const isTerence = hitter.customData?.birdType === 'terence';
+                            const carry = isTerence ? 0.90 : Math.min(0.80, Math.max(0.45, 1 - hpBefore / (dmg * 1.4)));
                             Body.setVelocity(hitter, { x: pv.x * carry, y: pv.y * carry });
                         }
                     }
@@ -840,20 +874,20 @@ class AngryBirdsMaster {
 
     addPig(x, y, pigType = 'normal') {
         let radius = 22;
-        let hp = 65;
+        let hp = 42; // Calibrated for authentic fun & fair demolition
 
         if (pigType === 'small') {
             radius = 16;
-            hp = 38;
+            hp = 24;
         } else if (pigType === 'helmet') {
             radius = 23;
-            hp = 145;
+            hp = 85;
         } else if (pigType === 'foreman') {
             radius = 26;
-            hp = 180;
+            hp = 115;
         } else if (pigType === 'king') {
             radius = 36;
-            hp = 380;
+            hp = 220;
         }
 
         const pig = Bodies.circle(x, y, radius, {
@@ -2307,7 +2341,43 @@ class AngryBirdsMaster {
             }
         }
 
-        // 3. Camera Framing & Panoramic Overview
+        // 3. Continuous Heavy Weight Crushing on Pigs (Collapsing roofs & beams crushing pigs)
+        if (this.pigs.length > 0 && this.blocks.length > 0) {
+            for (let pIdx = this.pigs.length - 1; pIdx >= 0; pIdx--) {
+                const pig = this.pigs[pIdx];
+                if (!pig || pig.customData?.dead) continue;
+                const pPos = pig.position;
+                const pR = pig.customData.radius || 20;
+
+                for (let b of this.blocks) {
+                    if (b.isStatic || b.customData?.dead) continue;
+                    const bPos = b.position;
+                    const bHalfW = (b.customData?.width || 30) / 2 + pR * 0.75;
+                    const bHalfH = (b.customData?.height || 30) / 2 + pR;
+
+                    // Block is resting directly above the pig
+                    if (Math.abs(bPos.x - pPos.x) < bHalfW && bPos.y < pPos.y && (pPos.y - bPos.y) < bHalfH + 6) {
+                        const mass = b.mass || 1;
+                        if (mass >= 2.0 && b.velocity.y >= -0.2) {
+                            const squishDmg = 0.65 * Math.min(6.0, mass) * (dt * 60);
+                            pig.customData.hp -= squishDmg;
+
+                            if (Math.random() < 0.06) {
+                                window.soundFX?.playPigGrunt(0.9, true);
+                                this.createSparks(pPos.x, pPos.y, '#bef264', 3);
+                            }
+
+                            if (pig.customData.hp <= 0) {
+                                this.destroyPig(pig);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Camera Framing & Panoramic Overview
         if (this.camera.mode === 'wide') {
             this.camera.targetZoom = 0.74;
             this.camera.targetY = -20;

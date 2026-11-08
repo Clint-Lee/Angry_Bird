@@ -1012,7 +1012,7 @@ class SpriteRenderer {
             ctx.restore();
         }
 
-        // Mouth (Terrified gasp vs Cheeky toothy grin)
+        // Mouth (Terrified gasp vs Bruised grimace vs Cheeky toothy grin)
         if (terrified) {
             ctx.fillStyle = '#450a0a';
             ctx.strokeStyle = '#1a2e05';
@@ -1021,6 +1021,24 @@ class SpriteRenderer {
             ctx.ellipse(0, r * 0.56, r * 0.26, r * 0.22, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+        } else if (hpRatio < 0.5) {
+            // Trembling bruised grimace when low HP / smashed by debris
+            ctx.strokeStyle = '#1a2e05';
+            ctx.lineWidth = 2.4;
+            ctx.beginPath();
+            ctx.arc(0, r * 0.65, r * 0.26, 1.15 * Math.PI, 1.85 * Math.PI);
+            ctx.stroke();
+            // Chipped crooked tooth
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-r * 0.06, r * 0.48, r * 0.12, r * 0.10);
+            
+            // Panic sweat drop when critical HP
+            if (hpRatio < 0.35) {
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.ellipse(r * 0.68, -r * 0.35, 3.5, 6, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
         } else {
             ctx.fillStyle = '#14532d';
             ctx.beginPath();
