@@ -155,7 +155,7 @@ class AngryBirdsMaster {
 
         // Persistent LocalStorage Progress & Settings
         this.saveData = SaveManager.load();
-        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 60;
+        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 75;
         this.currentLevelIndex = Math.max(0, Math.min(this.saveData.currentLevelIndex || 0, totalLevels - 1));
         this.unlockedLevels = this.saveData.unlockedLevels || [0];
         this.highScores = this.saveData.levelScores || {};

@@ -55,33 +55,12 @@ class SpriteRenderer {
             const offsetX = -panProgress * (drawW - viewW);
             ctx.drawImage(bgImg, offsetX, -viewH * 0.04, drawW, drawH);
         } else {
-            // Instant fallback sky gradient while image decodes
-            const grad = ctx.createLinearGradient(0, 0, 0, viewH);
-            if (worldKey === 'desert') {
-                grad.addColorStop(0, '#7c2d12');
-                grad.addColorStop(0.55, '#f97316');
-                grad.addColorStop(1, '#fde047');
-            } else if (worldKey === 'castle') {
-                grad.addColorStop(0, '#090d1f');
-                grad.addColorStop(0.6, '#1e1b4b');
-                grad.addColorStop(1, '#4c1d95');
-            } else if (worldKey === 'snow') {
-                grad.addColorStop(0, '#0c1a30');
-                grad.addColorStop(0.35, '#073b4c');
-                grad.addColorStop(0.7, '#0ea5e9');
-                grad.addColorStop(1, '#bae6fd');
-            } else if (worldKey === 'volcano') {
-                grad.addColorStop(0, '#1c0705');
-                grad.addColorStop(0.35, '#450a0a');
-                grad.addColorStop(0.7, '#7f1d1d');
-                grad.addColorStop(1, '#ea580c');
-            } else {
-                grad.addColorStop(0, '#0284c7');
-                grad.addColorStop(0.65, '#7dd3fc');
-                grad.addColorStop(1, '#e0f2fe');
-            }
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, viewW, viewH);
+            // Refined procedural scene background — no external image dependency.
+            // Keeps the original per-world sky gradient and adds unified layered
+            // silhouettes (far / mid / near) so snow, volcano (and any world whose
+            // image is missing) get a polished local backdrop instead of a flat
+            // gradient. The SpriteRenderer asset interface is unchanged.
+            this._drawProceduralBackground(ctx, worldKey, camera, viewW, viewH, worldW, groundY, time);
         }
 
         // Atmospheric floating motes / snowflakes / volcanic embers
@@ -114,6 +93,168 @@ class SpriteRenderer {
             }
         }
         ctx.restore();
+    }
+
+    // --- Procedural fallback backdrop (used when a world's bg image is absent) ---
+    // Unified 3-layer silhouette system shared by every world so the five themes
+    // read with a consistent sense of depth. Snow and volcano are the showcase
+    // worlds here (no image assets ship for them).
+    _skyGradient(ctx, worldKey, viewH) {
+        const grad = ctx.createLinearGradient(0, 0, 0, viewH);
+        if (worldKey === 'desert') {
+            grad.addColorStop(0, '#7c2d12');
+            grad.addColorStop(0.55, '#f97316');
+            grad.addColorStop(1, '#fde047');
+        } else if (worldKey === 'castle') {
+            grad.addColorStop(0, '#090d1f');
+            grad.addColorStop(0.6, '#1e1b4b');
+            grad.addColorStop(1, '#4c1d95');
+        } else if (worldKey === 'snow') {
+            grad.addColorStop(0, '#0c1a30');
+            grad.addColorStop(0.35, '#073b4c');
+            grad.addColorStop(0.7, '#0ea5e9');
+            grad.addColorStop(1, '#bae6fd');
+        } else if (worldKey === 'volcano') {
+            grad.addColorStop(0, '#1c0705');
+            grad.addColorStop(0.35, '#450a0a');
+            grad.addColorStop(0.7, '#7f1d1d');
+            grad.addColorStop(1, '#ea580c');
+        } else {
+            grad.addColorStop(0, '#0284c7');
+            grad.addColorStop(0.65, '#7dd3fc');
+            grad.addColorStop(1, '#e0f2fe');
+        }
+        return grad;
+    }
+
+    _drawRidge(ctx, viewW, baseY, amp, color, shift, freq, round) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(-80 + shift, baseY + amp + 60);
+        const step = 36;
+        let first = true;
+        for (let px = -80; px <= viewW + 80; px += step) {
+            const t = px * freq;
+            const y = baseY - (Math.sin(t) * 0.5 + 0.5) * amp
+                           - (Math.sin(t * 2.7 + 1.3) * 0.5 + 0.5) * amp * 0.3;
+            const sx = px + shift;
+            if (first) {
+                ctx.lineTo(sx, y);
+                first = false;
+            } else if (round) {
+                ctx.quadraticCurveTo(sx - step / 2, y - amp * 0.18, sx, y);
+            } else {
+                ctx.lineTo(sx, y);
+            }
+        }
+        ctx.lineTo(viewW + 80 + shift, baseY + amp + 60);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    _drawPine(ctx, x, baseY, h) {
+        ctx.beginPath();
+        ctx.moveTo(x, baseY - h);
+        ctx.lineTo(x - h * 0.32, baseY);
+        ctx.lineTo(x + h * 0.32, baseY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x, baseY - h * 0.7);
+        ctx.lineTo(x - h * 0.26, baseY - h * 0.25);
+        ctx.lineTo(x + h * 0.26, baseY - h * 0.25);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    _drawFarLayer(ctx, worldKey, viewW, horizon, pan) {
+        const shift = -pan * viewW * 0.06;
+        switch (worldKey) {
+            case 'desert':
+                this._drawRidge(ctx, viewW, horizon - 18, 34, '#b45309', shift, 0.011, false);
+                break;
+            case 'castle':
+                this._drawRidge(ctx, viewW, horizon - 22, 46, '#312e81', shift, 0.013, false);
+                break;
+            case 'snow':
+                this._drawRidge(ctx, viewW, horizon - 34, 70, '#c7d2fe', shift, 0.016, false);
+                this._drawRidge(ctx, viewW, horizon - 10, 30, '#e2e8f0', shift, 0.02, false);
+                break;
+            case 'volcano':
+                this._drawRidge(ctx, viewW, horizon - 26, 58, '#3b0a0a', shift, 0.014, false);
+                ctx.fillStyle = 'rgba(234, 88, 12, 0.18)';
+                ctx.beginPath();
+                ctx.arc(viewW * 0.5 + shift, horizon - 30, 26, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+            default: // meadow
+                this._drawRidge(ctx, viewW, horizon - 28, 42, '#7cb342', shift, 0.012, true);
+        }
+    }
+
+    _drawMidLayer(ctx, worldKey, viewW, horizon, pan) {
+        const shift = -pan * viewW * 0.12;
+        switch (worldKey) {
+            case 'desert':
+                this._drawRidge(ctx, viewW, horizon + 6, 30, '#9a3412', shift, 0.015, false);
+                break;
+            case 'castle':
+                this._drawRidge(ctx, viewW, horizon + 4, 36, '#1e1b4b', shift, 0.017, false);
+                break;
+            case 'snow':
+                this._drawRidge(ctx, viewW, horizon + 2, 34, '#93c5fd', shift, 0.018, true);
+                break;
+            case 'volcano':
+                this._drawRidge(ctx, viewW, horizon + 4, 34, '#5b0f0f', shift, 0.016, false);
+                break;
+            default:
+                this._drawRidge(ctx, viewW, horizon + 4, 38, '#4e8b2f', shift, 0.016, true);
+        }
+    }
+
+    _drawNearLayer(ctx, worldKey, viewW, horizon, pan) {
+        const shift = -pan * viewW * 0.2;
+        switch (worldKey) {
+            case 'desert':
+                this._drawRidge(ctx, viewW, horizon + 40, 22, '#7c2d12', shift, 0.02, false);
+                break;
+            case 'castle':
+                this._drawRidge(ctx, viewW, horizon + 36, 26, '#0f172a', shift, 0.022, false);
+                break;
+            case 'snow':
+                this._drawRidge(ctx, viewW, horizon + 38, 24, '#e0f2fe', shift, 0.022, true);
+                ctx.fillStyle = '#0f3d52';
+                for (let i = 0; i < 7; i++) {
+                    const tx = (i + 0.5) * (viewW / 7) + shift;
+                    this._drawPine(ctx, tx, horizon + 44, 26 + (i % 3) * 6);
+                }
+                break;
+            case 'volcano':
+                this._drawRidge(ctx, viewW, horizon + 38, 24, '#1c0705', shift, 0.02, false);
+                ctx.strokeStyle = 'rgba(249, 115, 22, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0 + shift, horizon + 50);
+                ctx.lineTo(viewW + shift, horizon + 44);
+                ctx.stroke();
+                break;
+            default:
+                this._drawRidge(ctx, viewW, horizon + 40, 26, '#2f5f1f', shift, 0.02, true);
+        }
+    }
+
+    _drawProceduralBackground(ctx, worldKey, camera, viewW, viewH, worldW, groundY, time) {
+        const horizon = viewH * 0.70;
+        const zoom = (camera && camera.zoom) ? camera.zoom : 1;
+        const maxCamX = Math.max(1, worldW - viewW / zoom);
+        const pan = Math.max(0, Math.min(1, (camera && camera.x) ? camera.x / maxCamX : 0));
+
+        ctx.fillStyle = this._skyGradient(ctx, worldKey, viewH);
+        ctx.fillRect(0, 0, viewW, viewH);
+
+        this._drawFarLayer(ctx, worldKey, viewW, horizon, pan);
+        this._drawMidLayer(ctx, worldKey, viewW, horizon, pan);
+        this._drawNearLayer(ctx, worldKey, viewW, horizon, pan);
     }
 
     drawForegroundGround(ctx, worldKey, worldW, groundY, worldH) {

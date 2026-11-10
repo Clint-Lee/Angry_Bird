@@ -9,6 +9,7 @@ class SoundFX {
         this.sfxVolume = 0.85;
         this.bgmVolume = 0.50;
         this.masterGain = null;
+        this.limiter = null;
         this.sfxGain = null;
         this.bgmGain = null;
         this.bgmTimer = null;
@@ -22,7 +23,26 @@ class SoundFX {
                 this.ctx = new AudioContext();
                 this.masterGain = this.ctx.createGain();
                 this.masterGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
-                this.masterGain.connect(this.ctx.destination);
+
+                // Gentle bus limiter (DynamicsCompressor) inserted between the master
+                // gain and the destination. It only engages on peaks that would otherwise
+                // sum past ~0 dBFS (e.g. many SFX/BGM voices stacking on one physics
+                // frame), preventing digital clipping/distortion. Normal playback levels
+                // stay transparent, so perceived volume and the public API are unchanged.
+                // Falls back to a direct connection on engines lacking the node.
+                try {
+                    this.limiter = this.ctx.createDynamicsCompressor();
+                    this.limiter.threshold.setValueAtTime(-1, this.ctx.currentTime);
+                    this.limiter.knee.setValueAtTime(0, this.ctx.currentTime);
+                    this.limiter.ratio.setValueAtTime(20, this.ctx.currentTime);
+                    this.limiter.attack.setValueAtTime(0.002, this.ctx.currentTime);
+                    this.limiter.release.setValueAtTime(0.1, this.ctx.currentTime);
+                    this.masterGain.connect(this.limiter);
+                    this.limiter.connect(this.ctx.destination);
+                } catch (e) {
+                    this.limiter = null;
+                    this.masterGain.connect(this.ctx.destination);
+                }
 
                 this.sfxGain = this.ctx.createGain();
                 this.sfxGain.gain.setValueAtTime(this.enabled ? this.sfxVolume : 0, this.ctx.currentTime);

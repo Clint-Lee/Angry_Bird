@@ -1,4 +1,4 @@
-// 60 Hand-Crafted Physics-Tested Stable Levels Across 4 Themed Worlds for Angry Birds Remastered
+// 75 Hand-Crafted Physics-Tested Stable Levels Across 5 Themed Worlds for Angry Birds Remastered
 // Coordinate reference: Ground top surface is at y = GROUND_Y (660 in 2000x760 world space)
 // Battlefield is generously spaced: Slingshot at X = 240, Fortresses placed between X = 1150 and 1680
 
