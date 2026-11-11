@@ -207,6 +207,148 @@ levels.forEach((lv) => {
 });
 ok(worldLevelOk, 'every level has a numeric id, a valid world, and a matching W-L worldLevel label');
 
+// Progressive outposts: validate geometry, metadata and monotonic score curves.
+const pigRadius = { small: 17, normal: 22, helmet: 24, foreman: 27, king: 34 };
+function recordLevel(level) {
+    const objects = [];
+    const add = (kind, x, y, w, h, material) => objects.push({ kind, x, y, w, h, material });
+    const g = {
+        addBlock: (x, y, w, h, material) => add('block', x, y, w, h, material),
+        addPig: (x, y, type) => add('pig', x, y, (pigRadius[type] || 22) * 2, (pigRadius[type] || 22) * 2, type),
+        addTNT: (x, y) => add('tnt', x, y, 42, 42),
+        addBoulder: (x, y) => add('boulder', x, y, 44, 44),
+        addRoof: (x, y, w, h, material) => add('roof', x, y, w, h, material),
+        addStaticPlatform: (x, y, w, h) => add('platform', x, y, w, h),
+        addBouncyPad: (x, y, w, h) => add('pad', x, y, w || 100, h || 20),
+        addHangingTNT: (x, y) => add('hangingTnt', x, y, 42, 42),
+        addPendulumBall: (x, y) => add('pendulum', x, y, 60, 60),
+    };
+    level.build(g, 660);
+    return objects;
+}
+function bounds(o) {
+    return { left: o.x - o.w / 2, right: o.x + o.w / 2, top: o.y - o.h / 2, bottom: o.y + o.h / 2 };
+}
+function overlaps(a, b) {
+    const aa = bounds(a), bb = bounds(b);
+    return aa.left < bb.right - 0.5 && aa.right > bb.left + 0.5 &&
+        aa.top < bb.bottom - 0.5 && aa.bottom > bb.top + 0.5;
+}
+function takeLast(items, count) { return count > 0 ? items.slice(-count) : []; }
+function expectedOutpost(stage) {
+    if (stage < 4) return { blocks: 0, pigs: 0, tnts: 0, birds: 0 };
+    // 单塔逐档叠层，每层 2 根承重柱 + 1 根顶梁 + 1 只守卫猪
+    const tier = Math.floor((stage - 4) / 2) + 1;   // 1..6
+    return {
+        blocks: tier * 3,
+        pigs: tier,
+        tnts: 0,
+        birds: tier <= 2 ? 1 : (tier <= 4 ? 2 : 3)
+    };
+}
+let progressionOk = true, geometryOk = true, separationOk = true, parCurveOk = true;
+let difficultyOk = true, visibilityOk = true, reachableOk = true;
+const STATIC_VISIBLE_RIGHT = 20 + 1280 / 0.74;  // 静止全景可见右边界 ≈ 1749.7
+const SAFE_REACH_X = 1800;                      // 普通弹弓最大自由射程 ≈ 1838，留 38px 余量
+const lastPar = {};
+const worldTrack = {};
+levels.forEach((lv) => {
+    const p = lv.progression;
+    const stage = Number(lv.worldLevel.split('-')[1]);
+    const expected = expectedOutpost(stage);
+    if (!p || p.stage !== stage || p.addedBlocks !== expected.blocks ||
+        p.addedPigs !== expected.pigs || p.addedTnts !== expected.tnts ||
+        p.addedBirds !== expected.birds) {
+        progressionOk = false;
+        console.log('    progression mismatch at ' + lv.worldLevel + ': ' + JSON.stringify(p));
+    }
+    if (lastPar[lv.world] !== undefined && lv.parScore <= lastPar[lv.world]) parCurveOk = false;
+    lastPar[lv.world] = lv.parScore;
+
+    // 世界内难度必须单调不降，且第 15 关是全场最难（旧版曾出现 15 关弱于 13/14）
+    const track = worldTrack[lv.world] || (worldTrack[lv.world] = { blocks: -1, pigs: -1, rank: -1 });
+    if (p.addedBlocks < track.blocks || p.addedPigs < track.pigs || p.guardRank < track.rank) {
+        difficultyOk = false;
+        console.log('    difficulty regression at ' + lv.worldLevel);
+    }
+    track.blocks = p.addedBlocks;
+    track.pigs = p.addedPigs;
+    track.rank = p.guardRank;
+    if (stage === 15 && (p.addedPigs < 6 || p.guardRank < 7 || p.tier < 6)) {
+        difficultyOk = false;
+        console.log('    final level is not the hardest at ' + lv.worldLevel);
+    }
+
+    const objects = recordLevel(lv);
+    const outpost = [
+        ...takeLast(objects.filter((o) => o.kind === 'block'), expected.blocks),
+        ...takeLast(objects.filter((o) => o.kind === 'pig'), expected.pigs),
+        ...takeLast(objects.filter((o) => o.kind === 'tnt'), expected.tnts),
+    ];
+    const outpostSet = new Set(outpost);
+    const base = objects.filter((o) => !outpostSet.has(o));
+    if (outpost.length) {
+        const baseRight = Math.max(...base.map((o) => bounds(o).right));
+        const outpostLeft = Math.min(...outpost.map((o) => bounds(o).left));
+        if (outpostLeft <= baseRight) {
+            separationOk = false;
+            console.log('    outpost intersects original footprint at ' + lv.worldLevel);
+        }
+    }
+    for (const o of outpost) {
+        const b = bounds(o);
+        if (b.left < 1650 || b.right > 1780 || b.top < 0 || b.bottom > 660.5) geometryOk = false;
+        // 通关目标必须在静止画面里看得见，且不能被放到弹弓射程之外。
+        if (o.kind === 'pig' && o.x >= STATIC_VISIBLE_RIGHT) visibilityOk = false;
+        if (o.x > SAFE_REACH_X) reachableOk = false;
+    }
+    for (let i = 0; i < outpost.length; i++) {
+        for (let j = i + 1; j < outpost.length; j++) {
+            if (overlaps(outpost[i], outpost[j])) {
+                geometryOk = false;
+                console.log('    outpost overlap at ' + lv.worldLevel + ': ' + outpost[i].kind + '/' + outpost[j].kind);
+            }
+        }
+    }
+});
+ok(progressionOk, 'all 75 levels expose the expected staged outpost and support-bird metadata');
+ok(difficultyOk, 'difficulty rises monotonically within each world and level 15 is the hardest');
+ok(parCurveOk, 'parScore strictly increases through all 15 levels within every world');
+ok(separationOk, 'every added outpost is fully separated from the original fortress footprint');
+ok(geometryOk, 'added structures stay in bounds and have no unintended AABB overlaps');
+ok(visibilityOk, 'every added pig is visible in the static panoramic camera (x < ' + STATIC_VISIBLE_RIGHT.toFixed(1) + ')');
+ok(reachableOk, 'every added structure stays within normal-sling safe reach (x <= ' + SAFE_REACH_X + ')');
+
+// 弹道硬约束：用 game.js 的实际物理常量做纯数值积分（不启动游戏/浏览器），
+// 证明普通弹弓能带着余量打到最远的新增目标，避免再次出现「看不见也打不到」的关卡。
+const GRAVITY_STEP = 0.142 * 0.001 * Math.pow(1000 / 60, 2);
+function maxFreeRange(speed) {
+    let best = 0;
+    for (let ang = 5; ang <= 80; ang += 0.5) {
+        for (let mul = 0.5; mul <= 1; mul += 0.02) {
+            const s = 124 * mul, a = ang * Math.PI / 180;
+            let vx = Math.cos(a) * s * speed;
+            let vy = -Math.sin(a) * s * speed;
+            let x = 240, y = 660 - 142;
+            for (let i = 0; i < 900; i++) {
+                vx *= (1 - 0.0005);
+                vy = vy * (1 - 0.0005) + GRAVITY_STEP;
+                x += vx;
+                y += vy;
+                if (y >= 640) { if (x > best) best = x; break; }
+            }
+        }
+    }
+    return best;
+}
+const freeRange = maxFreeRange(0.066);
+const farthestTarget = Math.max(...levels
+    .filter((lv) => lv.progression && lv.progression.outpostX)
+    .map((lv) => lv.progression.outpostX));
+ok(freeRange >= farthestTarget + 60,
+    'normal-sling free range (' + Math.round(freeRange) + ') clears farthest added target (' +
+    farthestTarget + ') with >=60px margin');
+
 // The code-side fallback constant in game.js must agree with the real count.
 const gameJs = fs.readFileSync(path.join(ROOT, 'game.js'), 'utf8');
 ok(/GAME_LEVELS\.length : 75/.test(gameJs),

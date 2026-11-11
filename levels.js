@@ -1,4 +1,4 @@
-// 75 Hand-Crafted Physics-Tested Stable Levels Across 5 Themed Worlds for Angry Birds Remastered
+// 75 Hand-Crafted Levels + Deterministic Progressive Outposts Across 5 Themed Worlds
 // Coordinate reference: Ground top surface is at y = GROUND_Y (660 in 2000x760 world space)
 // Battlefield is generously spaced: Slingshot at X = 240, Fortresses placed between X = 1150 and 1680
 
@@ -2140,3 +2140,76 @@ window.GAME_LEVELS = [
         }
     }
 ];
+
+// 每个主题内部采用 15 关严格递增的难度曲线。原关卡布局与出鸟顺序完全保留，
+// 只在原堡垒右侧的「可见 + 可达」安全带内追加一座多層哨塔，逐关加高、加守卫、换硬材料。
+// 硬约束（由 tests/smoke_test.js 静态校验，勿随意改动坐标）：
+//   - 普通弹弓最大自由射程约 1838；静止全景可见右边界约 1749.7；
+//   - 因此全部新增目标统一落在 x=1716，既不超出射程，也在静止画面内看得见；
+//   - 最高层保留较软材料作为突破口，保证后期关卡始终存在可击破路径。
+(function applyProgressiveDifficulty(levels) {
+    const themes = {
+        meadow: { base: 'wood', accent: 'glass', support: ['yellow', 'blue', 'bomb'] },
+        desert: { base: 'wood', accent: 'stone', support: ['bomb', 'matilda', 'yellow'] },
+        snow: { base: 'glass', accent: 'wood', support: ['blue', 'terence', 'bomb'] },
+        castle: { base: 'stone', accent: 'wood', support: ['bomb', 'terence', 'yellow'] },
+        volcano: { base: 'stone', accent: 'glass', support: ['hal', 'bomb', 'terence'] }
+    };
+    const previousPar = {};
+    const pigRadius = { normal: 22, helmet: 24, foreman: 27 };
+    const OUTPOST_X = 1716;
+    const STORY_HEIGHT = 98;   // 顶梁顶面恰好对齐上一层柱底
+
+    levels.forEach((level) => {
+        const stage = Number(level.worldLevel.split('-')[1]);
+        if (stage < 4) {
+            // 教学关不加哨站，但仍需保证三星线在世界内平滑递增（原始 parScore 有并列值）
+            level.parScore = Math.max(level.parScore, (previousPar[level.world] || 0) + 1000);
+            previousPar[level.world] = level.parScore;
+            level.progression = {
+                stage, tier: 0, guardRank: 0, outpostX: null,
+                addedBlocks: 0, addedPigs: 0, addedTnts: 0, addedBirds: 0
+            };
+            return;
+        }
+
+        const theme = themes[level.world];
+        const baseBuild = level.build;
+        const t = stage - 4;                    // 0..11
+        const tier = Math.floor(t / 2) + 1;     // 1..6：哨塔层数逐档递增
+        const hardened = (t % 2) === 1;         // 每档第二关：材料与守卫再升一级
+        const guardRank = tier + (hardened ? 1 : 0);  // 1..7，4→15 连续变强
+        const floors = tier;
+        const extraBirds = tier <= 2 ? 1 : (tier <= 4 ? 2 : 3);
+        const mainMaterial = guardRank >= 5 ? 'stone' : (guardRank >= 3 ? theme.accent : theme.base);
+        const pigType = guardRank >= 6 ? 'foreman' : (guardRank >= 3 ? 'helmet' : 'normal');
+        const pigR = pigRadius[pigType] || 22;
+
+        level.build = function buildWithProgression(g, GY) {
+            baseBuild.call(this, g, GY);
+
+            // 单塔纵向叠层：越往后越高、越密，但始终留在同一条可见/可达的窄带内。
+            for (let floor = 0; floor < floors; floor++) {
+                const baseY = GY - floor * STORY_HEIGHT;
+                // 最高层保留较软材料，作为后期关卡的稳定突破口
+                const mat = (floor === floors - 1 && floors >= 4) ? theme.base : mainMaterial;
+                g.addBlock(OUTPOST_X - 36, baseY - 40, 12, 80, mat);
+                g.addBlock(OUTPOST_X + 36, baseY - 40, 12, 80, mat);
+                g.addBlock(OUTPOST_X, baseY - 89, 84, 18, mat);
+                g.addPig(OUTPOST_X, baseY - pigR, pigType);
+            }
+        };
+
+        level.birds = level.birds.concat(theme.support.slice(0, extraBirds));
+        const addedBlocks = floors * 3;
+        const addedPigs = floors;
+        const addedScore = addedPigs * 5000 + addedBlocks * 900 + extraBirds * 10000;
+        level.parScore = Math.max(level.parScore + addedScore, (previousPar[level.world] || 0) + 1000);
+        previousPar[level.world] = level.parScore;
+        level.progression = {
+            stage, tier, guardRank,
+            outpostX: OUTPOST_X,
+            addedBlocks, addedPigs, addedTnts: 0, addedBirds: extraBirds
+        };
+    });
+})(window.GAME_LEVELS);
