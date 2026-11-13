@@ -830,3 +830,162 @@ canvas {
     padding: 12px 36px;
     border-radius: 16px;
 }
+
+/* =========================================================
+   Refined Arcade Surface Craft, Specular HUD & Modal Polish
+   ========================================================= */
+
+@keyframes ab-modal-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes ab-modal-pop {
+    from { opacity: 0; transform: translateY(10px) scale(0.965); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ab-bar-shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.game-container {
+    box-shadow:
+        0 26px 64px rgba(2, 6, 23, 0.72),
+        0 0 0 1px rgba(148, 163, 184, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.header-bar {
+    position: relative;
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.96) 0%, rgba(15, 23, 42, 0.96) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 4px 16px rgba(2, 6, 23, 0.35);
+}
+
+.logo-text {
+    text-shadow: 0 2px 10px rgba(249, 115, 22, 0.25);
+}
+
+.level-badge {
+    background: linear-gradient(180deg, rgba(51, 65, 85, 0.85) 0%, rgba(30, 41, 59, 0.92) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        0 3px 8px rgba(2, 6, 23, 0.28);
+}
+
+.score-box {
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(10, 15, 28, 0.96) 100%);
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.45),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.star-progress-box {
+    font-variant-numeric: tabular-nums;
+}
+
+.star-bar-track {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+.star-bar-fill {
+    background-size: 200% 100%;
+    animation: ab-bar-shimmer 3.2s linear infinite;
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.45);
+}
+
+.btn {
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        0 3px 0 rgba(2, 6, 23, 0.45),
+        0 6px 14px rgba(2, 6, 23, 0.25);
+    transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), filter 0.14s ease, box-shadow 0.14s ease;
+}
+
+.btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.32),
+        0 4px 0 rgba(2, 6, 23, 0.48),
+        0 10px 20px rgba(2, 6, 23, 0.32);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(1.5px);
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.25),
+        0 1px 0 rgba(2, 6, 23, 0.45);
+}
+
+.canvas-wrapper {
+    box-shadow:
+        inset 0 0 32px rgba(2, 6, 23, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.footer-bar {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.modal-overlay {
+    backdrop-filter: blur(8px) saturate(135%);
+    animation: ab-modal-fade 0.18s ease-out;
+}
+
+.modal-content {
+    box-shadow:
+        0 28px 70px rgba(2, 6, 23, 0.8),
+        0 0 0 1px rgba(148, 163, 184, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    animation: ab-modal-pop 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.world-tab-btn {
+    transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.world-tab-btn:hover {
+    transform: translateY(-1px);
+}
+
+.level-select-card {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 4px 12px rgba(2, 6, 23, 0.28);
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.level-select-card:not(.locked):hover {
+    transform: translateY(-3px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        0 12px 24px rgba(2, 6, 23, 0.42),
+        0 0 0 1px rgba(250, 204, 21, 0.35);
+}
+
+.modal-stars {
+    filter: drop-shadow(0 4px 12px rgba(250, 204, 21, 0.4));
+}
+
+.level-select-grid::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.level-select-grid::-webkit-scrollbar-thumb,
+.settings-body::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.32);
+    border-radius: 999px;
+}
+
+.level-select-grid::-webkit-scrollbar-track,
+.settings-body::-webkit-scrollbar-track {
+    background: transparent;
+}

@@ -540,3 +540,108 @@ body {
     border-top: 1px solid #1e293b;
 }
 
+
+
+/* =========================================================
+   Refined Arcade Portal Craft, Hero Glow & Card Polish
+   ========================================================= */
+
+@keyframes arc-flock-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.arcade-header {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(15, 23, 42, 0.72) 100%);
+    backdrop-filter: blur(14px) saturate(140%);
+    border-color: rgba(148, 163, 184, 0.16);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 12px 32px rgba(2, 6, 23, 0.45);
+}
+
+.arcade-logo-icon {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 6px 16px rgba(249, 115, 22, 0.35);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.header-brand:hover .arcade-logo-icon {
+    transform: rotate(-6deg) scale(1.06);
+}
+
+.featured-card {
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        0 24px 60px rgba(2, 6, 23, 0.65),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.24s ease, box-shadow 0.24s ease;
+}
+
+.featured-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(250, 204, 21, 0.42);
+    box-shadow:
+        0 30px 72px rgba(2, 6, 23, 0.72),
+        0 0 36px rgba(249, 115, 22, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.hero-emoji-flock > span,
+.hero-emoji-flock {
+    animation: arc-flock-bob 3.6s ease-in-out infinite;
+}
+
+.saved-stats-panel {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.stat-bubble {
+    font-variant-numeric: tabular-nums;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: transform 0.16s ease, border-color 0.16s ease;
+}
+
+.stat-bubble:hover {
+    transform: translateY(-1px);
+    border-color: rgba(56, 189, 248, 0.35);
+}
+
+.btn-play-primary,
+.btn-play-secondary,
+.btn-portal-back {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        0 4px 14px rgba(2, 6, 23, 0.35);
+    transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), filter 0.16s ease, box-shadow 0.16s ease;
+}
+
+.btn-play-primary:hover,
+.btn-play-secondary:hover,
+.btn-portal-back:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.07);
+}
+
+.btn-play-primary:active,
+.btn-play-secondary:active,
+.btn-portal-back:active {
+    transform: translateY(1px);
+}
+
+.arcade-card {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        0 10px 26px rgba(2, 6, 23, 0.35);
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.arcade-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(148, 163, 184, 0.36);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        0 18px 36px rgba(2, 6, 23, 0.5);
+}

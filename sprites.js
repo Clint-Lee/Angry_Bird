@@ -563,6 +563,14 @@ class SpriteRenderer {
             ctx.moveTo(x - 20, y - 11);
             ctx.lineTo(pouchX, pouchY);
             ctx.stroke();
+
+            // Specular elastic sheen along top edge of stretched rubber band
+            ctx.strokeStyle = kingSlingActive ? 'rgba(255, 255, 255, 0.55)' : 'rgba(248, 113, 113, 0.34)';
+            ctx.lineWidth = Math.max(1.2, bandWidth * 0.28);
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y - 12);
+            ctx.lineTo(pouchX, pouchY - 1);
+            ctx.stroke();
         } else {
             // Resting rubber band hanging loosely between prongs
             ctx.strokeStyle = kingSlingActive ? '#eab308' : '#5a170c';

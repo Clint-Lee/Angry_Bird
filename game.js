@@ -3324,16 +3324,18 @@ class AngryBirdsMaster {
         // Layer A: Subtle luminous guide curve underneath dots so full parabola is Effortlessly readable
         if (pathPoints.length > 2) {
             this.ctx.strokeStyle = this.kingSlingActive
-                ? 'rgba(253, 224, 71, 0.36)'
-                : 'rgba(255, 255, 255, 0.28)';
+                ? 'rgba(253, 224, 71, 0.38)'
+                : 'rgba(255, 255, 255, 0.30)';
             this.ctx.lineWidth = 3.2;
             this.ctx.setLineDash([8, 8]);
+            this.ctx.lineDashOffset = -time * 26;
             this.ctx.beginPath();
             this.ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
             for (let k = 1; k < pathPoints.length; k++) {
                 this.ctx.lineTo(pathPoints[k].x, pathPoints[k].y);
             }
             this.ctx.stroke();
+            this.ctx.lineDashOffset = 0;
             this.ctx.setLineDash([]);
         }
 
@@ -3377,6 +3379,18 @@ class AngryBirdsMaster {
             const ringColor = isCriticalTarget ? '#ef4444' : isBounceTarget ? '#f43f5e' : '#facc15';
             const ringR = 16 * pulse;
 
+            // Subtle radial target aura so impact ring pops over bright ice or dark volcanic stone
+            const auraGrad = this.ctx.createRadialGradient(
+                impactPt.x, impactPt.y, 2,
+                impactPt.x, impactPt.y, ringR + 10
+            );
+            auraGrad.addColorStop(0, isCriticalTarget ? 'rgba(239, 68, 68, 0.28)' : 'rgba(250, 204, 21, 0.22)');
+            auraGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+            this.ctx.fillStyle = auraGrad;
+            this.ctx.beginPath();
+            this.ctx.arc(impactPt.x, impactPt.y, ringR + 10, 0, Math.PI * 2);
+            this.ctx.fill();
+
             // Dark outer shadow ring
             this.ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)';
             this.ctx.lineWidth = 5.5;
@@ -3412,17 +3426,34 @@ class AngryBirdsMaster {
             this.ctx.stroke();
         }
 
-        // Layer D: Subtle Pull Power & Angle Badge next to slingshot while dragging
+        // Layer D: Crisp HUD Pill Badge showing Pull Power & Launch Angle while aiming
         const powerPct = Math.min(100, Math.round((dist / MAX_STRETCH) * 100));
         const elevDeg = Math.round(Math.atan2(-stretch.y, stretch.x) * (180 / Math.PI));
-        this.ctx.font = '800 14px "Fredoka", sans-serif';
-        this.ctx.fillStyle = powerPct >= 95 ? '#fde047' : '#f8fafc';
-        this.ctx.strokeStyle = '#0f172a';
-        this.ctx.lineWidth = 3.5;
-        this.ctx.textAlign = 'center';
         const label = `${powerPct}% · ${elevDeg}°`;
-        this.ctx.strokeText(label, SLING_POS.x, SLING_POS.y - 54);
-        this.ctx.fillText(label, SLING_POS.x, SLING_POS.y - 54);
+        const badgeX = SLING_POS.x;
+        const badgeY = SLING_POS.y - 60;
+        this.ctx.font = '800 13px "Fredoka", sans-serif';
+        const pillW = Math.max(82, this.ctx.measureText(label).width + 20);
+        const pillH = 24;
+        const rx = badgeX - pillW / 2;
+        const ry = badgeY - pillH / 2;
+
+        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.84)';
+        this.ctx.strokeStyle = powerPct >= 95 ? 'rgba(253, 224, 71, 0.85)' : 'rgba(148, 163, 184, 0.45)';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.beginPath();
+        if (typeof this.ctx.roundRect === 'function') {
+            this.ctx.roundRect(rx, ry, pillW, pillH, 999);
+        } else {
+            this.ctx.rect(rx, ry, pillW, pillH);
+        }
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        this.ctx.fillStyle = powerPct >= 95 ? '#fde047' : '#f8fafc';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(label, badgeX, badgeY + 0.5);
 
         this.ctx.restore();
     }
