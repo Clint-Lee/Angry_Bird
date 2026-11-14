@@ -206,6 +206,10 @@ class AngryBirdsMaster {
         this.floatingTexts = [];
         this.smokeTrails = [];
         this.debrisEffects = [];
+        this.shotCombo = 0;
+        this.comboExpiresAt = 0;
+        this.comboBonusScore = 0;
+        this.ambientMotes = [];
 
         // Mouse & Touch Input
         this.mouse = { x: 0, y: 0, worldX: 0, worldY: 0, isDown: false };
@@ -392,7 +396,25 @@ class AngryBirdsMaster {
 
             // Flag bird contact
             if (d.type === 'bird') {
+                const firstImpact = !d.collided;
                 d.collided = true;
+                if (relSpeed > 3.2 && (firstImpact || Math.random() < 0.35)) {
+                    const fColor = this.getBirdFeatherColor(d.birdType);
+                    for (let f = 0; f < (firstImpact ? 4 : 2); f++) {
+                        this.createFeather(target.position.x, target.position.y, fColor);
+                    }
+                    if (firstImpact && relSpeed > 6.0) {
+                        this.debrisEffects.push({
+                            type: 'ring',
+                            x: target.position.x,
+                            y: target.position.y,
+                            radius: 8,
+                            maxRadius: 48,
+                            alpha: 0.75,
+                            color: fColor
+                        });
+                    }
+                }
                 // Bomb bird starts glowing red-hot fuse countdown on impact
                 if (d.birdType === 'bomb' && !d.detonateTimer && !d.exploded) {
                     d.detonateTimer = this.addTimer(() => {
@@ -553,10 +575,20 @@ class AngryBirdsMaster {
 
         const points = pType === 'king' ? 15000 : pType === 'foreman' ? 8000 : pType === 'helmet' ? 6000 : 5000;
         this.addScore(points, pos.x, pos.y);
+        this.registerDestruction(pos.x, pos.y, points, 'pig');
 
         this.addCameraShake(pType === 'king' ? 14 : 6);
         this.createPigDebris(pos.x, pos.y, pigBody.customData.radius || 20);
-        this.createScorePopup(`+${points}`, pos.x, pos.y - 10, '#facc15');
+        this.debrisEffects.push({
+            type: 'ring',
+            x: pos.x,
+            y: pos.y,
+            radius: 10,
+            maxRadius: pType === 'king' ? 110 : 62,
+            alpha: 0.9,
+            color: pType === 'king' ? '#facc15' : '#bef264'
+        });
+        this.createScorePopup(`+${points}`, pos.x, pos.y - 10, '#facc15', pType === 'king' ? 1.45 : 1.15);
 
         // Check if King Pig was destroyed
         if (pType === 'king') {
@@ -626,9 +658,11 @@ class AngryBirdsMaster {
         blockBody.customData.dead = true;
         const pos = blockBody.position;
         const mat = blockBody.customData.material;
+        const pts = mat === 'stone' ? 800 : mat === 'wood' ? 500 : 400;
 
         this.createBlockDebris(blockBody);
-        this.addScore(mat === 'stone' ? 800 : mat === 'wood' ? 500 : 400, pos.x, pos.y);
+        this.addScore(pts, pos.x, pos.y);
+        this.registerDestruction(pos.x, pos.y, pts, 'block');
 
         Composite.remove(this.world, blockBody);
         this.blocks = this.blocks.filter(b => b !== blockBody);
@@ -740,7 +774,8 @@ class AngryBirdsMaster {
         this.triggerSlowMo(0.2, 350);
         this.createFireball(pos.x, pos.y, 160);
         this.addScore(4000, pos.x, pos.y);
-        this.createScorePopup('+4000', pos.x, pos.y - 20, '#ef4444');
+        this.registerDestruction(pos.x, pos.y, 4000, 'tnt');
+        this.createScorePopup('+4000', pos.x, pos.y - 20, '#ef4444', 1.35);
 
         this.applyRadialBlast(pos, 250, 0.08, 380);
 
@@ -1091,9 +1126,15 @@ class AngryBirdsMaster {
         this.floatingTexts = [];
         this.smokeTrails = [];
         this.debrisEffects = [];
+        this.shotCombo = 0;
+        this.comboExpiresAt = 0;
+        this.comboBonusScore = 0;
+        this.ambientMotes = [];
 
         this.levelScore = 0;
         this.levelStartTime = performance.now();
+        this.resetShotCombo();
+        this.ambientMotes = [];
         this.state = 'AIMING';
         this.hideModal();
 
@@ -1180,6 +1221,7 @@ class AngryBirdsMaster {
 
     launchBird() {
         if (!this.currentBird) return;
+        this.resetShotCombo();
 
         // Ensure 1.0x physics clock so trajectory matches aiming arc 1:1
         this.timeScale = 1.0;
@@ -1636,12 +1678,89 @@ class AngryBirdsMaster {
         this.createScorePopup('钢盔击飞!', x, y - 24, '#cbd5e1');
     }
 
-    createScorePopup(text, x, y, color = '#fef08a') {
+    getBirdFeatherColor(birdType) {
+        const colors = {
+            red: '#ef4444',
+            yellow: '#facc15',
+            blue: '#38bdf8',
+            bomb: '#334155',
+            matilda: '#f8fafc',
+            hal: '#22c55e',
+            terence: '#b91c1c'
+        };
+        return colors[birdType] || '#ef4444';
+    }
+
+    resetShotCombo() {
+        this.shotCombo = 0;
+        this.comboExpiresAt = 0;
+        this.comboBonusScore = 0;
+        this.updateComboHUD();
+    }
+
+    updateComboHUD() {
+        const pill = document.getElementById('comboHudPill');
+        const multEl = document.getElementById('comboMultText');
+        const bonusEl = document.getElementById('comboBonusText');
+        if (!pill || !multEl || !bonusEl) return;
+
+        if (this.shotCombo >= 2) {
+            pill.classList.remove('hidden');
+            multEl.textContent = `x${this.shotCombo}`;
+            bonusEl.textContent = `+${this.comboBonusScore.toLocaleString()}`;
+            pill.classList.remove('pop');
+            void pill.offsetWidth;
+            pill.classList.add('pop');
+        } else {
+            pill.classList.add('hidden');
+            pill.classList.remove('pop');
+        }
+    }
+
+    registerDestruction(x, y, basePoints, kind = 'block') {
+        const now = performance.now();
+        if (now <= this.comboExpiresAt) {
+            this.shotCombo += 1;
+        } else {
+            this.shotCombo = 1;
+            this.comboBonusScore = 0;
+        }
+        this.comboExpiresAt = now + 1750;
+
+        if (this.shotCombo >= 2) {
+            const mult = Math.min(1.5, (this.shotCombo - 1) * 0.25);
+            const bonus = Math.max(100, Math.round(basePoints * mult));
+            this.comboBonusScore += bonus;
+            this.addScore(bonus, x, y);
+
+            if (this.shotCombo === 3 || this.shotCombo === 5 || this.shotCombo === 8 || this.shotCombo % 5 === 0) {
+                const label = this.shotCombo >= 8
+                    ? `狂潮清场 x${this.shotCombo}!`
+                    : this.shotCombo >= 5
+                        ? `连锁爆破 x${this.shotCombo}!`
+                        : `连击 x${this.shotCombo}!`;
+                this.createScorePopup(label, x, y - 34, '#fde047', 1.45);
+                this.debrisEffects.push({
+                    type: 'ring',
+                    x,
+                    y,
+                    radius: 12,
+                    maxRadius: 95,
+                    alpha: 0.9,
+                    color: '#fde047'
+                });
+            }
+        }
+        this.updateComboHUD();
+    }
+
+    createScorePopup(text, x, y, color = '#fef08a', scale = 1.0) {
         this.floatingTexts.push({
             text, x, y,
             alpha: 1.0,
             color,
-            vy: -1.5
+            vy: -1.65,
+            scale: Math.max(1.0, scale)
         });
     }
 
@@ -3010,13 +3129,72 @@ class AngryBirdsMaster {
             if (ring.alpha <= 0) this.debrisEffects.splice(i, 1);
         }
 
-        // Update floating texts
+        // Expire combo banner cleanly when destruction chain ends
+        if (this.shotCombo > 0 && performance.now() > this.comboExpiresAt) {
+            this.resetShotCombo();
+        }
+
+        // Subtle atmospheric motes matched to current world
+        const curLevel = window.GAME_LEVELS[this.currentLevelIndex];
+        this.updateAmbientMotes(curLevel ? curLevel.world : 'meadow');
+
+        // Update floating texts with crisp spring settle
         for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
             const ft = this.floatingTexts[i];
             ft.y += ft.vy;
+            if (ft.scale && ft.scale > 1.0) {
+                ft.scale = Math.max(1.0, ft.scale - 0.028);
+            }
             ft.alpha -= 0.015;
             if (ft.alpha <= 0) this.floatingTexts.splice(i, 1);
         }
+    }
+
+    updateAmbientMotes(worldKey) {
+        const targetCount = 18;
+        while (this.ambientMotes.length < targetCount) {
+            const isLava = worldKey === 'volcano';
+            this.ambientMotes.push({
+                x: Math.random() * WORLD_WIDTH,
+                y: isLava ? (GROUND_Y - 10 - Math.random() * 140) : Math.random() * (GROUND_Y - 20),
+                vx: worldKey === 'snow' ? -0.35 - Math.random() * 0.45 : (Math.random() - 0.5) * 0.45,
+                vy: isLava ? (-0.6 - Math.random() * 0.9) : (worldKey === 'snow' ? (0.45 + Math.random() * 0.65) : (Math.random() - 0.5) * 0.25),
+                r: isLava ? (1.8 + Math.random() * 2.4) : (1.5 + Math.random() * 2.4),
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+        for (let i = 0; i < this.ambientMotes.length; i++) {
+            const m = this.ambientMotes[i];
+            m.x += m.vx + Math.sin(m.phase) * 0.2;
+            m.y += m.vy;
+            m.phase += 0.035;
+            if (m.x < -20) m.x = WORLD_WIDTH + 10;
+            if (m.x > WORLD_WIDTH + 20) m.x = -10;
+            if (m.y < -20) m.y = GROUND_Y - 12;
+            if (m.y > GROUND_Y) m.y = worldKey === 'volcano' ? (GROUND_Y - 10) : 10;
+        }
+    }
+
+    drawAmbientMotes(worldKey, time) {
+        if (!this.ambientMotes || this.ambientMotes.length === 0) return;
+        const palette = {
+            meadow: 'rgba(254, 249, 195, 0.52)',
+            desert: 'rgba(253, 186, 116, 0.42)',
+            snow: 'rgba(240, 249, 255, 0.72)',
+            castle: 'rgba(196, 181, 253, 0.48)',
+            volcano: 'rgba(251, 146, 60, 0.78)'
+        };
+        this.ctx.save();
+        this.ctx.fillStyle = palette[worldKey] || palette.meadow;
+        for (let i = 0; i < this.ambientMotes.length; i++) {
+            const m = this.ambientMotes[i];
+            const tw = 0.55 + 0.45 * Math.sin(time * 2.2 + m.phase);
+            this.ctx.globalAlpha = tw;
+            this.ctx.beginPath();
+            this.ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        this.ctx.restore();
     }
 
     getSlingshotVibe() {
@@ -3080,6 +3258,7 @@ class AngryBirdsMaster {
 
         // 3. Draw Foreground Ground Cap & Turf BEFORE slingshot mound so hillock blends over flat turf!
         window.spriteRenderer.drawForegroundGround(this.ctx, worldKey, WORLD_WIDTH, GROUND_Y, WORLD_HEIGHT);
+        this.drawAmbientMotes(worldKey, time);
 
         // 4. Draw Persistent Flight Path Trail & Full-Arc Aim Trajectory Guide
         this.drawFlightPathTrail();
@@ -3697,14 +3876,19 @@ class AngryBirdsMaster {
     drawFloatingScores() {
         this.ctx.save();
         this.floatingTexts.forEach(ft => {
+            const sc = ft.scale || 1.0;
+            this.ctx.save();
+            this.ctx.translate(ft.x, ft.y);
+            this.ctx.scale(sc, sc);
             this.ctx.font = '900 24px "Fredoka", Impact, sans-serif';
             this.ctx.fillStyle = ft.color;
             this.ctx.strokeStyle = '#09090b';
             this.ctx.lineWidth = 4;
             this.ctx.globalAlpha = Math.max(0, ft.alpha);
             this.ctx.textAlign = 'center';
-            this.ctx.strokeText(ft.text, ft.x, ft.y);
-            this.ctx.fillText(ft.text, ft.x, ft.y);
+            this.ctx.strokeText(ft.text, 0, 0);
+            this.ctx.fillText(ft.text, 0, 0);
+            this.ctx.restore();
         });
         this.ctx.restore();
     }

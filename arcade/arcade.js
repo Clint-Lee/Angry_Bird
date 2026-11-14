@@ -49,7 +49,10 @@
         '3-11 雪峰重炮', '3-12 极地金字塔', '3-13 浮冰连环', '3-14 极寒要塞', '3-15 冰冠司令 (BOSS)',
         '4-1 钟摆破城', '4-2 巨无霸登场', '4-3 连环炼狱', '4-4 皇家门楼', '4-5 护城河卫所',
         '4-6 地牢暗室', '4-7 箭塔合围', '4-8 弹跳王廷', '4-9 钢铁重装', '4-10 皇冠吊灯',
-        '4-11 绝壁棱堡', '4-12 铁壁铜墙', '4-13 炼狱熔炉', '4-14 禁卫总督', '4-15 猪王决战 (FINAL BOSS)'
+        '4-11 绝壁棱堡', '4-12 铁壁铜墙', '4-13 炼狱熔炉', '4-14 禁卫总督', '4-15 猪王决战 (FINAL BOSS)',
+        '5-1 熔岩前哨', '5-2 盲区暗袭', '5-3 连锁爆燃', '5-4 浮岛要塞', '5-5 逆风回旋',
+        '5-6 熔岩阶梯', '5-7 滚烫落石', '5-8 炽焰跳跃', '5-9 火山双子塔', '5-10 硫磺深坑',
+        '5-11 熔岩钟摆', '5-12 地心穿刺', '5-13 熔岩迷宫', '5-14 巨兽狂怒', '5-15 熔岩领主决战'
     ];
 
     function updateLobbyUI() {
@@ -94,6 +97,12 @@
 
         const unlockedEl = document.getElementById('abUnlockedCount');
         if (unlockedEl) unlockedEl.innerText = `${Math.min(totalLevels, unlockedCount)} / ${totalLevels} 关`;
+
+        const masteryPct = Math.round((totalStars / maxStars) * 100);
+        const pctEl = document.getElementById('abMasteryPct');
+        if (pctEl) pctEl.innerText = `${masteryPct}%`;
+        const fillEl = document.getElementById('abMasteryFill');
+        if (fillEl) fillEl.style.width = `${masteryPct}%`;
 
         // 4. Update Resume Button text and path
         const resumeSub = document.getElementById('btnPlaySubtitle');

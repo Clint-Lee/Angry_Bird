@@ -1261,6 +1261,18 @@ class SpriteRenderer {
             ctx.restore();
         });
 
+        // King Pig subtle royal aura behind body so boss targets stand out immediately
+        if (pData.pigType === 'king') {
+            const auraR = r * (1.42 + Math.sin(time * 3.5) * 0.08);
+            const kingAura = ctx.createRadialGradient(0, -r * 0.25, r * 0.4, 0, -r * 0.25, auraR);
+            kingAura.addColorStop(0, 'rgba(250, 204, 21, 0.34)');
+            kingAura.addColorStop(1, 'rgba(250, 204, 21, 0)');
+            ctx.fillStyle = kingAura;
+            ctx.beginPath();
+            ctx.arc(0, -r * 0.25, auraR, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         // Main Green Pig Sphere (3D Volumetric Shading)
         const pigGrad = ctx.createRadialGradient(-r * 0.28, -r * 0.32, r * 0.12, 0, 0, r * 1.05);
         pigGrad.addColorStop(0, '#bef264');
@@ -1273,6 +1285,12 @@ class SpriteRenderer {
         ctx.arc(0, 0, r, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+
+        // Subtle rosy cheek warmth + top specular gleam
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(-r * 0.32, -r * 0.56, r * 0.24, r * 0.11, -0.35, 0, Math.PI * 2);
+        ctx.fill();
 
         // Bruise / Swollen Black Eye when damaged!
         if (hpRatio < 0.7) {
@@ -1593,6 +1611,38 @@ class SpriteRenderer {
             ctx.lineWidth = 2.4;
             ctx.strokeRect(-hw, -hh, d.width, d.height);
 
+            // Material-specific tactile surface details
+            if (d.material === 'glass') {
+                // Prismatic ice diagonal sheen streaks
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+                const span = Math.min(d.width, d.height);
+                ctx.beginPath();
+                ctx.moveTo(-hw + 4, -hh + 3);
+                ctx.lineTo(-hw + Math.min(d.width - 4, span * 0.85), -hh + 3);
+                ctx.lineTo(-hw + 4, -hh + Math.min(d.height - 4, span * 0.85));
+                ctx.closePath();
+                ctx.fill();
+            } else if (d.material === 'wood' && !body.isStatic) {
+                // Subtle wood grain & plank seam line
+                ctx.strokeStyle = 'rgba(92, 45, 12, 0.28)';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                if (d.width >= d.height) {
+                    ctx.moveTo(-hw + 8, 0);
+                    ctx.lineTo(hw - 8, 0);
+                } else {
+                    ctx.moveTo(0, -hh + 8);
+                    ctx.lineTo(0, hh - 8);
+                }
+                ctx.stroke();
+            } else if (d.material === 'stone') {
+                // Chiseled corner flecks
+                ctx.fillStyle = 'rgba(248, 250, 252, 0.24)';
+                ctx.fillRect(-hw + 4, -hh + 4, 4, 4);
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
+                ctx.fillRect(hw - 8, hh - 8, 4, 4);
+            }
+
             // End nails on wooden beams
             if (d.material === 'wood' && Math.max(d.width, d.height) > 55 && !body.isStatic) {
                 ctx.fillStyle = '#3b1d0a';
@@ -1658,6 +1708,25 @@ class SpriteRenderer {
             ctx.textBaseline = 'middle';
             ctx.fillText('TNT', 0, 0);
         }
+
+        // Animated sparkling fuse & subtle danger glow on TNT crate
+        const tNow = (typeof performance !== 'undefined' ? performance.now() : Date.now()) * 0.008;
+        const pulseR = 4 + Math.sin(tNow) * 1.6;
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -hs);
+        ctx.quadraticCurveTo(4, -hs - 7, 9, -hs - 5);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(251, 146, 60, 0.45)';
+        ctx.beginPath();
+        ctx.arc(9, -hs - 5, pulseR + 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(9, -hs - 5, Math.max(2, pulseR * 0.55), 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
     }
 

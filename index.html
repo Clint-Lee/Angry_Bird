@@ -53,6 +53,13 @@
         <main class="canvas-wrapper">
             <canvas id="gameCanvas"></canvas>
 
+            <div class="combo-hud-pill hidden" id="comboHudPill" aria-live="polite">
+                <span class="combo-flame">🔥</span>
+                <span class="combo-mult" id="comboMultText">x2</span>
+                <span class="combo-label">连环破坏</span>
+                <span class="combo-bonus" id="comboBonusText">+0</span>
+            </div>
+
             <!-- Level Cleared / Level Failed Modal -->
             <div class="modal-overlay hidden" id="gameOverModal">
                 <div class="modal-content">
