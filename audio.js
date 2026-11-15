@@ -14,6 +14,20 @@ class SoundFX {
         this.bgmGain = null;
         this.bgmTimer = null;
         this.lastCollisionSoundTime = 0;
+        this.lastStretchSoundTime = 0;
+        this.lastIdleOinkTime = 0;
+    }
+
+    _createNoiseBuffer(duration, decay = 0) {
+        if (!this.ctx) return null;
+        const length = Math.max(64, Math.floor(this.ctx.sampleRate * duration));
+        const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i++) {
+            const env = decay > 0 ? Math.exp(-i / (this.ctx.sampleRate * decay)) : 1;
+            data[i] = (Math.random() * 2 - 1) * env;
+        }
+        return buffer;
     }
 
     init() {
@@ -278,24 +292,63 @@ class SoundFX {
 
     playStretch(ratio = 0.5) {
         if (!this.enabled) return;
+        const nowMs = performance.now();
+        if (nowMs - this.lastStretchSoundTime < 75) return;
+        this.lastStretchSoundTime = nowMs;
+
         this.init();
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
+        const clamped = Math.max(0.05, Math.min(1.0, ratio));
+
+        // 1. Classic rubber band friction creak (low warm triangle + filtered saw)
         const osc = this.ctx.createOscillator();
+        const sub = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
 
         osc.type = 'sawtooth';
-        const base = 75 + ratio * 75;
+        sub.type = 'triangle';
+        const base = 92 + clamped * 115;
         osc.frequency.setValueAtTime(base, now);
-        osc.frequency.linearRampToValueAtTime(base + 30, now + 0.09);
+        osc.frequency.exponentialRampToValueAtTime(base * 1.24, now + 0.065);
+        sub.frequency.setValueAtTime(base * 0.52, now);
+        sub.frequency.linearRampToValueAtTime(base * 0.64, now + 0.065);
 
-        gain.gain.setValueAtTime(0.05, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(340 + clamped * 480, now);
+        filter.Q.setValueAtTime(2.6, now);
 
-        osc.connect(gain);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.045 + clamped * 0.035, now + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0015, now + 0.075);
+
+        osc.connect(filter);
+        sub.connect(filter);
+        filter.connect(gain);
         gain.connect(this.sfxOut);
         osc.start(now);
-        osc.stop(now + 0.09);
+        sub.start(now);
+        osc.stop(now + 0.078);
+        sub.stop(now + 0.078);
+
+        // 2. Subtle leather pouch & wood Y-fork micro-creak noise
+        const noiseBuf = this._createNoiseBuffer(0.045, 0.018);
+        if (noiseBuf) {
+            const noise = this.ctx.createBufferSource();
+            const nFilter = this.ctx.createBiquadFilter();
+            const nGain = this.ctx.createGain();
+            noise.buffer = noiseBuf;
+            nFilter.type = 'bandpass';
+            nFilter.frequency.setValueAtTime(520 + clamped * 350, now);
+            nFilter.Q.setValueAtTime(3.2, now);
+            nGain.gain.setValueAtTime(0.03, now);
+            nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.042);
+            noise.connect(nFilter);
+            nFilter.connect(nGain);
+            nGain.connect(this.sfxOut);
+            noise.start(now);
+        }
     }
 
     playLaunch(birdType = 'red') {
@@ -304,18 +357,37 @@ class SoundFX {
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
 
-        // 1. Rubber Slingshot Snap & Twang
+        // 1. Classic Rubber Slingshot "Thwack-Boiing!" + Air Whoosh
         const snap = this.ctx.createOscillator();
         const snapGain = this.ctx.createGain();
         snap.type = 'triangle';
-        snap.frequency.setValueAtTime(190, now);
-        snap.frequency.exponentialRampToValueAtTime(52, now + 0.14);
-        snapGain.gain.setValueAtTime(0.32, now);
-        snapGain.gain.exponentialRampToValueAtTime(0.005, now + 0.14);
+        snap.frequency.setValueAtTime(245, now);
+        snap.frequency.exponentialRampToValueAtTime(68, now + 0.11);
+        snap.frequency.linearRampToValueAtTime(118, now + 0.16);
+        snapGain.gain.setValueAtTime(0.30, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.004, now + 0.18);
         snap.connect(snapGain);
         snapGain.connect(this.sfxOut);
         snap.start(now);
-        snap.stop(now + 0.14);
+        snap.stop(now + 0.18);
+
+        const whooshBuf = this._createNoiseBuffer(0.16, 0.065);
+        if (whooshBuf) {
+            const whoosh = this.ctx.createBufferSource();
+            const wFilter = this.ctx.createBiquadFilter();
+            const wGain = this.ctx.createGain();
+            whoosh.buffer = whooshBuf;
+            wFilter.type = 'bandpass';
+            wFilter.frequency.setValueAtTime(420, now);
+            wFilter.frequency.exponentialRampToValueAtTime(1450, now + 0.12);
+            wFilter.Q.setValueAtTime(1.4, now);
+            wGain.gain.setValueAtTime(0.16, now);
+            wGain.gain.exponentialRampToValueAtTime(0.003, now + 0.15);
+            whoosh.connect(wFilter);
+            wFilter.connect(wGain);
+            wGain.connect(this.sfxOut);
+            whoosh.start(now);
+        }
 
         // 2. Iconic Classic Angry Birds Battle Cry Vocalization!
         if (birdType === 'yellow') {
@@ -771,17 +843,55 @@ class SoundFX {
         this.init();
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
+        const amp = Math.min(1.6, Math.max(0.35, intensity));
+
+        // 1. Hollow timber knock (warm filtered pulse + resonant wood overtone)
         const osc = this.ctx.createOscillator();
+        const overtone = this.ctx.createOscillator();
+        const woodFilter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(185 + Math.random() * 40, now);
-        osc.frequency.exponentialRampToValueAtTime(65, now + 0.085);
-        gain.gain.setValueAtTime(Math.min(0.28, 0.09 * intensity), now);
-        gain.gain.exponentialRampToValueAtTime(0.004, now + 0.085);
+
+        osc.type = 'triangle';
+        overtone.type = 'square';
+        const rootF = 165 + Math.random() * 55;
+        osc.frequency.setValueAtTime(rootF, now);
+        osc.frequency.exponentialRampToValueAtTime(62, now + 0.085);
+        overtone.frequency.setValueAtTime(rootF * 2.45, now);
+        overtone.frequency.exponentialRampToValueAtTime(135, now + 0.055);
+
+        woodFilter.type = 'bandpass';
+        woodFilter.frequency.setValueAtTime(480 + Math.random() * 160, now);
+        woodFilter.Q.setValueAtTime(1.8, now);
+
+        gain.gain.setValueAtTime(Math.min(0.30, 0.12 * amp), now);
+        gain.gain.exponentialRampToValueAtTime(0.003, now + 0.095);
+
         osc.connect(gain);
+        overtone.connect(woodFilter);
+        woodFilter.connect(gain);
         gain.connect(this.sfxOut);
         osc.start(now);
-        osc.stop(now + 0.085);
+        overtone.start(now);
+        osc.stop(now + 0.095);
+        overtone.stop(now + 0.06);
+
+        // 2. Crisp wood splinter snap transient
+        const crackBuf = this._createNoiseBuffer(0.07, 0.022);
+        if (crackBuf) {
+            const crack = this.ctx.createBufferSource();
+            const cFilter = this.ctx.createBiquadFilter();
+            const cGain = this.ctx.createGain();
+            crack.buffer = crackBuf;
+            cFilter.type = 'bandpass';
+            cFilter.frequency.setValueAtTime(1450 + Math.random() * 500, now);
+            cFilter.Q.setValueAtTime(1.6, now);
+            cGain.gain.setValueAtTime(Math.min(0.24, 0.095 * amp), now);
+            cGain.gain.exponentialRampToValueAtTime(0.003, now + 0.068);
+            crack.connect(cFilter);
+            cFilter.connect(cGain);
+            cGain.connect(this.sfxOut);
+            crack.start(now);
+        }
     }
 
     playHitGlass(intensity = 1) {
@@ -789,19 +899,40 @@ class SoundFX {
         this.init();
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
-        [1950, 2650].forEach((baseF, idx) => {
+        const amp = Math.min(1.6, Math.max(0.35, intensity));
+
+        // 1. Sparkling crystal/ice multi-partial chimes
+        [1760, 2480, 3320].forEach((baseF, idx) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(baseF + Math.random() * 300, now + idx * 0.015);
-            osc.frequency.exponentialRampToValueAtTime(880, now + 0.11);
-            gain.gain.setValueAtTime(Math.min(0.2, 0.07 * intensity), now + idx * 0.015);
-            gain.gain.exponentialRampToValueAtTime(0.004, now + 0.11);
+            const delay = idx * 0.012;
+            osc.type = idx === 0 ? 'sine' : 'triangle';
+            osc.frequency.setValueAtTime(baseF + Math.random() * 280, now + delay);
+            osc.frequency.exponentialRampToValueAtTime(baseF * 0.58, now + delay + 0.12);
+            gain.gain.setValueAtTime(Math.min(0.18, (0.075 - idx * 0.015) * amp), now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.0025, now + delay + 0.125);
             osc.connect(gain);
             gain.connect(this.sfxOut);
-            osc.start(now + idx * 0.015);
-            osc.stop(now + 0.11);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.13);
         });
+
+        // 2. Crisp glass tinkle scatter noise
+        const tinkleBuf = this._createNoiseBuffer(0.09, 0.028);
+        if (tinkleBuf) {
+            const tinkle = this.ctx.createBufferSource();
+            const hFilter = this.ctx.createBiquadFilter();
+            const tGain = this.ctx.createGain();
+            tinkle.buffer = tinkleBuf;
+            hFilter.type = 'highpass';
+            hFilter.frequency.setValueAtTime(3400, now);
+            tGain.gain.setValueAtTime(Math.min(0.22, 0.09 * amp), now);
+            tGain.gain.exponentialRampToValueAtTime(0.002, now + 0.088);
+            tinkle.connect(hFilter);
+            hFilter.connect(tGain);
+            tGain.connect(this.sfxOut);
+            tinkle.start(now);
+        }
     }
 
     playHitStone(intensity = 1) {
@@ -809,17 +940,45 @@ class SoundFX {
         this.init();
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
+        const amp = Math.min(1.6, Math.max(0.35, intensity));
+
+        // 1. Dense boulder thud (deep sine punch + stony triangle body)
         const osc = this.ctx.createOscillator();
+        const body = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(105, now);
-        osc.frequency.exponentialRampToValueAtTime(38, now + 0.13);
-        gain.gain.setValueAtTime(Math.min(0.38, 0.14 * intensity), now);
-        gain.gain.exponentialRampToValueAtTime(0.004, now + 0.13);
+        body.type = 'triangle';
+        osc.frequency.setValueAtTime(118 + Math.random() * 18, now);
+        osc.frequency.exponentialRampToValueAtTime(34, now + 0.14);
+        body.frequency.setValueAtTime(215 + Math.random() * 35, now);
+        body.frequency.exponentialRampToValueAtTime(76, now + 0.08);
+        gain.gain.setValueAtTime(Math.min(0.38, 0.16 * amp), now);
+        gain.gain.exponentialRampToValueAtTime(0.003, now + 0.145);
         osc.connect(gain);
+        body.connect(gain);
         gain.connect(this.sfxOut);
         osc.start(now);
-        osc.stop(now + 0.13);
+        body.start(now);
+        osc.stop(now + 0.15);
+        body.stop(now + 0.085);
+
+        // 2. Gritty rock crumble scatter
+        const gritBuf = this._createNoiseBuffer(0.11, 0.04);
+        if (gritBuf) {
+            const grit = this.ctx.createBufferSource();
+            const lFilter = this.ctx.createBiquadFilter();
+            const gGain = this.ctx.createGain();
+            grit.buffer = gritBuf;
+            lFilter.type = 'bandpass';
+            lFilter.frequency.setValueAtTime(420, now);
+            lFilter.Q.setValueAtTime(1.1, now);
+            gGain.gain.setValueAtTime(Math.min(0.24, 0.10 * amp), now);
+            gGain.gain.exponentialRampToValueAtTime(0.003, now + 0.105);
+            grit.connect(lFilter);
+            lFilter.connect(gGain);
+            gGain.connect(this.sfxOut);
+            grit.start(now);
+        }
     }
 
     // Classic Angry Birds Pig Grunt & Oink System (Authentic snout flutter & nasal resonance)
@@ -1211,6 +1370,111 @@ class SoundFX {
         setTimeout(() => {
             this.playPigMockLaugh();
         }, 1750);
+    }
+
+    // Playful Ambient Pig Oinks / Snorts during active gameplay (non-intrusive, size-pitched)
+    playPigIdleOink(size = 'medium') {
+        if (!this.enabled) return;
+        const nowMs = performance.now();
+        if (nowMs - this.lastIdleOinkTime < 2600) return;
+        this.lastIdleOinkTime = nowMs;
+
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const pitchScale = size === 'small' ? 1.28 : size === 'large' || size === 'king' ? 0.78 : 1.0;
+        const variant = Math.floor(Math.random() * 3);
+
+        if (variant === 0) {
+            // Friendly double snout oink ("oink-oink")
+            [0, 0.12].forEach((del, idx) => {
+                const startT = now + del;
+                const osc = this.ctx.createOscillator();
+                const formant = this.ctx.createBiquadFilter();
+                const gain = this.ctx.createGain();
+                const lfo = this.ctx.createOscillator();
+                const lfoG = this.ctx.createGain();
+
+                formant.type = 'bandpass';
+                formant.frequency.setValueAtTime((idx === 0 ? 640 : 760) * pitchScale, startT);
+                formant.Q.setValueAtTime(3.2, startT);
+
+                osc.type = 'sawtooth';
+                const f = (idx === 0 ? 205 : 242) * pitchScale;
+                osc.frequency.setValueAtTime(f, startT);
+                osc.frequency.linearRampToValueAtTime(f * 1.18, startT + 0.03);
+                osc.frequency.exponentialRampToValueAtTime(f * 0.74, startT + 0.095);
+
+                lfo.frequency.setValueAtTime(24, startT);
+                lfoG.gain.setValueAtTime(18, startT);
+                lfo.connect(osc.frequency);
+                lfo.start(startT);
+                lfo.stop(startT + 0.095);
+
+                gain.gain.setValueAtTime(0.001, startT);
+                gain.gain.linearRampToValueAtTime(0.11, startT + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.003, startT + 0.095);
+
+                osc.connect(formant);
+                formant.connect(gain);
+                gain.connect(this.sfxOut);
+                osc.start(startT);
+                osc.stop(startT + 0.1);
+            });
+        } else if (variant === 1) {
+            // Lazy content pig snort ("hrrrn-oink")
+            const osc = this.ctx.createOscillator();
+            const formant = this.ctx.createBiquadFilter();
+            const gain = this.ctx.createGain();
+
+            formant.type = 'bandpass';
+            formant.frequency.setValueAtTime(580 * pitchScale, now);
+            formant.Q.setValueAtTime(2.9, now);
+
+            osc.type = 'sawtooth';
+            const f = 175 * pitchScale;
+            osc.frequency.setValueAtTime(f, now);
+            osc.frequency.linearRampToValueAtTime(f * 1.32, now + 0.07);
+            osc.frequency.exponentialRampToValueAtTime(f * 0.82, now + 0.16);
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.125, now + 0.025);
+            gain.gain.exponentialRampToValueAtTime(0.003, now + 0.16);
+
+            osc.connect(formant);
+            formant.connect(gain);
+            gain.connect(this.sfxOut);
+            osc.start(now);
+            osc.stop(now + 0.165);
+        } else {
+            // Mischievous cheeky chuckle ("heh-heh-oink!")
+            [0, 0.095, 0.21].forEach((del, idx) => {
+                const startT = now + del;
+                const osc = this.ctx.createOscillator();
+                const formant = this.ctx.createBiquadFilter();
+                const gain = this.ctx.createGain();
+                const f = (idx < 2 ? 320 + idx * 35 : 230) * pitchScale;
+                const dur = idx < 2 ? 0.068 : 0.11;
+
+                formant.type = 'bandpass';
+                formant.frequency.setValueAtTime((idx < 2 ? 780 : 660) * pitchScale, startT);
+                formant.Q.setValueAtTime(3.0, startT);
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(f, startT);
+                osc.frequency.exponentialRampToValueAtTime(f * 0.80, startT + dur);
+
+                gain.gain.setValueAtTime(0.001, startT);
+                gain.gain.linearRampToValueAtTime(0.105, startT + 0.012);
+                gain.gain.exponentialRampToValueAtTime(0.003, startT + dur);
+
+                osc.connect(formant);
+                formant.connect(gain);
+                gain.connect(this.sfxOut);
+                osc.start(startT);
+                osc.stop(startT + dur + 0.005);
+            });
+        }
     }
 }
 

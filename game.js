@@ -34,63 +34,61 @@ const ACTIVE_ABILITY_BIRDS = new Set(['yellow', 'blue', 'bomb', 'matilda', 'hal'
 // =========================================================================
 class SaveManager {
     static STORAGE_KEY = 'tianshu_angry_birds_save_v2';
+    static LEGACY_KEYS = ['ab_current_level', 'ab_highscores', 'ab_stars', 'tianshu_angry_birds_save_v1'];
+    static _saveCount = 0;
 
-    static load() {
-        let data = null;
-        try {
-            const raw = localStorage.getItem(this.STORAGE_KEY);
-            if (raw) data = JSON.parse(raw);
-        } catch (e) {
-            console.warn('Failed to parse localStorage save data:', e);
-        }
+    static normalize(raw) {
+        const maxLevels = (typeof window !== 'undefined' && Array.isArray(window.GAME_LEVELS))
+            ? window.GAME_LEVELS.length
+            : 75;
+        const data = (raw && typeof raw === 'object') ? { ...raw } : {};
 
-        if (!data || typeof data !== 'object') {
-            data = {
-                currentLevelIndex: 0,
-                unlockedLevels: [0],
-                seenBirds: ['red'],
-                levelScores: {},
-                levelStars: {},
-                settings: {
-                    sfxVolume: 0.8,
-                    bgmVolume: 0.5,
-                    sfxEnabled: true,
-                    bgmEnabled: false,
-                    trajectoryGuide: true,
-                    screenShake: true
-                }
-            };
-        }
-        if (!Array.isArray(data.seenBirds)) {
-            data.seenBirds = ['red'];
-        }
+        data.currentLevelIndex = Math.max(0, Math.min(maxLevels - 1, parseInt(data.currentLevelIndex, 10) || 0));
 
-        // Migrate legacy localStorage keys if present
-        try {
-            const legacyLevel = parseInt(localStorage.getItem('ab_current_level') || '0', 10);
-            if (!isNaN(legacyLevel) && legacyLevel > 0 && !data.currentLevelIndex) {
-                data.currentLevelIndex = legacyLevel;
-            }
-            const legacyScores = JSON.parse(localStorage.getItem('ab_highscores') || '{}');
-            data.levelScores = Object.assign({}, legacyScores, data.levelScores || {});
-            const legacyStars = JSON.parse(localStorage.getItem('ab_stars') || '{}');
-            data.levelStars = Object.assign({}, legacyStars, data.levelStars || {});
-        } catch (e) {}
+        // Deduplicate & sanitize arrays
+        const rawSeen = Array.isArray(data.seenBirds) ? data.seenBirds : ['red'];
+        const seenSet = new Set(['red']);
+        rawSeen.forEach(b => {
+            if (typeof b === 'string' && b.trim()) seenSet.add(b.trim());
+        });
+        data.seenBirds = Array.from(seenSet);
 
-        // Ensure unlockedLevels is valid and always contains level 0
-        if (!Array.isArray(data.unlockedLevels)) data.unlockedLevels = [0];
-        if (!data.unlockedLevels.includes(0)) data.unlockedLevels.push(0);
-
-        // If user already had stars on any level, unlock that level and its next
-        Object.keys(data.levelStars || {}).forEach(k => {
+        const levelScores = {};
+        Object.entries(data.levelScores || {}).forEach(([k, v]) => {
             const idx = parseInt(k, 10);
-            if (!isNaN(idx)) {
-                if (!data.unlockedLevels.includes(idx)) data.unlockedLevels.push(idx);
-                if (!data.unlockedLevels.includes(idx + 1)) data.unlockedLevels.push(idx + 1);
+            const score = Math.floor(Number(v));
+            if (!isNaN(idx) && idx >= 0 && idx < maxLevels && Number.isFinite(score) && score > 0) {
+                levelScores[idx] = Math.max(levelScores[idx] || 0, score);
             }
         });
+        data.levelScores = levelScores;
 
-        // Ensure settings defaults
+        const levelStars = {};
+        Object.entries(data.levelStars || {}).forEach(([k, v]) => {
+            const idx = parseInt(k, 10);
+            const stars = Math.max(0, Math.min(3, Math.floor(Number(v) || 0)));
+            if (!isNaN(idx) && idx >= 0 && idx < maxLevels && stars > 0) {
+                levelStars[idx] = Math.max(levelStars[idx] || 0, stars);
+            }
+        });
+        data.levelStars = levelStars;
+
+        const unlockedSet = new Set([0]);
+        if (Array.isArray(data.unlockedLevels)) {
+            data.unlockedLevels.forEach(v => {
+                const idx = parseInt(v, 10);
+                if (!isNaN(idx) && idx >= 0 && idx < maxLevels) unlockedSet.add(idx);
+            });
+        }
+        Object.keys(levelStars).forEach(k => {
+            const idx = parseInt(k, 10);
+            if (!isNaN(idx) && idx >= 0 && idx < maxLevels) {
+                unlockedSet.add(idx);
+                if (idx + 1 < maxLevels) unlockedSet.add(idx + 1);
+            }
+        });
+        data.unlockedLevels = Array.from(unlockedSet).sort((a, b) => a - b);
+
         data.settings = Object.assign({
             sfxVolume: 0.8,
             bgmVolume: 0.5,
@@ -103,13 +101,90 @@ class SaveManager {
         return data;
     }
 
+    static cleanupStorage() {
+        try {
+            if (typeof localStorage === 'undefined') return;
+            // Remove migrated legacy keys & known temporary cache prefixes to reduce browser storage bloat
+            this.LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
+            const staleKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key || key === this.STORAGE_KEY) continue;
+                if (
+                    key.startsWith('ab_temp_') ||
+                    key.startsWith('ab_cache_') ||
+                    key.startsWith('angry_birds_tmp_')
+                ) {
+                    staleKeys.push(key);
+                }
+            }
+            staleKeys.forEach(k => localStorage.removeItem(k));
+        } catch (e) {}
+    }
+
+    static load() {
+        let data = null;
+        try {
+            const raw = localStorage.getItem(this.STORAGE_KEY);
+            if (raw) data = JSON.parse(raw);
+        } catch (e) {
+            console.warn('Failed to parse localStorage save data:', e);
+        }
+
+        if (!data || typeof data !== 'object') {
+            data = {};
+        }
+
+        // Migrate legacy localStorage keys once, merging best scores/stars cleanly
+        let migratedLegacy = false;
+        try {
+            const rawLegacyLevel = localStorage.getItem('ab_current_level');
+            if (rawLegacyLevel !== null) {
+                migratedLegacy = true;
+                const legacyLevel = parseInt(rawLegacyLevel, 10);
+                if (!isNaN(legacyLevel) && legacyLevel > 0 && !data.currentLevelIndex) {
+                    data.currentLevelIndex = legacyLevel;
+                }
+            }
+            const rawLegacyScores = localStorage.getItem('ab_highscores');
+            if (rawLegacyScores) {
+                migratedLegacy = true;
+                const legacyScores = JSON.parse(rawLegacyScores);
+                const mergedScores = { ...(data.levelScores || {}) };
+                Object.entries(legacyScores || {}).forEach(([k, v]) => {
+                    mergedScores[k] = Math.max(Number(mergedScores[k]) || 0, Number(v) || 0);
+                });
+                data.levelScores = mergedScores;
+            }
+            const rawLegacyStars = localStorage.getItem('ab_stars');
+            if (rawLegacyStars) {
+                migratedLegacy = true;
+                const legacyStars = JSON.parse(rawLegacyStars);
+                const mergedStars = { ...(data.levelStars || {}) };
+                Object.entries(legacyStars || {}).forEach(([k, v]) => {
+                    mergedStars[k] = Math.max(Number(mergedStars[k]) || 0, Number(v) || 0);
+                });
+                data.levelStars = mergedStars;
+            }
+        } catch (e) {}
+
+        const normalized = this.normalize(data);
+        // Clean up duplicate/legacy keys on startup and persist consolidated format if migrated
+        this.cleanupStorage();
+        if (migratedLegacy) {
+            this.save(normalized);
+        }
+        return normalized;
+    }
+
     static save(data) {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-            // Sync legacy keys for backward compatibility
-            localStorage.setItem('ab_current_level', String(data.currentLevelIndex || 0));
-            localStorage.setItem('ab_highscores', JSON.stringify(data.levelScores || {}));
-            localStorage.setItem('ab_stars', JSON.stringify(data.levelStars || {}));
+            const normalized = this.normalize(data);
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(normalized));
+            this._saveCount = (this._saveCount + 1) % 8;
+            if (this._saveCount === 0) {
+                this.cleanupStorage();
+            }
         } catch (e) {
             console.warn('Failed to save to localStorage:', e);
         }
@@ -118,9 +193,7 @@ class SaveManager {
     static reset() {
         try {
             localStorage.removeItem(this.STORAGE_KEY);
-            localStorage.removeItem('ab_current_level');
-            localStorage.removeItem('ab_highscores');
-            localStorage.removeItem('ab_stars');
+            this.cleanupStorage();
         } catch (e) {}
         return this.load();
     }
@@ -222,6 +295,7 @@ class AngryBirdsMaster {
         this.lastStretchTime = 0;
         this.dragOffset = { x: 0, y: 0 };
         this.settleTimer = 0;
+        this.nextAmbientPigOinkAt = performance.now() + 2800 + Math.random() * 2400;
         this.lastTime = performance.now();
 
         // Setup
@@ -1133,6 +1207,7 @@ class AngryBirdsMaster {
 
         this.levelScore = 0;
         this.levelStartTime = performance.now();
+        this.nextAmbientPigOinkAt = this.levelStartTime + 2600 + Math.random() * 2600;
         this.resetShotCombo();
         this.ambientMotes = [];
         this.state = 'AIMING';
@@ -3055,6 +3130,19 @@ class AngryBirdsMaster {
                         }
                     }
                 }
+            }
+        }
+
+        // 3b. Ambient Pig Oinks/Snorts while pigs remain on the map
+        if (this.pigs.length > 0 && (this.state === 'AIMING' || this.state === 'DRAGGING' || this.state === 'FLYING')) {
+            if (now >= this.nextAmbientPigOinkAt) {
+                const livePigs = this.pigs.filter(p => p && !p.customData?.dead);
+                if (livePigs.length > 0) {
+                    const vocalPig = livePigs[Math.floor(Math.random() * livePigs.length)];
+                    window.soundFX?.playPigIdleOink?.(vocalPig.customData?.size || 'medium');
+                }
+                const densityBoost = Math.min(1800, livePigs.length * 220);
+                this.nextAmbientPigOinkAt = now + (4200 - densityBoost) + Math.random() * 4200;
             }
         }
 
