@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>星砾方阵 · Lumina Grid - 云檐趣阁小游戏</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css?v=20261116_2230">
+</head>
+<body>
+  <div class="lumina-shell">
+    <!-- 顶部栏 -->
+    <header class="lumina-header">
+      <div class="brand-group">
+        <div class="prism-logo" aria-hidden="true">
+          <svg viewBox="0 0 36 36" fill="none">
+            <defs>
+              <linearGradient id="lgPrism" x1="4" y1="4" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="50%" stop-color="#34d399" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+            <rect x="4" y="4" width="13" height="13" rx="3.5" fill="url(#lgPrism)" />
+            <rect x="19" y="4" width="13" height="13" rx="3.5" fill="#fbbf24" opacity="0.92" />
+            <rect x="4" y="19" width="13" height="13" rx="3.5" fill="#a78bfa" opacity="0.88" />
+            <path d="M25.5 19.5L31.5 25.5L25.5 31.5L19.5 25.5Z" fill="#34d399" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">星砾方阵 · <span lang="en">Lumina Grid</span></h1>
+          <p class="brand-sub" id="modeSubtitle">第 1-1 关 · 星尘唤醒</p>
+        </div>
+      </div>
+
+      <nav class="header-actions" aria-label="游戏控制">
+        <button type="button" id="btnModeLevels" class="nav-pill active">
+          <span>🌌 闯关</span>
+          <em id="headerStarsTotal" class="mono">0/72 ⭐</em>
+        </button>
+        <button type="button" id="btnModeEndless" class="nav-pill">
+          <span>♾️ 无尽挑战</span>
+        </button>
+        <button type="button" id="btnOpenChapters" class="icon-btn" title="选择星域关卡">选关</button>
+        <button type="button" id="btnToggleSound" class="icon-btn" title="开启或关闭音效" aria-pressed="true">🔊</button>
+        <button type="button" id="btnRestart" class="icon-btn" title="重新开始本局">↻ 重开</button>
+        <a href="../" class="btn-lobby" title="返回云檐趣阁小游戏大厅">← 大厅</a>
+      </nav>
+    </header>
+
+    <!-- 战局状态与目标面板 -->
+    <section class="hud-panel" aria-label="本局进度">
+      <div class="score-block">
+        <span class="hud-label">当前得分</span>
+        <div class="score-value-row">
+          <strong id="hudScore" class="score-num mono">0</strong>
+          <span id="hudComboPill" class="combo-pill hidden">连消 ×2</span>
+        </div>
+        <div class="star-progress-wrap" id="campaignStarWrap">
+          <div class="star-track">
+            <div class="star-fill" id="starProgressFill" style="width: 0%;"></div>
+          </div>
+          <div class="star-milestones mono" id="starMilestones"></div>
+        </div>
+      </div>
+
+      <div class="objectives-block" id="campaignGoals">
+        <span class="hud-label">关卡目标</span>
+        <div class="goal-chips" id="goalChips"></div>
+        <p class="goal-hint" id="levelHint">把下方宝石块放进棋盘，凑满整行或整列即可消融！</p>
+      </div>
+
+      <div class="objectives-block hidden" id="endlessGoals">
+        <span class="hud-label">无尽荣耀纪录</span>
+        <div class="goal-chips">
+          <span class="goal-chip">🏆 最高分 <b id="hudEndlessBest" class="mono">0</b></span>
+          <span class="goal-chip">⚡ 最高连消 <b id="hudEndlessCombo" class="mono">0</b></span>
+          <span class="goal-chip">✨ 本局消行 <b id="hudLinesCleared" class="mono">0</b></span>
+        </div>
+        <p class="goal-hint">每消融 3 行自动充能 1 次「脉冲换块」，冲击无限高分连消！</p>
+      </div>
+
+      <div class="power-block">
+        <button type="button" id="btnShuffleTray" class="btn-shuffle" title="使用脉冲充能更换当前 3 个备选块">
+          <span class="shuffle-top">⚡ 换一批</span>
+          <span class="shuffle-sub mono" id="shuffleStatus">充能 1/2</span>
+        </button>
+        <div class="power-meter" title="每消融 3 行增加 1 次充能（上限 2 次）">
+          <div class="power-meter-fill" id="shuffleMeterFill" style="width: 0%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 主棋盘与备选块托盘 -->
+    <main class="playfield">
+      <div class="board-frame">
+        <canvas id="boardCanvas" aria-label="8乘8星砾棋盘"></canvas>
+      </div>
+
+      <section class="tray-section" aria-label="备选宝石块">
+        <div class="tray-header">
+          <span>备选晶块（可拖拽或点选后落入棋盘）</span>
+          <span id="selectedHint" class="selected-hint"></span>
+        </div>
+        <div class="tray-grid" id="trayGrid">
+          <button type="button" class="tray-slot" data-slot="0" aria-label="备选宝石块 1"></button>
+          <button type="button" class="tray-slot" data-slot="1" aria-label="备选宝石块 2"></button>
+          <button type="button" class="tray-slot" data-slot="2" aria-label="备选宝石块 3"></button>
+        </div>
+      </section>
+    </main>
+
+    <!-- 拖拽漂浮影子 -->
+    <canvas id="dragGhostCanvas" class="drag-ghost hidden" aria-hidden="true"></canvas>
+
+    <!-- 选关弹窗 -->
+    <div id="levelModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="levelModalTitle">
+      <div class="modal-window chapters-modal">
+        <div class="modal-head">
+          <div>
+            <h2 id="levelModalTitle">选择星域关卡</h2>
+            <p class="modal-sub">4 大主题星域 · 24 道精巧棋局 · 收集全部 72 颗星徽 ⭐</p>
+          </div>
+          <button type="button" id="btnCloseLevels" class="btn-close" aria-label="关闭选关面板">✕</button>
+        </div>
+        <div id="chaptersContainer" class="chapters-scroll"></div>
+      </div>
+    </div>
+
+    <!-- 结算弹窗 -->
+    <div id="resultModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <div class="modal-window result-modal">
+        <div class="result-badge" id="resultBadge">关卡达成</div>
+        <div class="result-stars" id="resultStars" aria-label="星级评价">⭐⭐⭐</div>
+        <h2 id="resultTitle" class="result-title">星域点亮！</h2>
+        <p id="resultDesc" class="result-desc">干得漂亮，全部星核与冰晶已消融。</p>
+        <div class="result-metrics">
+          <div class="result-stat">
+            <span>本局得分</span>
+            <strong id="resultScore" class="mono">0</strong>
+          </div>
+          <div class="result-stat">
+            <span>最高连消</span>
+            <strong id="resultCombo" class="mono">×1</strong>
+          </div>
+          <div class="result-stat">
+            <span>历史最佳</span>
+            <strong id="resultBest" class="mono">0</strong>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button type="button" id="btnResultPrimary" class="btn-result-primary">下一关 →</button>
+          <button type="button" id="btnResultRetry" class="btn-result-secondary">再玩一次</button>
+          <button type="button" id="btnResultChapters" class="btn-result-ghost">选关列表</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="engine.js?v=20261116_2230"></script>
+  <script src="audio.js?v=20261116_2230"></script>
+  <script src="game.js?v=20261116_2230"></script>
+</body>
+</html>

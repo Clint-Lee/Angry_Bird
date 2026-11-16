@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>云檐趣阁网页小游戏平台 - Web Mini-Games Arcade</title>
-    <link rel="stylesheet" href="style.css?v=20261115_2215">
+    <link rel="stylesheet" href="style.css?v=20261116_2230">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -115,30 +115,104 @@
                 </div>
             </section>
 
+            <!-- Second Featured Playable Game: Lumina Grid -->
+            <section class="hero-section puzzle-hero-section">
+                <div class="section-badge puzzle-badge">✨ 全新上线 · 休闲益智新品</div>
+
+                <div class="featured-card puzzle-featured-card">
+                    <div class="card-visual puzzle-visual">
+                        <div class="visual-badge puzzle-visual-badge">💎 全新原创益智 · 立即开玩</div>
+                        <div class="visual-art puzzle-art-wrap" aria-hidden="true">
+                            <svg class="lumina-art-svg" viewBox="0 0 120 120" fill="none">
+                                <rect x="12" y="12" width="28" height="28" rx="7" fill="#38bdf8" />
+                                <rect x="46" y="12" width="28" height="28" rx="7" fill="#34d399" />
+                                <rect x="80" y="12" width="28" height="28" rx="7" fill="#a78bfa" />
+                                <rect x="12" y="46" width="28" height="28" rx="7" fill="#f59e0b" />
+                                <rect x="46" y="46" width="28" height="28" rx="7" fill="rgba(56,189,248,0.22)" stroke="#7dd3fc" stroke-width="2" />
+                                <path d="M60 51L63 57L69 60L63 63L60 69L57 63L51 60L57 57Z" fill="#fde047" />
+                                <rect x="80" y="46" width="28" height="28" rx="7" fill="#f43f5e" />
+                                <rect x="12" y="80" width="28" height="28" rx="7" fill="rgba(186,230,253,0.24)" stroke="#bae6fd" stroke-width="2" />
+                                <rect x="46" y="80" width="28" height="28" rx="7" fill="#3b82f6" />
+                                <rect x="80" y="80" width="28" height="28" rx="7" fill="#10b981" />
+                            </svg>
+                        </div>
+                        <div class="worlds-pills">
+                            <span class="pill-world lg-c1">🌠 星尘初航</span>
+                            <span class="pill-world lg-c2">💎 翠玉星垣</span>
+                            <span class="pill-world lg-c3">❄️ 极光回廊</span>
+                            <span class="pill-world lg-c4">👑 棱镜神殿</span>
+                        </div>
+                    </div>
+
+                    <div class="card-details">
+                        <div class="card-header">
+                            <div class="game-meta-row">
+                                <span class="tag-genre puzzle-genre">宝石拼盘消融</span>
+                                <span class="tag-version puzzle-ver">Lumina Grid v1.0</span>
+                                <span class="tag-levels">4大星域 · 24关 + 无尽模式</span>
+                            </div>
+                            <h2 class="game-title">星砾方阵 · Lumina Grid</h2>
+                            <p class="game-desc">
+                                拖拽或点选晶石方块落入 <strong>8×8 星砾棋盘</strong>，凑满一整行或一整列即可触发激光消融！独创<strong>「预判消行微光提示」</strong>、横竖交叉十字共振爆破、单/双层霜晶与星核目标，更可切换<strong>无尽连消挑战</strong>冲击高分榜。
+                            </p>
+                        </div>
+
+                        <!-- Live LocalStorage Saved Stats for Lumina Grid -->
+                        <div class="saved-stats-panel">
+                            <div class="stats-title-row">
+                                <span class="title" style="color:#6ee7b7;">💎 星砾方阵存档纪录</span>
+                                <span class="notice">浏览器 LocalStorage 自动同步</span>
+                            </div>
+                            <div class="stats-pills-row">
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">星域总星数</span>
+                                    <span class="bubble-val" id="lgTotalStars">0 / 72 ⭐</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">当前挑战关卡</span>
+                                    <span class="bubble-val highlight" id="lgCurrentLvl">1-1 星尘唤醒</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">无尽最高分</span>
+                                    <span class="bubble-val" id="lgEndlessBest">0 分</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">已解锁进度</span>
+                                    <span class="bubble-val" id="lgUnlockedCount">1 / 24 关</span>
+                                </div>
+                            </div>
+                            <div class="mastery-bar-wrap">
+                                <div class="mastery-meta">
+                                    <span>🌟 全星域三星收集度</span>
+                                    <strong id="lgMasteryPct">0%</strong>
+                                </div>
+                                <div class="mastery-track">
+                                    <div class="mastery-fill lg-mastery-fill" id="lgMasteryFill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="./lumina-grid/" class="btn-play-primary lg-play-btn" id="btnPlayLumina">
+                                <span>✨ 立即开玩 · 星砾方阵</span>
+                                <span class="action-sub" id="btnLuminaSub">(4大星域 24关 / 无尽)</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Upcoming Games Grid -->
             <section class="upcoming-section">
                 <div class="section-header">
                     <div class="section-title-wrap">
                         <h3>🕹️ 更多网页小游戏</h3>
-                        <span class="section-sub">全新 HTML5 微端小游戏矩阵正在全力开发制作中，敬请期待！</span>
+                        <span class="section-sub">《愤怒的小鸟》与《星砾方阵》现已开放畅玩，更多 HTML5 微端游戏持续扩充中！</span>
                     </div>
-                    <span class="badge-pipeline">🚀 开发筹备中 (5款)</span>
+                    <span class="badge-pipeline">🚀 开发筹备中 (4款)</span>
                 </div>
 
                 <div class="upcoming-grid">
-                    <!-- Game Card 1: Sokoban -->
-                    <div class="arcade-card locked">
-                        <div class="card-icon-wrap">
-                            <span class="card-icon">📦</span>
-                            <span class="tag-status">敬请期待 · 研发中</span>
-                        </div>
-                        <h4 class="card-name">经典推箱子 (Sokoban)</h4>
-                        <p class="card-brief">经典益智推箱解谜游戏，还原经典复古逻辑挑战，内含 50+ 脑力关卡设计与步数最优解榜单。</p>
-                        <div class="card-footer">
-                            <span class="genre">益智解谜</span>
-                            <span class="dev-state">核心算法调优</span>
-                        </div>
-                    </div>
 
                     <!-- Game Card 2: Tank 1990 -->
                     <div class="arcade-card locked">
@@ -205,7 +279,7 @@
         </footer>
     </div>
 
-    <script src="arcade.js?v=20261115_2215"></script>
+    <script src="arcade.js?v=20261116_2230"></script>
 </body>
 </html>
 

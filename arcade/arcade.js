@@ -131,6 +131,55 @@
                 } catch (err) { }
             });
         }
+
+        // 5. Lumina Grid live stats sync
+        updateLuminaCard();
+    }
+
+    function updateLuminaCard() {
+        const LG_KEY = 'cloudeave_lumina_grid_v1';
+        const LG_NAMES = [
+            '1-1 星尘唤醒', '1-2 双星呼应', '1-3 角隅晶石', '1-4 十字星路', '1-5 星翼拱门', '1-6 启明星阵 · 试炼',
+            '2-1 霜晶初现', '2-2 翠玉对称', '2-3 八角晶室', '2-4 双桥过涧', '2-5 翡翠花瓣', '2-6 星垣守卫 · 试炼',
+            '3-1 双层坚冰', '3-2 极光阶梯', '3-3 回廊迷镜', '3-4 幻彩织网', '3-5 极境风眼', '3-6 极光圣殿 · 试炼',
+            '4-1 棱镜沙漏', '4-2 四象星枢', '4-3 虚空棋局', '4-4 王冠加冕', '4-5 永夜星炉', '4-6 终极星曜神殿'
+        ];
+        let lg = null;
+        try {
+            const raw = localStorage.getItem(LG_KEY);
+            if (raw) lg = JSON.parse(raw);
+        } catch { lg = null; }
+        if (!lg || typeof lg !== 'object') lg = {};
+
+        const starsObj = (lg.levelStars && typeof lg.levelStars === 'object') ? lg.levelStars : {};
+        const lgStars = Object.values(starsObj).reduce((s, v) => s + (Number(v) || 0), 0);
+        const lgIdx = Math.max(0, Math.min(23, Number(lg.currentLevelIndex) || 0));
+        const lgUnlocked = Math.max(1, Math.min(24, Number(lg.unlockedLevel) || 1));
+        const lgBest = Math.max(0, Number(lg.endlessHighScore) || 0);
+        const lgPct = Math.round((lgStars / 72) * 100);
+
+        const starsEl = document.getElementById('lgTotalStars');
+        if (starsEl) starsEl.innerText = `${lgStars} / 72 ⭐`;
+        const lvlEl = document.getElementById('lgCurrentLvl');
+        if (lvlEl) lvlEl.innerText = LG_NAMES[lgIdx] || '1-1 星尘唤醒';
+        const bestEl = document.getElementById('lgEndlessBest');
+        if (bestEl) bestEl.innerText = `${lgBest.toLocaleString()} 分`;
+        const unlockEl = document.getElementById('lgUnlockedCount');
+        if (unlockEl) unlockEl.innerText = `${lgUnlocked} / 24 关`;
+        const pctEl = document.getElementById('lgMasteryPct');
+        if (pctEl) pctEl.innerText = `${lgPct}%`;
+        const fillEl = document.getElementById('lgMasteryFill');
+        if (fillEl) fillEl.style.width = `${lgPct}%`;
+
+        const luminaSub = document.getElementById('btnLuminaSub');
+        if (luminaSub) luminaSub.innerText = lgStars > 0 ? `(继续 ${LG_NAMES[lgIdx]})` : '(4大星域 24关 / 无尽)';
+
+        const btnLumina = document.getElementById('btnPlayLumina');
+        if (btnLumina) {
+            btnLumina.href = window.location.pathname.includes('/games/arcade')
+                ? '/games/arcade/lumina-grid/'
+                : './lumina-grid/';
+        }
     }
 
     if (document.readyState === 'loading') {
