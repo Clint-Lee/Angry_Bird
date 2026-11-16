@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>萌果奇缘 · Fruit Merge | 云檐趣阁小游戏厅</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='28' fill='%2322c55e'/><path d='M18 12Q22 32 18 52M32 6Q35 32 32 58M46 12Q48 32 46 52' stroke='%2315803d' stroke-width='4' fill='none'/></svg>">
+    <link rel="stylesheet" href="style.css?v=20261116_2335">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="fm-shell">
+        <!-- Top Header -->
+        <header class="fm-topbar">
+            <div class="top-left">
+                <a href="../" class="btn-pill btn-back" id="btnBackArcade">← 大厅</a>
+                <div class="brand-cluster">
+                    <span class="brand-emblem" aria-hidden="true">🍉</span>
+                    <div>
+                        <h1>萌果奇缘 · Fruit Merge</h1>
+                        <span class="brand-sub" id="subtitleLabel">2D物理甜心大合成</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="top-controls">
+                <div class="seg-group" role="tablist" aria-label="游戏模式">
+                    <button class="seg-btn active" id="btnModeCampaign" data-mode="campaign">闯关模式</button>
+                    <button class="seg-btn" id="btnModeEndless" data-mode="endless">无尽大西瓜</button>
+                </div>
+                <button class="btn-pill btn-theme" id="btnToggleTheme" title="切换鲜果/萌宠画风">
+                    <span id="themeBadgeIcon">🍓</span>
+                    <span id="themeBadgeLabel">鲜果</span>
+                </button>
+                <button class="btn-pill" id="btnLevels" title="选择关卡">关卡</button>
+                <button class="btn-pill" id="btnRestart" title="重新开始本局">重开</button>
+                <button class="btn-pill btn-icon" id="btnMute" aria-label="切换音效" title="开启或关闭音效">🔊</button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="fm-stage-grid">
+            <!-- Side Panel (Desktop Left / Mobile Compact Strip) -->
+            <aside class="fm-side-panel">
+                <div class="score-duo">
+                    <div class="hud-card score-card">
+                        <span class="hud-k">当前得分</span>
+                        <strong class="hud-v tabular" id="scoreVal">0</strong>
+                    </div>
+                    <div class="hud-card target-card">
+                        <span class="hud-k" id="goalLabel">最高纪录</span>
+                        <strong class="hud-v tabular" id="goalVal">0</strong>
+                    </div>
+                    <div class="hud-card next-card">
+                        <span class="hud-k">即将掉落</span>
+                        <div class="next-preview-wrap">
+                            <canvas id="nextPreviewCanvas" width="60" height="60"></canvas>
+                            <span class="next-name" id="nextNameText">红草莓</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mission Banner (Visible in Campaign / Shows Combo in Endless) -->
+                <div class="mission-card" id="missionCard">
+                    <div class="mission-head">
+                        <span class="mission-pill" id="stagePill">1-1 樱桃初遇</span>
+                        <span class="mission-moves" id="movesBadge">不限步数</span>
+                    </div>
+                    <p class="mission-desc" id="missionDesc">合成 1 颗红富士 (5阶)</p>
+                    <div class="danger-meter-wrap" id="dangerMeterWrap">
+                        <span>警戒线安全</span>
+                        <div class="danger-track"><div class="danger-fill" id="dangerFill"></div></div>
+                    </div>
+                </div>
+
+                <!-- 11-Tier Evolution Chain Guide -->
+                <div class="dex-card" id="dexCard">
+                    <div class="dex-head">
+                        <span>进化路线图鉴</span>
+                        <span class="dex-tip">同色触碰合高阶</span>
+                    </div>
+                    <div class="dex-strip" id="dexStrip"></div>
+                </div>
+            </aside>
+
+            <!-- Center Interactive Glass Jar -->
+            <section class="fm-jar-column">
+                <div class="jar-frame" id="jarFrame">
+                    <canvas id="gameCanvas" width="420" height="620" aria-label="萌果合成玻璃罐画布"></canvas>
+                    <div class="tool-banner" id="toolBanner" hidden>
+                        <span id="toolBannerText">点击罐内任意果实即可使用道具</span>
+                        <button class="banner-cancel" id="btnCancelTool">取消</button>
+                    </div>
+                    <div class="combo-float-pill" id="comboPill" hidden>连消 ×2</div>
+                </div>
+
+                <!-- Tactical Rescue Tools Dock -->
+                <div class="tools-dock">
+                    <button class="tool-btn" id="toolWand" data-tool="wand" title="升阶魔棒：直接将任意未满级果实升一阶">
+                        <span class="tool-ico">🪄</span>
+                        <span class="tool-meta">
+                            <b>升阶魔棒</b>
+                            <small>点选+1阶</small>
+                        </span>
+                        <span class="tool-count" id="countWand">1</span>
+                    </button>
+                    <button class="tool-btn" id="toolSpoon" data-tool="spoon" title="美味小勺：挖走一颗卡位的小果实">
+                        <span class="tool-ico">🥄</span>
+                        <span class="tool-meta">
+                            <b>美味小勺</b>
+                            <small>点选移除</small>
+                        </span>
+                        <span class="tool-count" id="countSpoon">1</span>
+                    </button>
+                    <button class="tool-btn" id="toolShake" data-tool="shake" title="晃动果篮：摇散堆积触发连锁合成">
+                        <span class="tool-ico">🌀</span>
+                        <span class="tool-meta">
+                            <b>晃一晃</b>
+                            <small>震荡重排</small>
+                        </span>
+                        <span class="tool-count" id="countShake">1</span>
+                    </button>
+                    <div class="energy-pill" title="每次合成充能 +1，满 12 格自动补充 1 枚道具">
+                        <div class="energy-head">
+                            <span>⚡ 补给充能</span>
+                            <b id="energyText">0/12</b>
+                        </div>
+                        <div class="energy-track"><div class="energy-fill" id="energyFill"></div></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Level Selector Modal -->
+    <div class="fm-modal-backdrop" id="levelsModal" hidden>
+        <div class="fm-modal fm-levels-modal" role="dialog" aria-modal="true" aria-labelledby="levelsModalTitle">
+            <div class="modal-head">
+                <div>
+                    <h2 id="levelsModalTitle">果园闯关地图 · 3 大主题 12 关</h2>
+                    <p class="modal-sub" id="levelsSummaryText">已集齐 0 / 36 ⭐</p>
+                </div>
+                <button class="modal-close" id="btnCloseLevels" aria-label="关闭关卡列表">✕</button>
+            </div>
+            <div class="chapters-scroll" id="chaptersContainer"></div>
+        </div>
+    </div>
+
+    <!-- Result Modal (Win / Game Over) -->
+    <div class="fm-modal-backdrop" id="resultModal" hidden>
+        <div class="fm-modal fm-result-modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+            <div class="result-badge" id="resultEmoji">🎉</div>
+            <h2 id="resultTitle">完美丰收！</h2>
+            <p class="result-sub" id="resultSub">成功达成甜心进化目标</p>
+            <div class="result-stars" id="resultStars">
+                <span class="r-star">⭐</span>
+                <span class="r-star">⭐</span>
+                <span class="r-star">⭐</span>
+            </div>
+            <div class="result-stats">
+                <div class="rs-box"><span>本局得分</span><strong id="resScore">0</strong></div>
+                <div class="rs-box"><span>最高连消</span><strong id="resCombo">0</strong></div>
+                <div class="rs-box"><span>合成次数</span><strong id="resMerges">0</strong></div>
+            </div>
+            <div class="result-actions">
+                <button class="btn-action secondary" id="btnResultRetry">再来一局</button>
+                <button class="btn-action primary" id="btnResultNext">下一关 →</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="engine.js?v=20261116_2335"></script>
+    <script src="audio.js?v=20261116_2335"></script>
+    <script src="game.js?v=20261116_2335"></script>
+</body>
+</html>
