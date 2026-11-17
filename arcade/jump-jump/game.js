@@ -315,6 +315,14 @@
             ctx.lineTo(s.x, s.y); ctx.lineTo(w.x, w.y);
             ctx.closePath();
             ctx.stroke();
+        } else if (p.style === 'coaster') {
+            // Subtle warm espresso coffee ring & center dot on ceramic top
+            const ctr = iso(p.x, baseY, p.z);
+            ctx.strokeStyle = 'rgba(180, 120, 72, 0.35)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(ctr.x, ctr.y, hw * 0.48, hw * 0.27, 0, 0, Math.PI * 2);
+            ctx.stroke();
         } else if (p.style === 'minimal' || p.style === 'cream') {
             // Clean architectural double-bevel band on side
             const bandTop = baseY - (baseY - botY) * 0.24;
@@ -549,11 +557,16 @@
             ctx.lineWidth = 1.2;
             ctx.stroke();
 
-            // Subtle inner cylinder bevel
-            ctx.strokeStyle = 'rgba(15, 23, 42, 0.07)';
+            // Subtle inner cylinder bevel + manhole radial slots on slate round pedestals
+            ctx.strokeStyle = p.style === 'slate' ? 'rgba(255,255,255,0.22)' : 'rgba(15, 23, 42, 0.08)';
             ctx.beginPath();
             ctx.ellipse(topC.x, topC.y, rx * 0.72, ry * 0.72, 0, 0, Math.PI * 2);
             ctx.stroke();
+            if (p.style === 'slate') {
+                ctx.beginPath();
+                ctx.ellipse(topC.x, topC.y, rx * 0.38, ry * 0.38, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
         } else {
             const hw = p.halfW;
             const hd = p.halfD;
@@ -784,7 +797,13 @@
         drawBackground();
         if (game) {
             const s = game.session;
-            const curPlat = s.platforms[s.currentIndex];
+            const chargeRatio = s.state === 'charging' ? (s.chargeTime / CONFIG.maxChargeSec) : 0;
+            const camZoom = 1 + chargeRatio * 0.045;
+            ctx.save();
+            ctx.translate(W * 0.5, H * 0.58);
+            ctx.scale(camZoom, camZoom);
+            ctx.translate(-W * 0.5, -H * 0.58);
+
             // Painter's order: render back-to-front by isometric depth (x + z descending)
             // When falling below a block surface, sort player depth alongside platforms for natural occlusion!
             const items = s.platforms.map((p) => ({ kind: 'plat', depth: p.x + p.z, p }));
@@ -797,8 +816,23 @@
                 if (it.kind === 'plat') drawPlatform(it.p);
                 else drawPlayerPiece();
             }
+
+            // Floating music notes while waiting on vinyl turntable
+            const curPlat = s.platforms[s.currentIndex];
+            if (s.state === 'idle' && curPlat && curPlat.special && curPlat.special.kind === 'vinyl' && s.stayTimer > 0.1) {
+                const pt = iso(curPlat.x, 42 + ((clock * 28) % 28), curPlat.z);
+                ctx.save();
+                ctx.font = 'bold 16px sans-serif';
+                ctx.fillStyle = '#0f172a';
+                ctx.fillText('♪', pt.x + Math.sin(clock * 5) * 10, pt.y);
+                ctx.restore();
+            }
+
+            updateAndDrawFx(dt);
+            ctx.restore();
+        } else {
+            updateAndDrawFx(dt);
         }
-        updateAndDrawFx(dt);
 
         requestAnimationFrame(frame);
     }

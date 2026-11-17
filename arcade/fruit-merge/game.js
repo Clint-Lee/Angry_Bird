@@ -723,16 +723,33 @@
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, W, H);
 
-        // Wooden shelf floor
-        ctx.fillStyle = '#d97706';
+        // Wooden plank tabletop base with subtle grain
+        ctx.fillStyle = '#c47b3b';
         ctx.fillRect(0, E.ARENA.floorY, W, H - E.ARENA.floorY);
-        ctx.fillStyle = '#b45309';
-        ctx.fillRect(0, E.ARENA.floorY, W, 3);
+        ctx.fillStyle = '#9a5822';
+        ctx.fillRect(0, E.ARENA.floorY, W, 3.5);
+        ctx.strokeStyle = 'rgba(120, 53, 15, 0.22)';
+        ctx.lineWidth = 1;
+        for (let wx = 24; wx < W; wx += 48) {
+            ctx.beginPath();
+            ctx.moveTo(wx, E.ARENA.floorY + 3);
+            ctx.lineTo(wx, H);
+            ctx.stroke();
+        }
 
-        // Subtle side wall borders inside jar
-        ctx.fillStyle = 'rgba(217, 119, 6, 0.11)';
+        // Beveled frosted glass jar borders & Fever shimmer when combo >= 3
+        const feverActive = world && world.combo >= 3 && world.comboTimer > 0;
+        ctx.fillStyle = feverActive ? 'rgba(251, 191, 36, 0.16)' : 'rgba(255, 255, 255, 0.34)';
         ctx.fillRect(0, 0, E.ARENA.wallL, E.ARENA.floorY);
         ctx.fillRect(E.ARENA.wallR, 0, W - E.ARENA.wallR, E.ARENA.floorY);
+        ctx.strokeStyle = feverActive ? 'rgba(245, 158, 11, 0.72)' : 'rgba(180, 130, 86, 0.35)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(E.ARENA.wallL, 12);
+        ctx.lineTo(E.ARENA.wallL, E.ARENA.floorY);
+        ctx.moveTo(E.ARENA.wallR, 12);
+        ctx.lineTo(E.ARENA.wallR, E.ARENA.floorY);
+        ctx.stroke();
 
         // Danger threshold line
         const pulse = world && world.inDanger ? (0.45 + 0.45 * Math.sin(performance.now() * 0.012)) : 0.32;
@@ -751,27 +768,50 @@
             return;
         }
 
-        // Drop guide line & ghost prediction ring when playing without tool armed
+        // Drop guide line & ghost prediction ring + matching-tier highlight
         if (world.status === 'playing' && !activeTool && (world.dropsLeft === null || world.dropsLeft > 0)) {
             const pred = world.predictDropY(world.aimX, world.currentTier);
             const curDef = E.TIERS[world.currentTier];
 
             ctx.save();
             ctx.setLineDash([4, 5]);
-            ctx.strokeStyle = 'rgba(234, 88, 12, 0.35)';
+            ctx.strokeStyle = 'rgba(217, 119, 6, 0.42)';
             ctx.lineWidth = 1.6;
             ctx.beginPath();
             ctx.moveTo(pred.x, E.ARENA.spawnY + curDef.r + 4);
             ctx.lineTo(pred.x, pred.y - curDef.r);
             ctx.stroke();
 
+            // Subtle match pulse on any same-tier fruit reachable around aim column
+            for (const b of world.bodies) {
+                if (b.tier === world.currentTier && !b.frozen && Math.abs(b.x - pred.x) <= b.r + curDef.r + 6) {
+                    const pulseR = b.r + 4 + Math.sin(performance.now() * 0.01) * 2.5;
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'rgba(245, 158, 11, 0.65)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, pulseR, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+
             // Ghost landing circle
             ctx.setLineDash([5, 4]);
             ctx.strokeStyle = curDef.colorA;
-            ctx.globalAlpha = 0.45;
+            ctx.globalAlpha = 0.48;
             ctx.beginPath();
             ctx.arc(pred.x, pred.y, curDef.r, 0, Math.PI * 2);
             ctx.stroke();
+            ctx.restore();
+
+            // Fluffy cloud carrier holding ready fruit at top
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.beginPath();
+            ctx.arc(pred.x - 12, E.ARENA.spawnY - curDef.r - 4, 9, 0, Math.PI * 2);
+            ctx.arc(pred.x, E.ARENA.spawnY - curDef.r - 7, 11, 0, Math.PI * 2);
+            ctx.arc(pred.x + 12, E.ARENA.spawnY - curDef.r - 4, 9, 0, Math.PI * 2);
+            ctx.fill();
             ctx.restore();
 
             // Held fruit ready at top
@@ -1123,8 +1163,8 @@
         document.getElementById('themeBadgeIcon').textContent = isCritters ? '🐱' : '🍓';
         document.getElementById('themeBadgeLabel').textContent = isCritters ? '萌宠' : '鲜果';
         document.getElementById('subtitleLabel').textContent = isCritters
-            ? '经典无尽物理萌宠大合成 · 冲击历史 MAX 高分'
-            : '经典无尽物理甜心大合成 · 冲击历史 MAX 高分';
+            ? '萌宠物理合成 · 冲击历史最高分'
+            : '鲜果物理合成 · 冲击历史最高分';
     }
 
     document.getElementById('btnToggleTheme').addEventListener('click', () => {

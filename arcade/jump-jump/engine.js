@@ -31,6 +31,7 @@
         { style: 'minimal', colorTop: '#ffffff', colorLeft: '#dce3ec', colorRight: '#bec8d6' },
         { style: 'wood',    colorTop: '#ecd7bc', colorLeft: '#cfa880', colorRight: '#b48a62' },
         { style: 'grid',    colorTop: '#f1f5f9', colorLeft: '#cbd5e1', colorRight: '#94a3b8' },
+        { style: 'coaster', colorTop: '#fffaf3', colorLeft: '#e7dfd3', colorRight: '#cfc3b0' },
         { style: 'slate',   colorTop: '#64748b', colorLeft: '#475569', colorRight: '#334155' },
         { style: 'sage',    colorTop: '#d7ebe0', colorLeft: '#a8cfb9', colorRight: '#82b398' },
         { style: 'cream',   colorTop: '#fbf5e8', colorLeft: '#e2d5bc', colorRight: '#c7b79a' }

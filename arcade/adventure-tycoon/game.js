@@ -15,6 +15,7 @@
         goldVal: document.getElementById('goldVal'),
         repVal: document.getElementById('repVal'),
         maxGoldVal: document.getElementById('maxGoldVal'),
+        btnRushBell: document.getElementById('btnRushBell'),
         btnPrestige: document.getElementById('btnPrestige'),
         btnMute: document.getElementById('btnMute'),
         vipBanner: document.getElementById('vipBanner'),
@@ -104,9 +105,22 @@
         el.repVal.textContent = String(st.reputation);
         el.maxGoldVal.textContent = `${st.maxGoldHeld.toLocaleString()} G`;
         el.btnMute.textContent = st.muted ? '🔇' : '🔊';
-        el.shelfCapText.textContent = `货架上限: ${engine.getShelfCap()}`;
-        const mult = ((1 + st.prestigeCount * 0.35) * (1 + st.upgrades.priceBoost * 0.18)).toFixed(2);
+        el.shelfCapText.textContent = `上限 ${engine.getShelfCap()}`;
+        const mult = ((1 + st.prestigeCount * 0.35) * (1 + st.upgrades.priceBoost * 0.18) * (sim.rushTimer > 0 ? 1.35 : 1)).toFixed(2);
         el.prestigeMultText.textContent = `售价倍率 ×${mult}`;
+
+        if (el.btnRushBell) {
+            if (sim.rushTimer > 0) {
+                el.btnRushBell.disabled = true;
+                el.btnRushBell.textContent = `热卖中 ${Math.ceil(sim.rushTimer)}s`;
+            } else if (sim.rushCooldown > 0) {
+                el.btnRushBell.disabled = true;
+                el.btnRushBell.textContent = `冷却 ${Math.ceil(sim.rushCooldown)}s`;
+            } else {
+                el.btnRushBell.disabled = false;
+                el.btnRushBell.textContent = '🔔 招客热卖';
+            }
+        }
 
         el.btnPrestige.disabled = st.totalGoldEarned < 3000;
         el.btnPrestige.title = st.totalGoldEarned >= 3000
@@ -255,13 +269,23 @@
                     const md = MATERIALS.find((x) => x.id === m);
                     return `${md ? md.icon : ''}+${q}`;
                 }).join(' ');
-                popups.push({ x: 105, y: 120, text: `凯旋! ${msg}`, color: '#4ade80', life: 1.2 });
+                popups.push({
+                    x: 105, y: 120,
+                    text: ev.chestGold > 0 ? `${msg} +宝箱 ${ev.chestGold}G!` : `凯旋! ${msg}`,
+                    color: ev.chestGold > 0 ? '#facc15' : '#4ade80',
+                    life: 1.3
+                });
             } else if (ev.type === 'crafted') {
                 changed = true;
                 audio.playCraft();
                 const rDef = RECIPES.find((r) => r.id === ev.recipeId);
-                spawnBurst(305, 185, '#38bdf8', 10);
-                popups.push({ x: 305, y: 140, text: `${rDef ? rDef.icon : ''} +1 上架`, color: '#38bdf8', life: 0.95 });
+                spawnBurst(305, 185, ev.masterwork ? '#facc15' : '#38bdf8', ev.masterwork ? 16 : 10);
+                popups.push({
+                    x: 305, y: 140,
+                    text: ev.masterwork ? `★ 精品锻造 +${ev.qty}!` : `${rDef ? rDef.icon : ''} +1 上架`,
+                    color: ev.masterwork ? '#fde047' : '#38bdf8',
+                    life: 1.05
+                });
             } else if (ev.type === 'sale') {
                 changed = true;
                 audio.playCoin();
@@ -333,6 +357,17 @@
         }
     });
 
+    if (el.btnRushBell) {
+        el.btnRushBell.addEventListener('click', () => {
+            if (engine.triggerRush()) {
+                audio.playCoin();
+                spawnBurst(490, 145, '#facc15', 18);
+                popups.push({ x: 490, y: 118, text: '🔔 招客热卖! 售价+35%', color: '#fde047', life: 1.4 });
+                renderPanels();
+            }
+        });
+    }
+
     el.btnPrestige.addEventListener('click', () => {
         if (engine.prestigeRebirth()) {
             audio.playLoot();
@@ -350,160 +385,204 @@
         renderPanels();
     });
 
+    // Hand-drawn RPG item artwork for shelves & bubbles
+    function drawItemArt(id, x, y, scale = 1) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        if (id === 'potion') {
+            ctx.fillStyle = '#e11d48';
+            ctx.beginPath(); ctx.arc(0, 3, 9, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(-3.5, -9, 7, 5);
+            ctx.fillStyle = '#d97706';
+            ctx.fillRect(-3, -12, 6, 3);
+            ctx.fillStyle = 'rgba(255,255,255,0.45)';
+            ctx.beginPath(); ctx.arc(-3, 0, 2.5, 0, Math.PI * 2); ctx.fill();
+        } else if (id === 'sword') {
+            ctx.rotate(0.5);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.moveTo(0, -15); ctx.lineTo(3.5, -9); ctx.lineTo(3, 5); ctx.lineTo(-3, 5); ctx.lineTo(-3.5, -9);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(-8, 5, 16, 3);
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(-2, 8, 4, 7);
+        } else if (id === 'staff') {
+            ctx.rotate(0.35);
+            ctx.fillStyle = '#92400e';
+            ctx.fillRect(-2, -6, 4, 21);
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath(); ctx.arc(0, -10, 6.5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#e0f2fe';
+            ctx.beginPath(); ctx.arc(-2, -12, 2, 0, Math.PI * 2); ctx.fill();
+        } else if (id === 'armor') {
+            ctx.fillStyle = '#b91c1c';
+            ctx.beginPath();
+            ctx.moveTo(-10, -10); ctx.lineTo(-4, -12); ctx.lineTo(0, -7); ctx.lineTo(4, -12); ctx.lineTo(10, -10);
+            ctx.lineTo(9, 10); ctx.lineTo(-9, 10);
+            ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2; ctx.stroke();
+        }
+        ctx.restore();
+    }
+
     // Canvas Living World Renderer
     function drawScene() {
         const st = engine.state;
         const sim = engine.sim;
+        const rushOn = sim.rushTimer > 0;
 
-        // 1. Exterior Dungeon Sky -> Warm Wooden Shop Floor -> Street
+        // 1. Exterior Stone Dungeon Courtyard -> Cozy Warm Timber Tavern Shop
         const g = ctx.createLinearGradient(0, 0, W, 0);
-        g.addColorStop(0, '#0f1c2e');
-        g.addColorStop(0.29, '#192338');
-        g.addColorStop(0.31, '#312119');
-        g.addColorStop(0.95, '#251a14');
+        g.addColorStop(0, '#121826');
+        g.addColorStop(0.3, '#1a2030');
+        g.addColorStop(0.31, '#2b1e16');
+        g.addColorStop(1, '#211610');
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, W, H);
 
-        // Floor plank grid lines
+        // Warm plank floorboards
         ctx.fillStyle = '#3b281d';
-        ctx.fillRect(210, 210, W - 210, H - 210);
-        ctx.strokeStyle = 'rgba(0,0,0,0.22)';
-        for (let py = 230; py < H; py += 26) {
-            ctx.beginPath();
-            ctx.moveTo(210, py);
-            ctx.lineTo(W, py);
-            ctx.stroke();
+        ctx.fillRect(212, 212, W - 212, H - 212);
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+        ctx.lineWidth = 1;
+        for (let py = 232; py < H; py += 24) {
+            ctx.beginPath(); ctx.moveTo(212, py); ctx.lineTo(W, py); ctx.stroke();
         }
+        // Separating timber beam column between dungeon portal & shop
+        ctx.fillStyle = '#4a3121';
+        ctx.fillRect(204, 0, 12, H);
 
-        // 2. Left Zone: Glowing Dungeon Portal
+        // 2. Left Zone: Stone Archway Dungeon Gate & Animated Knight Hero
         const zDef = ZONES.find((z) => z.id === st.activeZone) || ZONES[0];
         ctx.save();
-        ctx.translate(105, 175);
-        const pg = ctx.createRadialGradient(0, 0, 8, 0, 0, 62);
-        pg.addColorStop(0, '#4ade80');
-        pg.addColorStop(0.55, 'rgba(56, 189, 248, 0.45)');
-        pg.addColorStop(1, 'rgba(15, 23, 42, 0)');
+        ctx.translate(104, 175);
+        // Stone archway pillar silhouette
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(0, -14, 52, Math.PI, 0);
+        ctx.lineTo(52, 62); ctx.lineTo(-52, 62);
+        ctx.closePath();
+        ctx.fill();
+        const pg = ctx.createRadialGradient(0, 8, 6, 0, 8, 42);
+        pg.addColorStop(0, zDef.id === 'peak' ? '#fb7185' : '#34d399');
+        pg.addColorStop(0.65, 'rgba(56, 189, 248, 0.35)');
+        pg.addColorStop(1, '#0f172a');
         ctx.fillStyle = pg;
         ctx.beginPath();
-        ctx.arc(0, 0, 62, 0, Math.PI * 2);
+        ctx.arc(0, 8, 38, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.rotate(clock * (sim.expedition.active ? 2.8 : 0.7));
-        ctx.strokeStyle = '#34d399';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([10, 6]);
-        ctx.beginPath();
-        ctx.arc(0, 0, 42, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.rotate(clock * (sim.expedition.active ? 2.6 : 0.6));
+        ctx.strokeStyle = '#6ee7b7';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath(); ctx.arc(0, 8, 30, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
 
-        // Hero chibis walking into portal
+        // Knight Sprite with cape & sword + shield
         const expProg = sim.expedition.active ? sim.expedition.progress / sim.expedition.duration : 0;
-        const heroX = sim.expedition.active ? (180 - Math.sin(expProg * Math.PI) * 75) : 175;
-        const heroY = 235 + Math.abs(Math.sin(clock * 6)) * (sim.expedition.active ? -5 : -1);
-        ctx.fillStyle = '#38bdf8';
-        ctx.beginPath();
-        ctx.arc(heroX, heroY - 12, 12, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fde047';
-        ctx.fillRect(heroX - 7, heroY, 14, 16);
+        const heroX = sim.expedition.active ? (176 - Math.sin(expProg * Math.PI) * 68) : 172;
+        const heroY = 238 + Math.abs(Math.sin(clock * 7)) * (sim.expedition.active ? -4 : -1);
+        ctx.save();
+        ctx.translate(heroX, heroY);
+        ctx.fillStyle = '#b91c1c'; // Cape
+        ctx.beginPath(); ctx.moveTo(-4, -4); ctx.lineTo(14, 16); ctx.lineTo(-2, 16); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#64748b'; // Armor chest + helmet
+        ctx.fillRect(-7, 0, 14, 16);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.beginPath(); ctx.arc(0, -10, 9.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ef4444'; // Helmet plume
+        ctx.fillRect(-2, -23, 5, 5);
+        ctx.restore();
 
         ctx.fillStyle = '#e2e8f0';
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`${zDef.icon} ${zDef.name}`, 105, 86);
-        // Progress bar under portal
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(45, 265, 120, 10);
-        ctx.fillStyle = '#4ade80';
-        ctx.fillRect(45, 265, 120 * expProg, 10);
+        ctx.fillText(`${zDef.icon} ${zDef.name}`, 104, 82);
+        ctx.fillStyle = 'rgba(0,0,0,0.48)';
+        ctx.fillRect(44, 266, 120, 9);
+        ctx.fillStyle = '#34d399';
+        ctx.fillRect(44, 266, 120 * expProg, 9);
         ctx.fillStyle = '#94a3b8';
         ctx.font = '11px sans-serif';
-        ctx.fillText(sim.expedition.active ? '探险中 (点击加速)' : '点击传送门出发!', 105, 294);
+        ctx.fillText(sim.expedition.active ? '探险中 (点击加速)' : '点击传送门出发', 104, 292);
 
-        // 3. Center Zone: Alchemy Forge Workbench & Display Shelves
-        ctx.fillStyle = '#5c3c28';
-        ctx.strokeStyle = '#d97706';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(235, 145, 140, 72, 10);
-        ctx.fill();
-        ctx.stroke();
+        // 3. Center Zone: Brick Alchemy Cauldron & Display Shelves with Drawn Gear
+        // Hearth brick backdrop
+        ctx.fillStyle = '#473024';
+        ctx.beginPath(); ctx.roundRect(236, 134, 148, 86, 10); ctx.fill();
+        // Brass simmering cauldron
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath(); ctx.arc(310, 178, 22, 0, Math.PI); ctx.fill();
+        ctx.fillStyle = sim.crafting.active ? '#34d399' : '#0ea5e9';
+        ctx.beginPath(); ctx.ellipse(310, 178, 22, 6, 0, 0, Math.PI * 2); ctx.fill();
 
         const craftProg = sim.crafting.active ? sim.crafting.progress / sim.crafting.duration : 0;
         ctx.fillStyle = '#fde68a';
-        ctx.font = 'bold 12px sans-serif';
-        ctx.fillText('⚗️ 工坊炼造台', 305, 166);
+        ctx.font = 'bold 11.5px sans-serif';
         if (sim.crafting.active) {
             const rDef = RECIPES.find((r) => r.id === sim.crafting.recipeId);
-            ctx.fillText(`${rDef ? rDef.icon : ''} 炼制中...`, 305, 186);
+            ctx.fillText(`锻造 ${rDef ? rDef.name : ''}`, 310, 154);
         } else {
-            ctx.fillStyle = '#94a3b8';
-            ctx.fillText('点击炼造 / 催促', 305, 186);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillText('炼造台（点击加火）', 310, 154);
         }
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(250, 196, 110, 9);
+        ctx.fillRect(256, 206, 108, 7);
         ctx.fillStyle = '#38bdf8';
-        ctx.fillRect(250, 196, 110 * craftProg, 9);
+        ctx.fillRect(256, 206, 108 * craftProg, 7);
 
-        // Shelf icons along top of shop
+        // Wooden Top Display Shelves with Custom Drawn RPG Gear
         RECIPES.forEach((r, idx) => {
-            const sx = 240 + idx * 96;
-            const sy = 56;
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
-            ctx.strokeStyle = 'rgba(251, 191, 36, 0.32)';
-            ctx.lineWidth = 1.4;
+            const sx = 236 + idx * 106;
+            const sy = 44;
+            ctx.fillStyle = '#201610';
+            ctx.strokeStyle = rushOn ? '#facc15' : 'rgba(217, 119, 6, 0.35)';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.roundRect(sx, sy, 84, 54, 10);
+            ctx.roundRect(sx, sy, 92, 56, 8);
             ctx.fill();
             ctx.stroke();
-            ctx.font = '20px sans-serif';
-            ctx.fillText(r.icon, sx + 22, sy + 32);
+            drawItemArt(r.id, sx + 28, sy + 28, 1.05);
             ctx.font = 'bold 13px sans-serif';
             ctx.fillStyle = (st.stock[r.id] || 0) > 0 ? '#4ade80' : '#fb7185';
-            ctx.fillText(`×${st.stock[r.id] || 0}`, sx + 58, sy + 34);
+            ctx.fillText(`×${st.stock[r.id] || 0}`, sx + 66, sy + 33);
         });
 
-        // 4. Right Zone: Town Customers Queue
-        ctx.fillStyle = '#475569';
-        ctx.fillRect(420, 145, 230, 14);
+        // 4. Right Zone: Oak Shop Counter + Customers
+        ctx.fillStyle = rushOn ? '#b45309' : '#634129';
+        ctx.fillRect(422, 146, 232, 14);
         ctx.fillStyle = '#fde68a';
-        ctx.font = 'bold 12px sans-serif';
-        ctx.fillText('💰 结账柜台（点击待购顾客收银）', 535, 136);
+        ctx.font = 'bold 11.5px sans-serif';
+        ctx.fillText(rushOn ? '🔥 热卖时段! 点击顾客秒结账' : '结账柜台（点击待购顾客收银）', 538, 136);
 
         for (const c of sim.customers) {
             const bob = Math.sin(clock * 7 + c.id) * 2.5;
             ctx.save();
             ctx.translate(c.x, c.y + bob);
             ctx.fillStyle = c.coatColor;
-            ctx.beginPath();
-            ctx.roundRect(-12, -8, 24, 24, 6);
-            ctx.fill();
+            ctx.beginPath(); ctx.roundRect(-12, -8, 24, 24, 6); ctx.fill();
             ctx.fillStyle = '#fde68a';
-            ctx.beginPath();
-            ctx.arc(0, -16, 10, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(0, -16, 9.5, 0, Math.PI * 2); ctx.fill();
+            // Distinct adventurer hood/hat per ID
+            ctx.fillStyle = c.coatColor;
+            ctx.beginPath(); ctx.arc(0, -19, 9.5, Math.PI, 0); ctx.fill();
 
             if (c.phase === 'waiting') {
-                const rDef = RECIPES.find((r) => r.id === c.desiredId) || RECIPES[0];
                 const hasStock = (st.stock[c.desiredId] || 0) > 0;
-                // Speech bubble
                 ctx.fillStyle = hasStock ? '#ecfdf5' : '#fff1f2';
                 ctx.strokeStyle = hasStock ? '#22c55e' : '#fb7185';
                 ctx.lineWidth = 1.8;
-                ctx.beginPath();
-                ctx.roundRect(-20, -56, 40, 26, 8);
-                ctx.fill();
-                ctx.stroke();
-                ctx.font = '15px sans-serif';
-                ctx.fillText(rDef.icon, 0, -38);
+                ctx.beginPath(); ctx.roundRect(-19, -58, 38, 28, 7); ctx.fill(); ctx.stroke();
+                drawItemArt(c.desiredId, 0, -44, 0.85);
 
-                // Patience bar
                 const ratio = Math.max(0, c.patience / c.maxPatience);
                 ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                ctx.fillRect(-16, 20, 32, 5);
+                ctx.fillRect(-15, 20, 30, 5);
                 ctx.fillStyle = ratio > 0.35 ? '#4ade80' : '#fb7185';
-                ctx.fillRect(-16, 20, 32 * ratio, 5);
+                ctx.fillRect(-15, 20, 30 * ratio, 5);
             }
             ctx.restore();
         }
@@ -541,9 +620,22 @@
         const events = engine.step(dt);
         if (events.length > 0) handleSimEvents(events);
 
-        // Refresh VIP countdown & particle decay cleanly
+        // Refresh VIP & Rush Bell countdown cleanly
         if (engine.sim.vipOrder) {
             el.vipTimer.textContent = `${Math.ceil(engine.sim.vipOrder.timeLeft)}s`;
+        }
+        if (el.btnRushBell) {
+            const sim = engine.sim;
+            if (sim.rushTimer > 0) {
+                el.btnRushBell.disabled = true;
+                el.btnRushBell.textContent = `热卖中 ${Math.ceil(sim.rushTimer)}s`;
+            } else if (sim.rushCooldown > 0) {
+                el.btnRushBell.disabled = true;
+                el.btnRushBell.textContent = `冷却 ${Math.ceil(sim.rushCooldown)}s`;
+            } else if (el.btnRushBell.disabled) {
+                el.btnRushBell.disabled = false;
+                el.btnRushBell.textContent = '🔔 招客热卖';
+            }
         }
         persistTimer += dt;
         if (persistTimer > 4) {

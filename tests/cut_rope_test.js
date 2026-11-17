@@ -19,12 +19,12 @@ function test(name, fn) {
 }
 
 console.log('\n[1] Candy Rope Lab Stages & Scripted Solutions');
-test('2 chapters and 12 handcrafted levels defined cleanly', () => {
-    assert.strictEqual(Engine.CHAPTERS.length, 2);
-    assert.strictEqual(Engine.LEVELS.length, 12);
+test('3 chapters and 18 handcrafted levels defined cleanly', () => {
+    assert.strictEqual(Engine.CHAPTERS.length, 3);
+    assert.strictEqual(Engine.LEVELS.length, 18);
 });
 
-test('All 12 levels win with 3/3 stars via scripted slice/bubble/cushion actions', () => {
+test('All 18 levels win with 3/3 stars via scripted slice/bubble/cushion actions', () => {
     Engine.LEVELS.forEach((lvl, idx) => {
         const s = Engine.createSession(idx);
         const done = new Set();

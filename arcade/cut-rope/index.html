@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>割绳喂怪大作战 Candy Rope Lab · 云栖工坊</title>
-    <link rel="stylesheet" href="style.css?v=20261117_1650">
+    <title>割绳喂怪 · 18关益智物理</title>
+    <link rel="stylesheet" href="style.css?v=20261117_2045">
 </head>
 <body>
     <div class="cr-shell">
         <header class="topbar">
             <div class="top-left">
-                <a href="../index.html" class="nav-pill">← 游戏大厅</a>
+                <a href="../index.html" class="nav-pill">← 大厅</a>
                 <div class="stage-meta">
                     <span class="chapter-pill" id="chapterPill">盒子 1 · 纸盒初遇</span>
                     <h1 id="stageTitle">1-1 · 第一口甜点</h1>
@@ -19,10 +19,10 @@
             <div class="top-right">
                 <div class="star-pill">
                     <span>★</span>
-                    <b id="totalStarsVal">0 / 36</b>
+                    <b id="totalStarsVal">0 / 54</b>
                 </div>
-                <button class="action-pill" id="btnLevels" type="button">选关 (12)</button>
-                <button class="action-pill" id="btnRetry" type="button">↻ 重玩 (R)</button>
+                <button class="action-pill" id="btnLevels" type="button">选关 (18)</button>
+                <button class="action-pill" id="btnRetry" type="button">重玩 (R)</button>
                 <button class="icon-pill" id="btnMute" type="button" title="音效开关">🔊</button>
             </div>
         </header>
@@ -35,7 +35,7 @@
                     <span class="hud-star" id="hs1">☆</span>
                     <span class="hud-star" id="hs2">☆</span>
                 </div>
-                <div class="hint-toast" id="hintToast">划断悬挂糖果的绳子，让糖果垂直落入三星并喂给下方大嘴萌怪！</div>
+                <div class="hint-toast" id="hintToast">划断悬挂糖果的绳子，收齐金星喂给小怪兽</div>
             </div>
         </main>
     </div>
@@ -45,8 +45,7 @@
         <div class="modal-card modal-wide">
             <div class="modal-head">
                 <div>
-                    <div class="eyebrow">CANDY BOXES · 12 PUZZLES</div>
-                    <h2>选择甜品盒子关卡</h2>
+                    <h2>选择甜品盒子（3 盒 · 18 关）</h2>
                 </div>
                 <button class="close-btn" id="btnCloseLevels" type="button">✕</button>
             </div>
@@ -57,20 +56,20 @@
     <!-- 通关 / 失败结算弹窗 -->
     <div class="modal-backdrop hidden" id="resultModal" role="dialog" aria-modal="true">
         <div class="modal-card modal-compact">
-            <div class="res-badge" id="resBadge">DELICIOUS!</div>
-            <h2 id="resTitle">啊呜！太好吃了！</h2>
+            <div class="res-badge" id="resBadge">DELICIOUS</div>
+            <h2 id="resTitle">过关成功</h2>
             <div class="res-stars" id="resStars">★★★</div>
-            <p class="res-desc" id="resDesc">集齐三星，萌怪开心极了！</p>
+            <p class="res-desc" id="resDesc">集齐三星，完美甜品喂食。</p>
             <div class="res-actions">
                 <button class="cta-btn" id="btnResPrimary" type="button">下一关 →</button>
-                <button class="action-pill" id="btnResRetry" type="button">重玩本关 ↻</button>
+                <button class="action-pill" id="btnResRetry" type="button">重玩</button>
             </div>
         </div>
     </div>
 
-    <script src="engine.js?v=20261117_1650"></script>
-    <script src="audio.js?v=20261117_1650"></script>
-    <script src="game.js?v=20261117_1650"></script>
+    <script src="engine.js?v=20261117_2045"></script>
+    <script src="audio.js?v=20261117_2045"></script>
+    <script src="game.js?v=20261117_2045"></script>
 </body>
 </html>
 

@@ -74,6 +74,7 @@
         windPuffs.length = 0;
         el.levelsModal.classList.add('hidden');
         el.resultModal.classList.add('hidden');
+        el.hintToast.style.opacity = '1';
         syncUI();
     }
 
@@ -115,6 +116,9 @@
 
     function handleEvents(events) {
         for (const ev of events) {
+            if (ev.type === 'cut' || ev.type === 'pop' || ev.type === 'blow') {
+                el.hintToast.style.opacity = '0';
+            }
             if (ev.type === 'cut') {
                 audio.playCut();
                 spawnParticles(ev.x, ev.y, '#fde68a', 7, 90);
@@ -309,21 +313,59 @@
     }
 
     function drawBoxBackground() {
+        const chId = session ? session.level.chapter : 1;
         const g = ctx.createLinearGradient(0, 0, 0, ARENA.height);
-        g.addColorStop(0, '#f3dec0');
-        g.addColorStop(0.55, '#e2c496');
-        g.addColorStop(1, '#c59e6b');
+        if (chId === 2) {
+            g.addColorStop(0, '#1e3a5f');
+            g.addColorStop(0.6, '#172e4d');
+            g.addColorStop(1, '#0f1f36');
+        } else if (chId === 3) {
+            g.addColorStop(0, '#3e2c23');
+            g.addColorStop(0.6, '#2e2019');
+            g.addColorStop(1, '#201510');
+        } else {
+            g.addColorStop(0, '#f3dec0');
+            g.addColorStop(0.55, '#e2c496');
+            g.addColorStop(1, '#c59e6b');
+        }
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, ARENA.width, ARENA.height);
 
-        // Soft cardboard crease lines & stitched inner frame
-        ctx.strokeStyle = 'rgba(120, 82, 46, 0.12)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(18, 18, ARENA.width - 36, ARENA.height - 36);
-        ctx.setLineDash([7, 7]);
-        ctx.strokeStyle = 'rgba(120, 82, 46, 0.25)';
-        ctx.strokeRect(12, 12, ARENA.width - 24, ARENA.height - 24);
-        ctx.setLineDash([]);
+        if (chId === 2) {
+            // Subtle engineering blueprint grid
+            ctx.strokeStyle = 'rgba(125, 211, 252, 0.08)';
+            ctx.lineWidth = 1;
+            for (let gx = 30; gx < ARENA.width; gx += 36) {
+                ctx.beginPath(); ctx.moveTo(gx, 16); ctx.lineTo(gx, ARENA.height - 16); ctx.stroke();
+            }
+            for (let gy = 30; gy < ARENA.height; gy += 36) {
+                ctx.beginPath(); ctx.moveTo(16, gy); ctx.lineTo(ARENA.width - 16, gy); ctx.stroke();
+            }
+        } else if (chId === 3) {
+            // Subtle clockwork brass cogs in background
+            for (const [gx, gy, gr, spd] of [[95, 180, 44, 0.25], [375, 290, 56, -0.18], [150, 450, 38, 0.3]]) {
+                ctx.save();
+                ctx.translate(gx, gy);
+                ctx.rotate(clock * spd);
+                ctx.strokeStyle = 'rgba(245, 158, 11, 0.12)';
+                ctx.lineWidth = 6;
+                ctx.setLineDash([8, 6]);
+                ctx.beginPath(); ctx.arc(0, 0, gr, 0, Math.PI * 2); ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(0, 0, gr * 0.65, 0, Math.PI * 2); ctx.stroke();
+                ctx.restore();
+            }
+        } else {
+            // Stitched kraft cardboard seams
+            ctx.strokeStyle = 'rgba(120, 82, 46, 0.14)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(18, 18, ARENA.width - 36, ARENA.height - 36);
+            ctx.setLineDash([7, 7]);
+            ctx.strokeStyle = 'rgba(120, 82, 46, 0.26)';
+            ctx.strokeRect(12, 12, ARENA.width - 24, ARENA.height - 24);
+            ctx.setLineDash([]);
+        }
     }
 
     function drawOmnom() {
@@ -411,16 +453,23 @@
             ctx.restore();
         }
 
-        // Bouncy Pads
+        // Bouncy Pads with Coiled Steel Springs
         for (const pad of session.pads) {
             ctx.save();
             ctx.translate(pad.x, pad.y);
             ctx.rotate(pad.angle);
-            const bounce = pad.bounceTimer > 0 ? 1.12 : 1;
+            const bounce = pad.bounceTimer > 0 ? 1.15 : 1;
             ctx.scale(bounce, 1 / bounce);
-            ctx.fillStyle = '#0ea5e9';
-            ctx.strokeStyle = '#bae6fd';
-            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2.4;
+            for (const sx of [-pad.w * 0.3, pad.w * 0.3]) {
+                ctx.beginPath();
+                ctx.moveTo(sx - 5, 4); ctx.lineTo(sx + 5, 8); ctx.lineTo(sx - 5, 12);
+                ctx.stroke();
+            }
+            ctx.fillStyle = '#0284c7';
+            ctx.strokeStyle = '#e0f2fe';
+            ctx.lineWidth = 2.2;
             ctx.beginPath();
             ctx.roundRect(-pad.w * 0.5, -pad.h * 0.5, pad.w, pad.h, 8);
             ctx.fill();
@@ -428,23 +477,31 @@
             ctx.restore();
         }
 
-        // Magic Top Hat Portals
+        // Magic Top Hat Portals (Velvet Silhouette + Brim + Portal Vortex)
         for (const p of session.portals) {
             ctx.save();
             ctx.translate(p.x, p.y);
-            const g = ctx.createRadialGradient(0, 0, 4, 0, 0, p.r + 6);
-            g.addColorStop(0, '#c084fc');
-            g.addColorStop(0.65, '#4c1d95');
-            g.addColorStop(1, 'rgba(139, 92, 246, 0)');
-            ctx.fillStyle = g;
+            // Hat crown
+            ctx.fillStyle = '#312e81';
+            ctx.strokeStyle = '#c4b5fd';
+            ctx.lineWidth = 1.8;
             ctx.beginPath();
-            ctx.arc(0, 0, p.r + 6, 0, Math.PI * 2);
+            ctx.roundRect(-p.r * 0.78, -p.r * 0.9, p.r * 1.56, p.r * 1.15, 6);
+            ctx.fill();
+            ctx.stroke();
+            // Gold hat ribbon
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(-p.r * 0.76, -p.r * 0.1, p.r * 1.52, 5);
+            // Brim + Swirling portal opening
+            ctx.fillStyle = '#1e1b4b';
+            ctx.beginPath();
+            ctx.ellipse(0, p.r * 0.28, p.r * 1.08, p.r * 0.36, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = '#fde047';
-            ctx.lineWidth = 2.2;
-            ctx.setLineDash([6, 4]);
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 4]);
             ctx.beginPath();
-            ctx.arc(0, 0, p.r - 2, clock * 2.5, clock * 2.5 + Math.PI * 1.8);
+            ctx.ellipse(0, p.r * 0.28, p.r * 0.72, p.r * 0.24, clock * 3, 0, Math.PI * 1.7);
             ctx.stroke();
             ctx.restore();
         }
@@ -512,12 +569,31 @@
             ctx.restore();
         }
 
-        // Ropes + anchor pins
+        // Ropes + anchor pins + optional clockwork slider tracks
         for (const r of session.ropes) {
+            if (r.slideRange > 0) {
+                ctx.save();
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(r.baseAx - r.slideRange, r.ay);
+                ctx.lineTo(r.baseAx + r.slideRange, r.ay);
+                ctx.stroke();
+                ctx.fillStyle = '#475569';
+                ctx.beginPath();
+                ctx.arc(r.baseAx - r.slideRange, r.ay, 4, 0, Math.PI * 2);
+                ctx.arc(r.baseAx + r.slideRange, r.ay, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
             ctx.save();
             ctx.globalAlpha = r.cut ? r.cutFade : 1;
             if (ctx.globalAlpha > 0.02 && r.points.length >= 2) {
-                ctx.strokeStyle = '#78350f';
+                const endPt = r.points[r.points.length - 1];
+                const curDist = Math.hypot(endPt.x - r.ax, endPt.y - r.ay);
+                const tense = !r.cut && curDist > r.len * 1.04;
+                ctx.strokeStyle = tense ? '#991b1b' : '#78350f';
                 ctx.lineWidth = 4.2;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
@@ -528,11 +604,11 @@
                 }
                 ctx.stroke();
 
-                ctx.strokeStyle = '#d97706';
+                ctx.strokeStyle = tense ? '#fb7185' : '#d97706';
                 ctx.lineWidth = 1.6;
                 ctx.stroke();
             }
-            ctx.fillStyle = '#475569';
+            ctx.fillStyle = r.slideRange > 0 ? '#f59e0b' : '#475569';
             ctx.strokeStyle = '#f8fafc';
             ctx.lineWidth = 1.8;
             ctx.beginPath();
@@ -547,6 +623,7 @@
         const c = session.candy;
         ctx.save();
         ctx.translate(c.x, c.y);
+        ctx.rotate(c.rot || 0);
 
         // Swirled Red-White Hard Candy
         const cg = ctx.createRadialGradient(-5, -5, 2, 0, 0, c.r + 2);

@@ -481,6 +481,10 @@
                             const pts = Math.round(nextDef.score * mult);
                             world.score += pts;
                             world.maxTierSeen = Math.max(world.maxTierSeen, nextTier);
+                            if (nextTier >= 8) grantEnergy(events);
+                            if (nextTier === TIERS.length - 1 && world.tools.spoon < 5) {
+                                world.tools.spoon += 1;
+                            }
 
                             const spawned = {
                                 id: nextBodyId++,

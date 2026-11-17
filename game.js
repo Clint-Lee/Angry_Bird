@@ -3480,8 +3480,20 @@ class AngryBirdsMaster {
         // 9. Smoke Trails
         this.drawSmokeTrails();
 
-        // 10. Active Flying Birds
+        // 10. Active Flying Birds (with armed ability halo indicator!)
         this.activeFlyingBirds.forEach(b => {
+            const bt = b.customData?.birdType;
+            const skillArmed = bt && bt !== 'red' && bt !== 'terence' && !b.customData?.abilityUsed && !b.customData?.collided;
+            if (skillArmed) {
+                this.ctx.save();
+                this.ctx.strokeStyle = `rgba(250, 204, 21, ${(0.35 + 0.25 * Math.sin(time * 10)).toFixed(2)})`;
+                this.ctx.lineWidth = 2.5;
+                this.ctx.setLineDash([5, 4]);
+                this.ctx.beginPath();
+                this.ctx.arc(b.position.x, b.position.y, (b.customData?.radius || 18) + 8, time * 2, time * 2 + Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.restore();
+            }
             window.spriteRenderer.drawBird(this.ctx, b, time, 'flying');
         });
 
@@ -3792,6 +3804,25 @@ class AngryBirdsMaster {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(label, badgeX, badgeY + 0.5);
+
+        const skillTips = {
+            red: '均衡撞击',
+            yellow: '点击加速破木',
+            blue: '点击分裂破冰',
+            bomb: '爆炸破石',
+            matilda: '点击投蛋轰炸',
+            terence: '超重贯穿',
+            hal: '点击回旋'
+        };
+        const curType = this.currentBird?.customData?.birdType;
+        if (curType && skillTips[curType]) {
+            this.ctx.font = '700 11.5px "Fredoka", sans-serif';
+            this.ctx.fillStyle = 'rgba(226, 232, 240, 0.9)';
+            this.ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)';
+            this.ctx.lineWidth = 2.6;
+            this.ctx.strokeText(skillTips[curType], badgeX, ry - 11);
+            this.ctx.fillText(skillTips[curType], badgeX, ry - 11);
+        }
 
         this.ctx.restore();
     }

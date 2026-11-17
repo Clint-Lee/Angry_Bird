@@ -21,7 +21,8 @@
 
     const CHAPTERS = [
         { id: 1, name: '纸盒初遇', subtitle: '剪断麻绳、钟摆荡漾与气泡浮升', accent: '#4ade80' },
-        { id: 2, name: '奇幻风箱', subtitle: '配合充气风囊、魔术帽与自动抓钩通关', accent: '#38bdf8' }
+        { id: 2, name: '奇幻风箱', subtitle: '配合充气风囊、魔术帽与自动抓钩通关', accent: '#38bdf8' },
+        { id: 3, name: '发条机盒', subtitle: '滑轨悬索、弹鼓穿梭与终极连环机关', accent: '#f59e0b' }
     ];
 
     /**
@@ -191,6 +192,92 @@
             pads: [{ x: 110, y: 410, w: 86, h: 16, angle: 0.33, power: 675 }],
             autoRopes: [{ id: 'a1', ax: 345, ay: 72, triggerR: 92, len: 155 }],
             script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 1.55, act: 'cut', id: 'a1' }]
+        },
+        // Chapter 3: Moving Rail Anchors & Clockwork Combos
+        {
+            id: 13, chapter: 3, label: '3-1', name: '移动滑轨',
+            hint: '上方锚点沿轨道左右滑动！看准糖果向右荡起瞬间剪断，划出抛物线连扫三星入嘴。',
+            candy: { x: 230, y: 205 },
+            omnom: { x: 370, y: 530, r: 28 },
+            ropes: [{ id: 'r1', ax: 230, ay: 80, len: 125, slideRange: 72, slideSpeed: 2.2 }],
+            stars: [{ x: 308, y: 252 }, { x: 342, y: 365 }, { x: 362, y: 465 }],
+            bubbles: [], cushions: [], portals: [],
+            spikes: [{ x: 110, y: 495, w: 95, h: 16 }], pads: [], autoRopes: [],
+            script: [{ t: 0.72, act: 'cut', id: 'r1' }]
+        },
+        {
+            id: 14, chapter: 3, label: '3-2', name: '滑轨气泡',
+            hint: '乘滑轨把糖果推入右侧气泡，上浮穿双星进魔帽，从左侧穿出后待离开帽口立即戳破气泡！',
+            candy: { x: 220, y: 345 },
+            omnom: { x: 135, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 220, ay: 220, len: 125, slideRange: 75, slideSpeed: 2.0 }],
+            stars: [{ x: 280, y: 255 }, { x: 280, y: 180 }, { x: 135, y: 390 }],
+            bubbles: [{ id: 'b1', x: 280, y: 385, r: 30 }],
+            cushions: [],
+            portals: [
+                { pair: 0, x: 280, y: 120, r: 28 },
+                { pair: 0, x: 135, y: 225, r: 26 }
+            ],
+            spikes: [{ x: 215, y: 495, w: 120, h: 16 }], pads: [], autoRopes: [],
+            script: [{ t: 0.78, act: 'cut', id: 'r1' }, { t: 3.45, act: 'pop', id: 'b1' }]
+        },
+        {
+            id: 15, chapter: 3, label: '3-3', name: '双轨转接',
+            hint: '从左侧滑轨剪断进入自动抓钩区间，摆向右侧再二次剪断收星入嘴！',
+            candy: { x: 150, y: 195 },
+            omnom: { x: 315, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 150, ay: 75, len: 120, slideRange: 65, slideSpeed: 2.4 }],
+            stars: [{ x: 190, y: 235 }, { x: 255, y: 295 }, { x: 308, y: 425 }],
+            bubbles: [], cushions: [], portals: [],
+            spikes: [{ x: 95, y: 470, w: 120, h: 16 }], pads: [],
+            autoRopes: [{ id: 'a1', ax: 225, ay: 110, triggerR: 135, len: 185 }],
+            script: [{ t: 0.45, act: 'cut', id: 'r1' }, { t: 1.35, act: 'cut', id: 'a1' }]
+        },
+        {
+            id: 16, chapter: 3, label: '3-4', name: '弹鼓接力',
+            hint: '正下方斜角弹跳鼓早已就位，果断断绳借力飞越中央尖刺阵直取左岸！',
+            candy: { x: 335, y: 175 },
+            omnom: { x: 115, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 335, ay: 68, len: 108 }],
+            stars: [{ x: 335, y: 280 }, { x: 225, y: 225 }, { x: 115, y: 390 }],
+            bubbles: [], cushions: [], portals: [],
+            spikes: [{ x: 180, y: 455, w: 110, h: 16 }],
+            pads: [{ x: 335, y: 410, w: 88, h: 16, angle: -0.33, power: 675 }],
+            autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }]
+        },
+        {
+            id: 17, chapter: 3, label: '3-5', name: '魔帽回旋',
+            hint: '先掉入左下魔帽传至右岸，再按右侧吹风气囊把糖果送回正中央入嘴！',
+            candy: { x: 120, y: 175 },
+            omnom: { x: 182, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 120, ay: 68, len: 106 }],
+            stars: [{ x: 120, y: 285 }, { x: 345, y: 185 }, { x: 225, y: 390 }],
+            bubbles: [],
+            cushions: [{ id: 'c1', x: 395, y: 310, dx: -1, dy: -0.1, power: 520, range: 260 }],
+            portals: [
+                { pair: 0, x: 120, y: 395, r: 26 },
+                { pair: 0, x: 345, y: 145, r: 26 }
+            ],
+            spikes: [], pads: [], autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 0.85, act: 'blow', id: 'c1' }]
+        },
+        {
+            id: 18, chapter: 3, label: '3-6', name: '机盒大阅兵',
+            hint: '先在左路乘气泡升起，再用风囊推入中央魔帽，穿顶帽点破气泡精准喂食！',
+            candy: { x: 130, y: 350 },
+            omnom: { x: 345, y: 528, r: 28 },
+            ropes: [{ id: 'r1', ax: 130, ay: 220, len: 128 }],
+            stars: [{ x: 130, y: 255 }, { x: 235, y: 195 }, { x: 345, y: 380 }],
+            bubbles: [{ id: 'b1', x: 130, y: 395, r: 30 }],
+            cushions: [{ id: 'c1', x: 65, y: 195, dx: 1, dy: 0, power: 540, range: 280 }],
+            portals: [
+                { pair: 0, x: 285, y: 185, r: 30 },
+                { pair: 0, x: 345, y: 135, r: 26 }
+            ],
+            spikes: [{ x: 95, y: 505, w: 155, h: 16 }],
+            pads: [], autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 2.05, act: 'blow', id: 'c1' }, { t: 3.15, act: 'pop', id: 'b1' }]
         }
     ];
 
@@ -206,7 +293,7 @@
         return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
     }
 
-    function makeRope(id, ax, ay, len, candyPt) {
+    function makeRope(id, ax, ay, len, candyPt, slideRange = 0, slideSpeed = 0) {
         const segCount = Math.max(6, Math.round(len / 14));
         const segLen = len / segCount;
         const pts = [];
@@ -221,7 +308,7 @@
         for (let i = 0; i < pts.length - 1; i++) {
             constraints.push({ p1: pts[i], p2: pts[i + 1], len: segLen });
         }
-        return { id, ax, ay, len, points: pts, constraints, cut: false, cutFade: 1 };
+        return { id, ax, baseAx: ax, ay, len, slideRange, slideSpeed, points: pts, constraints, cut: false, cutFade: 1 };
     }
 
     function createSession(levelIndex) {
@@ -233,10 +320,11 @@
             y: lvl.candy.y,
             oldX: lvl.candy.x,
             oldY: lvl.candy.y,
-            r: ARENA.candyR
+            r: ARENA.candyR,
+            rot: 0
         };
 
-        const ropes = lvl.ropes.map((r) => makeRope(r.id, r.ax, r.ay, r.len, candy));
+        const ropes = lvl.ropes.map((r) => makeRope(r.id, r.ax, r.ay, r.len, candy, r.slideRange || 0, r.slideSpeed || 0));
         const stars = lvl.stars.map((s, i) => ({ id: i, x: s.x, y: s.y, r: 17, collected: false }));
         const bubbles = lvl.bubbles.map((b) => ({ ...b, vx: 0, captured: false, popped: false }));
         const cushions = lvl.cushions.map((c) => ({ ...c, r: 28, puffTimer: 0 }));
@@ -375,10 +463,16 @@
                 candy.oldY = candy.y;
                 candy.x += vx;
                 candy.y += vy + ARENA.gravity * dt * dt;
+                candy.rot += vx * 0.08;
             }
 
-            // 2. Integrate non-candy rope points
+            // 2. Integrate non-candy rope points (including optional sliding rail anchors)
             for (const rope of session.ropes) {
+                if (rope.slideRange && !rope.cut && rope.points.length > 0) {
+                    rope.ax = rope.baseAx + Math.sin(session.time * rope.slideSpeed) * rope.slideRange;
+                    rope.points[0].x = rope.ax;
+                    rope.points[0].oldX = rope.ax;
+                }
                 if (rope.cut) {
                     rope.cutFade = Math.max(0, rope.cutFade - dt * 2.4);
                     continue;

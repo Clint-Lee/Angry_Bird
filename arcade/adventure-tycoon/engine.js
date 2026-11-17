@@ -58,6 +58,7 @@
             },
             ordersCompleted: 0,
             customersServed: 0,
+            expeditionsRun: 0,
             lastTimestamp: Date.now()
         };
     }
@@ -77,6 +78,7 @@
             muted: !!raw.muted,
             ordersCompleted: Math.max(0, Math.floor(Number(raw.ordersCompleted) || 0)),
             customersServed: Math.max(0, Math.floor(Number(raw.customersServed) || 0)),
+            expeditionsRun: Math.max(0, Math.floor(Number(raw.expeditionsRun) || 0)),
             lastTimestamp: Number(raw.lastTimestamp) || Date.now()
         };
 
@@ -135,13 +137,24 @@
             vipOrder: null,
             nextCustomerIn: 0.8,
             nextVipIn: 14,
+            rushTimer: 0,
+            rushCooldown: 0,
             idCounter: 1
         };
+
+        function triggerRush() {
+            if (sim.rushTimer > 0 || sim.rushCooldown > 0) return false;
+            sim.rushTimer = 10;
+            sim.rushCooldown = 26;
+            if (sim.customers.length < 4) spawnCustomer();
+            return true;
+        }
 
         function priceMultiplier() {
             const prestigeBonus = 1 + state.prestigeCount * 0.35;
             const boostBonus = 1 + state.upgrades.priceBoost * 0.18;
-            return prestigeBonus * boostBonus;
+            const rushBonus = sim.rushTimer > 0 ? 1.35 : 1.0;
+            return prestigeBonus * boostBonus * rushBonus;
         }
 
         function getSellPrice(recipeId) {
@@ -353,15 +366,23 @@
                     const zDef = ZONES.find((z) => z.id === sim.expedition.zoneId) || ZONES[0];
                     sim.expedition.active = false;
                     sim.expedition.progress = 0;
+                    state.expeditionsRun += 1;
                     const gained = {};
                     Object.entries(zDef.drops).forEach(([mat, qty]) => {
                         const bonus = state.upgrades.heroSpeed >= 3 ? 1 : 0;
                         state.materials[mat] = (state.materials[mat] || 0) + qty + bonus;
                         gained[mat] = qty + bonus;
                     });
-                    events.push({ type: 'loot', zoneId: zDef.id, drops: gained });
+                    let chestGold = 0;
+                    if (state.expeditionsRun % 4 === 0) {
+                        chestGold = earnGold(Math.round(28 * (1 + state.prestigeCount * 0.35)));
+                    }
+                    events.push({ type: 'loot', zoneId: zDef.id, drops: gained, chestGold });
                 }
             }
+
+            if (sim.rushTimer > 0) sim.rushTimer = Math.max(0, sim.rushTimer - cleanDt);
+            if (sim.rushCooldown > 0) sim.rushCooldown = Math.max(0, sim.rushCooldown - cleanDt);
 
             // 2. Crafting progress & auto-craft helper
             if (!sim.crafting.active && state.upgrades.autoCraft > 0) {
@@ -380,16 +401,20 @@
                     const rId = sim.crafting.recipeId;
                     sim.crafting.active = false;
                     sim.crafting.progress = 0;
-                    state.stock[rId] = (state.stock[rId] || 0) + 1;
-                    events.push({ type: 'crafted', recipeId: rId });
+                    const cap = getShelfCap();
+                    const cur = state.stock[rId] || 0;
+                    const isMasterwork = Math.random() < 0.16 && cur + 2 <= cap;
+                    const addQty = isMasterwork ? 2 : 1;
+                    state.stock[rId] = cur + addQty;
+                    events.push({ type: 'crafted', recipeId: rId, qty: addQty, masterwork: isMasterwork });
                 }
             }
 
             // 3. Customers flow
-            sim.nextCustomerIn -= cleanDt;
+            sim.nextCustomerIn -= cleanDt * (sim.rushTimer > 0 ? 1.9 : 1.0);
             if (sim.nextCustomerIn <= 0 && sim.customers.length < 4) {
                 spawnCustomer();
-                sim.nextCustomerIn = Math.max(1.8, 3.8 - state.shopLevel * 0.08);
+                sim.nextCustomerIn = Math.max(1.6, 3.6 - state.shopLevel * 0.08);
             }
 
             for (let i = sim.customers.length - 1; i >= 0; i--) {
@@ -431,6 +456,7 @@
         return {
             state,
             sim,
+            triggerRush,
             startExpedition,
             startCraft,
             unlockZone,

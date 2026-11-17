@@ -472,12 +472,73 @@
         ctx.fill();
     }
 
+    function drawSokoban(ctx) {
+        ctx.fillStyle = '#1f1a17';
+        ctx.fillRect(0, 0, W, H);
+
+        // Classic 7x4 nostalgic warehouse floor/wall grid centered cleanly
+        const ts = 42;
+        const ox = (W - 7 * ts) / 2;
+        const oy = (H - 4 * ts) / 2;
+        const map = [
+            '#######',
+            '# .$. #',
+            '# *@$ #',
+            '#######'
+        ];
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 7; c++) {
+                const ch = map[r][c];
+                const x = ox + c * ts;
+                const y = oy + r * ts;
+                if (ch === '#') {
+                    ctx.fillStyle = '#57534e';
+                    ctx.fillRect(x + 1, y + 1, ts - 2, ts - 2);
+                    ctx.fillStyle = '#78716c';
+                    ctx.fillRect(x + 2, y + 2, ts - 4, 10);
+                } else {
+                    ctx.fillStyle = (r + c) % 2 === 0 ? '#3c342e' : '#352d28';
+                    ctx.fillRect(x, y, ts, ts);
+                    if (ch === '.' || ch === '*') {
+                        ctx.fillStyle = ch === '*' ? 'rgba(52, 211, 153, 0.28)' : 'rgba(245, 158, 11, 0.22)';
+                        ctx.beginPath(); ctx.arc(x + ts / 2, y + ts / 2, 11, 0, Math.PI * 2); ctx.fill();
+                        ctx.strokeStyle = ch === '*' ? '#34d399' : '#f59e0b';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.arc(x + ts / 2, y + ts / 2, 6, 0, Math.PI * 2); ctx.stroke();
+                    }
+                    if (ch === '$' || ch === '*') {
+                        const onGoal = ch === '*';
+                        const pad = 4;
+                        ctx.fillStyle = onGoal ? '#16a34a' : '#c27838';
+                        ctx.fillRect(x + pad, y + pad, ts - pad * 2, ts - pad * 2);
+                        ctx.strokeStyle = onGoal ? '#14532d' : '#7c4316';
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x + pad + 3, y + pad + 3); ctx.lineTo(x + ts - pad - 3, y + ts - pad - 3);
+                        ctx.moveTo(x + ts - pad - 3, y + pad + 3); ctx.lineTo(x + pad + 3, y + ts - pad - 3);
+                        ctx.stroke();
+                    }
+                    if (ch === '@') {
+                        const px = x + ts / 2, py = y + ts / 2;
+                        ctx.fillStyle = '#2563eb';
+                        ctx.beginPath(); ctx.arc(px, py, 13, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#fde68a';
+                        ctx.beginPath(); ctx.arc(px + 2, py + 2, 8, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#f59e0b';
+                        ctx.beginPath(); ctx.arc(px, py - 3, 9.5, Math.PI, 0); ctx.fill();
+                    }
+                }
+            }
+        }
+    }
+
     const PAINTERS = {
         'angry-birds': drawAngryBirds,
         'fruit-merge': drawFruitMerge,
         'cut-rope': drawCutRope,
         'adventure-tycoon': drawAdventureTycoon,
-        'jump-jump': drawJumpJump
+        'jump-jump': drawJumpJump,
+        'sokoban': drawSokoban
     };
 
     function renderAllCovers() {

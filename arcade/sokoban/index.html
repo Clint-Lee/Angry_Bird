@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>推格子 · 经典仓库番 Sokoban</title>
+    <link rel="stylesheet" href="style.css?v=20261117_2030">
+</head>
+<body>
+    <div class="sk-shell">
+        <header class="sk-topbar">
+            <div class="top-left">
+                <a href="../index.html" class="nav-btn">← 大厅</a>
+                <div class="title-wrap">
+                    <span class="lvl-tag" id="lvlBadge">第 1 / 15 关</span>
+                    <h1 id="lvlTitle">双箱热身</h1>
+                </div>
+            </div>
+            <div class="top-right">
+                <div class="metric"><span>步数</span><b id="movesVal">0</b></div>
+                <div class="metric"><span>最佳</span><b id="bestVal">—</b></div>
+                <button class="nav-btn" id="btnLevels" type="button">选关</button>
+                <button class="nav-btn" id="btnUndo" type="button" title="撤销上一步 [Z]">撤销</button>
+                <button class="nav-btn" id="btnReset" type="button" title="重新开始本关 [R]">重开</button>
+                <button class="nav-btn icon-only" id="btnMute" type="button" title="音效开关">🔊</button>
+            </div>
+        </header>
+
+        <main class="board-wrap">
+            <div class="board-frame">
+                <canvas id="sokobanCanvas" width="560" height="520"></canvas>
+                <div class="deadlock-bar hidden" id="deadlockBar">有箱子推入死角，可按 Z 撤销</div>
+            </div>
+
+            <div class="bottom-bar">
+                <span class="controls-note">方向键 / WASD 移动，点击空地自动寻路，Z 撤销，R 重开</span>
+                <div class="dpad" aria-label="方向控制">
+                    <button type="button" class="d-btn" data-dir="0,-1" aria-label="向上">▲</button>
+                    <div class="dpad-mid">
+                        <button type="button" class="d-btn" data-dir="-1,0" aria-label="向左">◀</button>
+                        <button type="button" class="d-btn" data-dir="0,1" aria-label="向下">▼</button>
+                        <button type="button" class="d-btn" data-dir="1,0" aria-label="向右">▶</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Stage Select Modal -->
+    <div class="modal-backdrop hidden" id="levelsModal" role="dialog" aria-modal="true">
+        <div class="modal-card modal-wide">
+            <div class="modal-head">
+                <h2>选择关卡（15 关）</h2>
+                <button class="close-btn" id="btnCloseLevels" type="button">✕</button>
+            </div>
+            <div class="levels-grid" id="levelsGrid"></div>
+        </div>
+    </div>
+
+    <!-- Clear Modal -->
+    <div class="modal-backdrop hidden" id="winModal" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div class="win-stars" id="winStars">★★★</div>
+            <h2 id="winTitle">过关</h2>
+            <p class="win-sub" id="winSub">用时 10 步 · 参考步数 12 步</p>
+            <div class="win-actions">
+                <button class="btn-primary" id="btnNextLvl" type="button">下一关 →</button>
+                <button class="nav-btn" id="btnReplayLvl" type="button">重玩</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="engine.js?v=20261117_2030"></script>
+    <script src="audio.js?v=20261117_2030"></script>
+    <script src="game.js?v=20261117_2030"></script>
+</body>
+</html>

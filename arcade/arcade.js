@@ -88,8 +88,8 @@
     function updateCutRope() {
         const cr = readJson('cloudeave_cut_rope_v1');
         const stars = Object.values(cr.levelStars || {}).reduce((s, v) => s + Math.min(3, Math.max(0, Number(v) || 0)), 0);
-        const curLvl = Math.max(1, Math.min(12, (Number(cr.currentLevelIndex) || 0) + 1));
-        setText('crSummary', `第 ${curLvl} 关 · ${stars} / 36 ⭐`);
+        const curLvl = Math.max(1, Math.min(18, (Number(cr.currentLevelIndex) || 0) + 1));
+        setText('crSummary', `第 ${curLvl} 关 · ${stars} / 54 ⭐`);
 
         const url = resolveUrl('cut-rope');
         const link = document.getElementById('linkCoverCr');
@@ -131,12 +131,29 @@
         if (btn) btn.href = url;
     }
 
+    function updateSokoban() {
+        const sk = readJson('cloudeave_sokoban_v1');
+        const stars = Object.values(sk.levelStars || {}).reduce((s, v) => s + Math.min(3, Math.max(0, Number(v) || 0)), 0);
+        const curLvl = Math.max(1, Math.min(15, (Number(sk.currentLevelIndex) || 0) + 1));
+        setText('skSummary', `第 ${curLvl} 关 · ${stars} / 45 ⭐`);
+
+        const url = resolveUrl('sokoban');
+        const link = document.getElementById('linkCoverSk');
+        if (link) link.href = url;
+        const btn = document.getElementById('btnPlaySokoban');
+        if (btn) {
+            btn.href = url;
+            btn.innerText = stars > 0 ? `继续第 ${curLvl} 关` : '开始游戏';
+        }
+    }
+
     function syncLobby() {
         updateAngryBirds();
         updateFruitMerge();
         updateCutRope();
         updateAdventureTycoon();
         updateJumpJump();
+        updateSokoban();
     }
 
     if (document.readyState === 'loading') {
