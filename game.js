@@ -14,7 +14,7 @@ const {
 
 const VIEW_WIDTH = 1280;
 const VIEW_HEIGHT = 720;
-const WORLD_WIDTH = 2050;
+const WORLD_WIDTH = 2240;
 const WORLD_HEIGHT = 760;
 const GROUND_Y = 660;
 const SLING_POS = { x: 240, y: GROUND_Y - 142 };
@@ -203,6 +203,10 @@ class AngryBirdsMaster {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.viewWidth = VIEW_WIDTH;
+        this.viewHeight = VIEW_HEIGHT;
+        this.dpr = 1;
+        this.levelRightEdge = 1790;
         this.canvas.width = VIEW_WIDTH;
         this.canvas.height = VIEW_HEIGHT;
 
@@ -214,16 +218,16 @@ class AngryBirdsMaster {
         });
         this.world = this.engine.world;
 
-        // Camera System with Widescreen Panoramic Zoom & Dynamic Panning
+        // Camera System with Full-Screen Responsive Panoramic Framing & Dynamic Panning
         this.camera = {
             x: 20,
             y: -20,
-            zoom: 0.74, // Wide Panorama: shows slingshot on left & fortress on right simultaneously!
+            zoom: 0.74,
             targetX: 20,
             targetY: -20,
             targetZoom: 0.74,
             shake: 0,
-            mode: 'wide' // 'wide' (0.74x panorama) or 'close' (0.90x cinematic)
+            mode: 'wide'
         };
 
         // Persistent LocalStorage Progress & Settings
@@ -299,6 +303,7 @@ class AngryBirdsMaster {
         this.lastTime = performance.now();
 
         // Setup
+        this.setupResponsiveViewport();
         this.initBoundaries();
         this.setupPhysicsEvents();
         this.setupInputListeners();
@@ -309,6 +314,79 @@ class AngryBirdsMaster {
 
         // Run Main Loop
         requestAnimationFrame((t) => this.loop(t));
+    }
+
+    setupResponsiveViewport() {
+        const update = () => this.syncViewportSize(true);
+        update();
+        if (typeof window !== 'undefined') {
+            window.addEventListener('resize', update);
+        }
+        const wrapper = this.canvas?.parentElement;
+        if (wrapper && typeof ResizeObserver !== 'undefined') {
+            this._resizeObserver = new ResizeObserver(() => this.syncViewportSize(true));
+            this._resizeObserver.observe(wrapper);
+        }
+    }
+
+    syncViewportSize(snapCamera = false) {
+        const wrapper = this.canvas?.parentElement;
+        const rect = wrapper ? wrapper.getBoundingClientRect() : null;
+        const cssW = Math.max(320, Math.round(rect && rect.width > 40 ? rect.width : VIEW_WIDTH));
+        const cssH = Math.max(220, Math.round(rect && rect.height > 40 ? rect.height : VIEW_HEIGHT));
+        const dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1);
+
+        if (this.viewWidth !== cssW || this.viewHeight !== cssH || this.dpr !== dpr) {
+            this.viewWidth = cssW;
+            this.viewHeight = cssH;
+            this.dpr = dpr;
+            this.canvas.width = Math.round(cssW * dpr);
+            this.canvas.height = Math.round(cssH * dpr);
+        }
+
+        if (snapCamera && this.camera && this.camera.mode === 'wide') {
+            const wide = this.getWideFraming();
+            this.camera.targetZoom = wide.zoom;
+            this.camera.zoom = wide.zoom;
+            this.camera.targetX = wide.x;
+            this.camera.x = wide.x;
+            this.camera.targetY = wide.y;
+            this.camera.y = wide.y;
+        }
+    }
+
+    computeLevelRightEdge() {
+        let maxX = 1790;
+        const expand = (b) => {
+            if (b && b.bounds && Number.isFinite(b.bounds.max.x)) {
+                maxX = Math.max(maxX, b.bounds.max.x);
+            } else if (b && b.position) {
+                const r = b.customData?.radius || (b.customData?.width ? b.customData.width / 2 : 30);
+                maxX = Math.max(maxX, b.position.x + r);
+            }
+        };
+        (this.pigs || []).forEach(expand);
+        (this.blocks || []).forEach(expand);
+        (this.tnts || []).forEach(expand);
+        this.levelRightEdge = Math.min(WORLD_WIDTH - 40, Math.max(1760, Math.round(maxX)));
+    }
+
+    getWideFraming() {
+        const leftAnchor = 8; // Reserve queue + slingshot x=240
+        const rightAnchor = Math.min(WORLD_WIDTH, Math.max(1820, (this.levelRightEdge || 1790) + 65));
+        const requiredWorldSpanX = Math.max(1780, rightAnchor - leftAnchor);
+        const requiredWorldSpanY = 740; // Sky headroom (-20) down to GROUND_Y + 60 (720)
+        const vw = this.viewWidth || VIEW_WIDTH;
+        const vh = this.viewHeight || VIEW_HEIGHT;
+
+        const fitZoomX = vw / requiredWorldSpanX;
+        const fitZoomY = vh / requiredWorldSpanY;
+        const zoom = Math.max(0.24, Math.min(1.45, Math.min(fitZoomX, fitZoomY)));
+
+        const extraWorldW = Math.max(0, vw / zoom - requiredWorldSpanX);
+        const x = leftAnchor - extraWorldW * 0.5;
+        const y = (GROUND_Y + 46) - (vh / zoom);
+        return { zoom, x, y };
     }
 
     saveProgress() {
@@ -326,7 +404,7 @@ class AngryBirdsMaster {
     // =========================================================================
     initBoundaries() {
         // Ground physics collider
-        const ground = Bodies.rectangle(WORLD_WIDTH / 2, GROUND_Y + 50, WORLD_WIDTH + 600, 100, {
+        const ground = Bodies.rectangle(WORLD_WIDTH / 2, GROUND_Y + 50, WORLD_WIDTH + 1600, 100, {
             isStatic: true,
             friction: 0.95,
             frictionStatic: 1.0,
@@ -624,8 +702,8 @@ class AngryBirdsMaster {
                                     (birdType === 'yellow' && d.material === 'wood') ||
                                     (birdType === 'hal');
                                 const isChuckDashed = birdType === 'yellow' && hitter.customData?.abilityUsed;
-                                const baseCarry = isChuckDashed ? 0.94 : (isSpecialistMatch ? 0.86 : 0.62);
-                                const overkillCarry = Math.min(0.95, Math.max(0.42, (1 - hpBefore / (dmg * 1.25)) * 0.3 + baseCarry * 0.75));
+                                const baseCarry = isChuckDashed ? 0.90 : (isSpecialistMatch ? 0.80 : 0.48);
+                                const overkillCarry = Math.min(0.92, Math.max(0.32, (1 - hpBefore / (dmg * 1.25)) * 0.28 + baseCarry * 0.72));
                                 Body.setVelocity(hitter, {
                                     x: pv.x * overkillCarry,
                                     y: pv.y * overkillCarry
@@ -928,20 +1006,20 @@ class AngryBirdsMaster {
     // LEVEL BUILDER HELPER METHODS (Invoked by levels.js)
     // =========================================================================
     addBlock(x, y, width, height, material) {
-        let hp = 85;
-        let density = 0.0022;
-        let friction = 0.88;
+        let hp = 115;
+        let density = 0.0025;
+        let friction = 0.90;
         let restitution = 0.02;
 
         if (material === 'glass') {
-            hp = 34;
-            density = 0.0014;
-            friction = 0.70;
+            hp = 44;
+            density = 0.0015;
+            friction = 0.72;
             restitution = 0.02;
         } else if (material === 'stone') {
-            hp = 260;
-            density = 0.0058;
-            friction = 0.95;
+            hp = 340;
+            density = 0.0064;
+            friction = 0.96;
             restitution = 0.01;
         }
 
@@ -986,8 +1064,8 @@ class AngryBirdsMaster {
                 material,
                 width,
                 height,
-                maxHp: material === 'stone' ? 240 : 100,
-                hp: material === 'stone' ? 240 : 100,
+                maxHp: material === 'stone' ? 320 : 130,
+                hp: material === 'stone' ? 320 : 130,
                 dead: false
             }
         });
@@ -1019,20 +1097,20 @@ class AngryBirdsMaster {
 
     addPig(x, y, pigType = 'normal') {
         let radius = 22;
-        let hp = 42; // Calibrated for authentic fun & fair demolition
+        let hp = 54; // Reinforced pig toughness
 
         if (pigType === 'small') {
             radius = 16;
-            hp = 24;
+            hp = 30;
         } else if (pigType === 'helmet') {
             radius = 23;
-            hp = 85;
+            hp = 112;
         } else if (pigType === 'foreman') {
             radius = 26;
-            hp = 115;
+            hp = 152;
         } else if (pigType === 'king') {
             radius = 36;
-            hp = 220;
+            hp = 285;
         }
 
         const pig = Bodies.circle(x, y, radius, {
@@ -1215,6 +1293,7 @@ class AngryBirdsMaster {
 
         // Build Level Layout
         levelData.build(this, GROUND_Y);
+        this.computeLevelRightEdge();
 
         // Populate Birds Queue & Place First Bird on Sling
         this.birdsQueue = [...levelData.birds];
@@ -1223,10 +1302,21 @@ class AngryBirdsMaster {
             this.prepareBirdOnSling(firstBird);
         }
 
-        // Center camera: wide panoramic view
-        this.camera.targetX = 20;
-        this.camera.targetY = -20;
-        this.camera.targetZoom = this.camera.mode === 'close' ? 0.90 : 0.74;
+        // Frame panoramic camera cleanly to keep both sling/birds & all pigs visible at any viewport size
+        this.syncViewportSize(false);
+        if (this.camera.mode === 'close') {
+            this.camera.targetZoom = 0.90;
+            this.camera.targetX = 20;
+            this.camera.targetY = -20;
+        } else {
+            const wide = this.getWideFraming();
+            this.camera.targetZoom = wide.zoom;
+            this.camera.zoom = wide.zoom;
+            this.camera.targetX = wide.x;
+            this.camera.x = wide.x;
+            this.camera.targetY = wide.y;
+            this.camera.y = wide.y;
+        }
 
         this.updateHUD();
 
@@ -1857,8 +1947,10 @@ class AngryBirdsMaster {
     setupInputListeners() {
         const toWorldCoords = (clientX, clientY) => {
             const rect = this.canvas.getBoundingClientRect();
-            const screenX = (clientX - rect.left) * (this.canvas.width / rect.width);
-            const screenY = (clientY - rect.top) * (this.canvas.height / rect.height);
+            const vw = this.viewWidth || VIEW_WIDTH;
+            const vh = this.viewHeight || VIEW_HEIGHT;
+            const screenX = (clientX - rect.left) * (vw / Math.max(1, rect.width));
+            const screenY = (clientY - rect.top) * (vh / Math.max(1, rect.height));
 
             // Invert camera transform
             const worldX = (screenX / this.camera.zoom) + this.camera.x;
@@ -1958,7 +2050,10 @@ class AngryBirdsMaster {
                 }
             } else if (this.isPanningCamera) {
                 const dx = (clientX - this.panStartX) / this.camera.zoom;
-                this.camera.targetX = Math.max(0, Math.min(WORLD_WIDTH - VIEW_WIDTH, this.camStartX - dx));
+                const vw = this.viewWidth || VIEW_WIDTH;
+                const minCamX = Math.min(0, this.getWideFraming().x);
+                const maxCamX = Math.max(0, WORLD_WIDTH - vw / this.camera.zoom);
+                this.camera.targetX = Math.max(minCamX, Math.min(maxCamX, this.camStartX - dx));
             }
         };
 
@@ -2028,34 +2123,10 @@ class AngryBirdsMaster {
             badgeBtn.href = window.location.origin.includes('39.97.50.218') ? '/' : 'https://39.97.50.218:8080/';
         }
 
-        // Initial HUD button states
-        const soundBtn = document.getElementById('soundBtn');
-        if (soundBtn) soundBtn.innerText = this.settings.sfxEnabled ? '🔊 音效: 开' : '🔇 音效: 关';
-        const bgmBtn = document.getElementById('bgmBtn');
-        if (bgmBtn) {
-            bgmBtn.innerText = this.settings.bgmEnabled ? '🎵 音乐: 开' : '🎵 音乐: 关';
-            bgmBtn.classList.toggle('active', this.settings.bgmEnabled);
-        }
-
         // Restart button
         document.getElementById('restartBtn')?.addEventListener('click', () => {
             if (window.soundFX?.playClick) window.soundFX.playClick();
             this.loadLevel(this.currentLevelIndex);
-        });
-
-        // Sound SFX button
-        soundBtn?.addEventListener('click', (e) => {
-            this.settings.sfxEnabled = window.soundFX.toggle();
-            e.currentTarget.innerText = this.settings.sfxEnabled ? '🔊 音效: 开' : '🔇 音效: 关';
-            this.saveProgress();
-        });
-
-        // BGM Music button
-        bgmBtn?.addEventListener('click', (e) => {
-            this.settings.bgmEnabled = window.soundFX.toggleBGM();
-            e.currentTarget.innerText = this.settings.bgmEnabled ? '🎵 音乐: 开' : '🎵 音乐: 关';
-            e.currentTarget.classList.toggle('active', this.settings.bgmEnabled);
-            this.saveProgress();
         });
 
         // King Sling power-up button
@@ -2077,10 +2148,13 @@ class AngryBirdsMaster {
             const isWide = this.camera.mode === 'wide';
             e.currentTarget.innerText = isWide ? '🔍 视角: 全景' : '🎯 视角: 特写';
             e.currentTarget.classList.toggle('active', !isWide);
-            this.camera.targetZoom = isWide ? 0.74 : 0.90;
             if (isWide) {
-                this.camera.targetX = 20;
-                this.camera.targetY = -20;
+                const wide = this.getWideFraming();
+                this.camera.targetZoom = wide.zoom;
+                this.camera.targetX = wide.x;
+                this.camera.targetY = wide.y;
+            } else {
+                this.camera.targetZoom = 0.90;
             }
         });
 
@@ -2151,8 +2225,6 @@ class AngryBirdsMaster {
             window.soundFX?.setEnabled(this.settings.sfxEnabled);
             e.currentTarget.innerText = this.settings.sfxEnabled ? '开' : '关';
             e.currentTarget.classList.toggle('active', this.settings.sfxEnabled);
-            const mainSoundBtn = document.getElementById('soundBtn');
-            if (mainSoundBtn) mainSoundBtn.innerText = this.settings.sfxEnabled ? '🔊 音效: 开' : '🔇 音效: 关';
             this.saveProgress();
         });
 
@@ -2161,11 +2233,6 @@ class AngryBirdsMaster {
             window.soundFX?.setBGMEnabled(this.settings.bgmEnabled);
             e.currentTarget.innerText = this.settings.bgmEnabled ? '开' : '关';
             e.currentTarget.classList.toggle('active', this.settings.bgmEnabled);
-            const mainBgmBtn = document.getElementById('bgmBtn');
-            if (mainBgmBtn) {
-                mainBgmBtn.innerText = this.settings.bgmEnabled ? '🎵 音乐: 开' : '🎵 音乐: 关';
-                mainBgmBtn.classList.toggle('active', this.settings.bgmEnabled);
-            }
             this.saveProgress();
         });
 
@@ -3146,30 +3213,26 @@ class AngryBirdsMaster {
             }
         }
 
-        // 4. Camera Framing & Panoramic Overview
+        // 4. Camera Framing & Responsive Panoramic Overview
+        const vw = this.viewWidth || VIEW_WIDTH;
+        const vh = this.viewHeight || VIEW_HEIGHT;
         if (this.camera.mode === 'wide') {
-            this.camera.targetZoom = 0.74;
-            this.camera.targetY = -20;
-            let impactFocus = 0;
-            if (this.activeFlyingBirds.length > 0) {
-                const lead = this.activeFlyingBirds[this.activeFlyingBirds.length - 1];
-                if (lead && lead.position.x > 950) {
-                    impactFocus = Math.min(100, (lead.position.x - 950) * 0.22);
-                }
-            }
-            this.camera.targetX = 20 + impactFocus;
+            const wide = this.getWideFraming();
+            this.camera.targetZoom = wide.zoom;
+            this.camera.targetY = wide.y;
+            this.camera.targetX = wide.x;
         } else {
             // Close-up cinematic follow mode
-            this.camera.targetZoom = 0.90;
+            this.camera.targetZoom = Math.max(0.55, Math.min(1.15, (vw / VIEW_WIDTH) * 0.90));
             if (this.activeFlyingBirds.length > 0) {
                 const lead = this.activeFlyingBirds[this.activeFlyingBirds.length - 1];
                 const curZoom = this.camera.zoom;
-                const maxCamX = Math.max(0, WORLD_WIDTH - VIEW_WIDTH / curZoom);
-                this.camera.targetX = Math.max(0, Math.min(maxCamX, lead.position.x - (VIEW_WIDTH / curZoom) * 0.45));
-                this.camera.targetY = Math.max(-50, Math.min(40, lead.position.y - (VIEW_HEIGHT / curZoom) * 0.52));
+                const maxCamX = Math.max(0, WORLD_WIDTH - vw / curZoom);
+                this.camera.targetX = Math.max(0, Math.min(maxCamX, lead.position.x - (vw / curZoom) * 0.45));
+                this.camera.targetY = Math.max(-80, Math.min(40, lead.position.y - (vh / curZoom) * 0.52));
             } else if (this.currentBird) {
                 this.camera.targetX = 40;
-                this.camera.targetY = -20;
+                this.camera.targetY = (GROUND_Y + 46) - (vh / this.camera.targetZoom);
             }
         }
 
@@ -3323,14 +3386,19 @@ class AngryBirdsMaster {
     render(time) {
         const levelData = window.GAME_LEVELS[this.currentLevelIndex];
         const worldKey = levelData ? levelData.world : 'meadow';
+        const vw = this.viewWidth || VIEW_WIDTH;
+        const vh = this.viewHeight || VIEW_HEIGHT;
+        const dpr = this.dpr || 1;
+
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         // 1. Draw Parallax Background (Screen space)
         window.spriteRenderer.drawWorldBackground(
             this.ctx,
             worldKey,
             this.camera,
-            VIEW_WIDTH,
-            VIEW_HEIGHT,
+            vw,
+            vh,
             WORLD_WIDTH,
             GROUND_Y,
             time
@@ -4006,8 +4074,9 @@ class AngryBirdsMaster {
                     this.ctx.strokeStyle = '#0f172a';
                     this.ctx.lineWidth = 4;
                     this.ctx.textAlign = 'center';
-                    this.ctx.strokeText(text, VIEW_WIDTH / 2, 54);
-                    this.ctx.fillText(text, VIEW_WIDTH / 2, 54);
+                    const vw = this.viewWidth || VIEW_WIDTH;
+                    this.ctx.strokeText(text, vw / 2, 54);
+                    this.ctx.fillText(text, vw / 2, 54);
                     this.ctx.restore();
                 }
             }

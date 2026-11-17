@@ -48,10 +48,11 @@ class SpriteRenderer {
         ctx.save();
         if (bgImg) {
             // Compute horizontal parallax factor (0..1 across camera pan range)
-            const maxCamX = Math.max(1, worldW - viewW / camera.zoom);
-            const panProgress = Math.max(0, Math.min(1, camera.x / maxCamX));
-            const drawW = viewW * 1.28;
-            const drawH = viewH * 1.04;
+            const zoom = (camera && camera.zoom) ? camera.zoom : 1;
+            const maxCamX = Math.max(1, worldW - viewW / zoom);
+            const panProgress = Math.max(0, Math.min(1, (camera && camera.x ? camera.x : 0) / maxCamX));
+            const drawW = Math.max(viewW * 1.28, viewH * 2.1);
+            const drawH = Math.max(viewH * 1.06, ((groundY - (camera && camera.y ? camera.y : 0)) * zoom) + 28);
             const offsetX = -panProgress * (drawW - viewW);
             ctx.drawImage(bgImg, offsetX, -viewH * 0.04, drawW, drawH);
         } else {
@@ -244,8 +245,10 @@ class SpriteRenderer {
     }
 
     _drawProceduralBackground(ctx, worldKey, camera, viewW, viewH, worldW, groundY, time) {
-        const horizon = viewH * 0.70;
         const zoom = (camera && camera.zoom) ? camera.zoom : 1;
+        const camY = (camera && typeof camera.y === 'number') ? camera.y : 0;
+        const groundScreenY = (groundY - camY) * zoom;
+        const horizon = Math.max(viewH * 0.44, Math.min(viewH * 0.78, groundScreenY - 24));
         const maxCamX = Math.max(1, worldW - viewW / zoom);
         const pan = Math.max(0, Math.min(1, (camera && camera.x) ? camera.x / maxCamX : 0));
 
@@ -259,7 +262,9 @@ class SpriteRenderer {
 
     drawForegroundGround(ctx, worldKey, worldW, groundY, worldH) {
         ctx.save();
-        const depth = worldH - groundY + 120;
+        const depth = Math.max(1200, worldH - groundY + 1200);
+        const padLeft = 1400;
+        const totalSpanW = worldW + 3200;
 
         // Soil / Bedrock body
         const soilGrad = ctx.createLinearGradient(0, groundY, 0, groundY + 110);
@@ -285,7 +290,7 @@ class SpriteRenderer {
             soilGrad.addColorStop(1, '#241409');
         }
         ctx.fillStyle = soilGrad;
-        ctx.fillRect(-300, groundY, worldW + 600, depth);
+        ctx.fillRect(-padLeft, groundY, totalSpanW, depth);
 
         // Top Turf / Sandstone / Snow Crust / Cobblestone Cap Strip
         const capH = 18;
@@ -313,17 +318,17 @@ class SpriteRenderer {
             capGrad.addColorStop(1, '#365314');
         }
         ctx.fillStyle = capGrad;
-        ctx.fillRect(-300, groundY - 2, worldW + 600, capH);
+        ctx.fillRect(-padLeft, groundY - 2, totalSpanW, capH);
 
         // Decorative grass tufts / pebbles / icicles / flagstones along ground surface
         ctx.strokeStyle = worldKey === 'desert' ? '#7c2d12' : (worldKey === 'castle' ? '#0f172a' : (worldKey === 'snow' ? '#0284c7' : '#1a2e05'));
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(-300, groundY);
-        ctx.lineTo(worldW + 300, groundY);
+        ctx.moveTo(-padLeft, groundY);
+        ctx.lineTo(worldW + 1800, groundY);
         ctx.stroke();
 
-        for (let x = -100; x < worldW + 200; x += 48) {
+        for (let x = -600; x < worldW + 800; x += 48) {
             if (worldKey === 'meadow') {
                 // Grass blades & tiny wildflowers
                 ctx.fillStyle = '#65a30d';

@@ -11,21 +11,24 @@ body {
     font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #ffffff;
     min-height: 100vh;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow-x: hidden;
-    padding: 12px;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding: 0;
 }
 
 .game-container {
     position: relative;
-    max-width: 1280px;
     width: 100%;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
     background: #020617;
-    border-radius: 20px;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 0 3px rgba(255, 255, 255, 0.12);
+    border-radius: 0;
+    box-shadow: none;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -219,8 +222,10 @@ body {
 /* Canvas wrapper */
 .canvas-wrapper {
     position: relative;
+    flex: 1 1 auto;
     width: 100%;
-    aspect-ratio: 1280 / 720;
+    min-height: 220px;
+    overflow: hidden;
     background: linear-gradient(180deg, #38bdf8 0%, #7dd3fc 60%, #bae6fd 100%);
 }
 
@@ -229,6 +234,36 @@ canvas {
     height: 100%;
     display: block;
     cursor: crosshair;
+}
+
+@media (max-width: 1040px), (max-height: 620px) {
+    .header-bar {
+        padding: 6px 12px;
+        gap: 8px;
+    }
+    .logo-text {
+        font-size: 20px;
+    }
+    .level-sub {
+        display: none;
+    }
+    .scoreboard {
+        gap: 8px;
+    }
+    .score-box {
+        padding: 3px 10px;
+    }
+    .score-box .val {
+        font-size: 16px;
+    }
+    .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .footer-bar {
+        padding: 4px 12px;
+        font-size: 11px;
+    }
 }
 
 /* Bottom status bar */
@@ -256,8 +291,9 @@ canvas {
 
 /* Modals */
 .modal-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
+    padding: 14px;
     background: rgba(15, 23, 42, 0.88);
     backdrop-filter: blur(5px);
     display: flex;
@@ -277,11 +313,13 @@ canvas {
     background: #1e293b;
     border: 3px solid #f59e0b;
     border-radius: 24px;
-    padding: 30px 36px;
+    padding: 26px 32px;
     text-align: center;
     box-shadow: 0 25px 50px rgba(0,0,0,0.85);
     max-width: 480px;
     width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
     animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
 }

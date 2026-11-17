@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>屠龙扫雷 Dragon Sweeper · 云栖奇幻工坊</title>
+    <link rel="stylesheet" href="style.css?v=20261117_1540">
+</head>
+<body>
+    <div class="ds-shell">
+        <header class="topbar">
+            <div class="topbar-left">
+                <a href="../index.html" class="nav-pill">← 游戏大厅</a>
+                <div class="title-group">
+                    <span class="mode-badge" id="modeBadge">地下城第 1 层</span>
+                    <h1 id="stageTitle">1-1 · 翠林前哨</h1>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="mode-switch">
+                    <button class="mode-btn active" id="btnModeStage" type="button">🗺️ 8大关卡</button>
+                    <button class="mode-btn" id="btnModeEndless" type="button">🔥 无尽深渊</button>
+                </div>
+                <div class="max-pill" title="无尽深渊历史最高分 MAX">
+                    <span>MAX</span>
+                    <b id="endlessMaxVal">0</b>
+                </div>
+                <button class="action-pill" id="btnStages" type="button">选关 (8)</button>
+                <button class="action-pill" id="btnRestart" type="button">重开本层</button>
+                <button class="icon-pill" id="btnMute" type="button" title="音效开关">🔊</button>
+            </div>
+        </header>
+
+        <main class="arena-layout">
+            <section class="board-column">
+                <!-- Hero Status Bar -->
+                <div class="hero-bar">
+                    <div class="stat-card atk-card">
+                        <span class="stat-label">⚔️ 当前战力</span>
+                        <strong class="stat-val" id="heroAtkVal">Lv.1</strong>
+                    </div>
+                    <div class="stat-card hp-card">
+                        <span class="stat-label">❤️ 生命值</span>
+                        <strong class="stat-val" id="heroHpVal">6 / 6</strong>
+                    </div>
+                    <div class="stat-card shield-card">
+                        <span class="stat-label">🛡️ 护盾</span>
+                        <strong class="stat-val" id="heroShieldVal">0</strong>
+                    </div>
+                    <div class="stat-card xp-card">
+                        <div class="xp-head">
+                            <span>✨ 升级经验</span>
+                            <b id="heroXpText">0 / 3</b>
+                        </div>
+                        <div class="xp-track"><div class="xp-fill" id="heroXpFill"></div></div>
+                    </div>
+                    <div class="stat-card score-card">
+                        <span class="stat-label">🏆 本局得分</span>
+                        <strong class="stat-val" id="scoreVal">0</strong>
+                    </div>
+                </div>
+
+                <!-- Interactive Dungeon Canvas -->
+                <div class="board-frame">
+                    <canvas id="boardCanvas" width="520" height="520"></canvas>
+                </div>
+
+                <!-- Action & Deduction Tag Bar -->
+                <div class="tool-bar">
+                    <div class="tool-primary-group">
+                        <button class="tool-btn active" id="toolDig" type="button">
+                            <span>⚔️ 探索 / 讨伐</span>
+                        </button>
+                        <button class="tool-btn" id="toolFlag" type="button">
+                            <span>🚩 插旗避险</span>
+                            <small>或右键</small>
+                        </button>
+                        <button class="tool-btn scroll-btn" id="toolScroll" type="button">
+                            <span>📜 鹰眼卷轴</span>
+                            <b id="scrollCount">x2</b>
+                        </button>
+                    </div>
+                    <div class="tag-palette" title="在标记模式下，也可指定标注疑似怪物等级 (快捷键 1~7)">
+                        <span class="palette-label">精准推演签:</span>
+                        <button class="tag-chip active" data-mark="flag" type="button">🚩</button>
+                        <button class="tag-chip" data-mark="1" type="button">1</button>
+                        <button class="tag-chip" data-mark="2" type="button">2</button>
+                        <button class="tag-chip" data-mark="3" type="button">3</button>
+                        <button class="tag-chip" data-mark="4" type="button">4</button>
+                        <button class="tag-chip" data-mark="5" type="button">5</button>
+                        <button class="tag-chip" data-mark="6" type="button">6</button>
+                        <button class="tag-chip" data-mark="7" type="button">7</button>
+                        <button class="tag-chip" data-mark="?" type="button">?</button>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="codex-column">
+                <div class="panel-box brief-box">
+                    <div class="eyebrow">TACTICAL BRIEF · 玩法极速上手</div>
+                    <p id="stageSubtitle" class="brief-sub">沿安全区数字线索追猎 Lv.1~3 小怪升级，再击败 Lv.5 石像鬼首领！</p>
+                    <ul class="rules-list">
+                        <li><strong>大数字</strong> = 周围8格未杀怪物<b>等级总和</b>；底部<b>紫点个数</b> = 剩余怪物<b>只数</b>。</li>
+                        <li><strong>战力 ≥ 怪物等级</strong>：直接<strong>无伤秒杀</strong>并涨经验升级！</li>
+                        <li><strong>战力 &lt; 怪物等级</strong>：强攻受 <code>(怪级-战力)×2</code> 点伤害！盲点必死！</li>
+                        <li>左键点已破数字可<strong>快速安全展开</strong>；找到宝物点击拾取。</li>
+                    </ul>
+                </div>
+
+                <div class="panel-box">
+                    <div class="eyebrow">BESTIARY · 实时战力克制表</div>
+                    <div class="monster-list" id="monsterCodex"></div>
+                </div>
+
+                <div class="panel-box">
+                    <div class="eyebrow">RELICS · 地城补给图标</div>
+                    <div class="relic-grid">
+                        <div class="relic-pill"><span>❤️</span><div><b>圣光药水</b><small>点击恢复 +3 HP</small></div></div>
+                        <div class="relic-pill"><span>⚔️</span><div><b>铁匠锻造</b><small>战力直接 +1</small></div></div>
+                        <div class="relic-pill"><span>🛡️</span><div><b>壁垒圣盾</b><small>+3 伤害护盾</small></div></div>
+                        <div class="relic-pill"><span>📜</span><div><b>鹰眼卷轴</b><small>无伤透视 3×3</small></div></div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- 选关弹窗 -->
+    <div class="modal-backdrop hidden" id="stagesModal" role="dialog" aria-modal="true">
+        <div class="modal-card modal-wide">
+            <div class="modal-head">
+                <div>
+                    <div class="eyebrow">DUNGEON FLOORS · 8 CHALLENGES</div>
+                    <h2>选择地下城试炼关卡</h2>
+                </div>
+                <button class="close-btn" id="btnCloseStages" type="button">✕</button>
+            </div>
+            <div class="stages-grid" id="stagesGrid"></div>
+        </div>
+    </div>
+
+    <!-- 胜负结算弹窗 -->
+    <div class="modal-backdrop hidden" id="resultModal" role="dialog" aria-modal="true">
+        <div class="modal-card modal-compact">
+            <div class="res-badge" id="resultBadge">BOSS SLAIN!</div>
+            <h2 id="resultTitle">讨伐成功！</h2>
+            <div class="res-stars" id="resultStars">★★★</div>
+            <p id="resultDesc" class="res-desc">完美掌控推演与升级节奏！</p>
+            <div class="res-stats">
+                <div class="res-stat"><span>本局得分</span><b id="resScore">0</b></div>
+                <div class="res-stat"><span>斩杀魔物</span><b id="resKills">0</b></div>
+                <div class="res-stat"><span>累计受伤</span><b id="resDamage">0 HP</b></div>
+            </div>
+            <div class="res-actions">
+                <button class="cta-btn" id="btnResultPrimary" type="button">挑战下一层 →</button>
+                <button class="action-pill" id="btnResultRetry" type="button">再战本层 ↻</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="engine.js?v=20261117_1540"></script>
+    <script src="audio.js?v=20261117_1540"></script>
+    <script src="game.js?v=20261117_1540"></script>
+</body>
+</html>

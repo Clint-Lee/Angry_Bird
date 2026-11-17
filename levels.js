@@ -2141,12 +2141,13 @@ window.GAME_LEVELS = [
     }
 ];
 
-// 每个主题内部采用 15 关严格递增的难度曲线。原关卡布局与出鸟顺序完全保留，
-// 只在原堡垒右侧的「可见 + 可达」安全带内追加一座多層哨塔，逐关加高、加守卫、换硬材料。
-// 硬约束（由 tests/smoke_test.js 静态校验，勿随意改动坐标）：
-//   - 普通弹弓最大自由射程约 1838；静止全景可见右边界约 1749.7；
-//   - 因此全部新增目标统一落在 x=1716，既不超出射程，也在静止画面内看得见；
-//   - 最高层保留较软材料作为突破口，保证后期关卡始终存在可击破路径。
+// 每个主题内部采用 15 关严格递增的难度曲线：
+//   1. 拉大猪与小鸟弹弓之间的战线距离（在不改变小鸟飞行初速度的前提下，整体将堡垒合理右移并强化防御）；
+//   2. 后期关卡适度精简小鸟数量（严格控制在 3~5 只），淘汰冗余小鸟、拒绝无脑堆数量；
+//   3. 追加多层重装护盾哨堡（前置盾墙 + 强化承重双柱 + 装甲顶盖），结构更立体坚固。
+// 硬约束（由 tests/smoke_test.js 静态校验）：
+//   - 普通弹弓最大自由射程约 1838..1915；新增装甲哨堡统一锚定在 x=1735（整体前沿≤1625），保证普通弹弓稳定可击破；
+//   - 全屏/缩放自适应相机动态框选弹弓队列至最右猪目标，任何浏览器尺寸下左右双方均可同屏清晰可见。
 (function applyProgressiveDifficulty(levels) {
     const themes = {
         meadow: { base: 'wood', accent: 'glass', support: ['yellow', 'blue', 'bomb'] },
@@ -2156,60 +2157,150 @@ window.GAME_LEVELS = [
         volcano: { base: 'stone', accent: 'glass', support: ['hal', 'bomb', 'terence'] }
     };
     const previousPar = {};
-    const pigRadius = { normal: 22, helmet: 24, foreman: 27 };
-    const OUTPOST_X = 1716;
-    const STORY_HEIGHT = 98;   // 顶梁顶面恰好对齐上一层柱底
+    const pigRadius = { small: 17, normal: 22, helmet: 24, foreman: 27, king: 34 };
+    const OUTPOST_X = 1735;
+    const STORY_HEIGHT = 98;
+
+    function measureBoundsX(buildFn, GY) {
+        let minX = Infinity;
+        let maxX = -Infinity;
+        const track = (x, hw) => {
+            minX = Math.min(minX, x - hw);
+            maxX = Math.max(maxX, x + hw);
+        };
+        const probe = {
+            addBlock: (x, y, w) => track(x, w / 2),
+            addPig: (x, y, t) => track(x, pigRadius[t] || 22),
+            addTNT: (x) => track(x, 21),
+            addBoulder: (x, y, r) => track(x, r || 22),
+            addRoof: (x, y, w) => track(x, w / 2),
+            addStaticPlatform: (x, y, w) => track(x, w / 2),
+            addBouncyPad: (x, y, w) => track(x, (w || 100) / 2),
+            addHangingTNT: (x) => track(x, 21),
+            addPendulumBall: (x) => track(x, 30)
+        };
+        buildFn(probe, GY);
+        return { minX, maxX };
+    }
+
+    function createShiftedBuilder(g, shiftX) {
+        if (!shiftX) return g;
+        return {
+            addBlock: (x, y, w, h, m) => g.addBlock(x + shiftX, y, w, h, m),
+            addPig: (x, y, t) => g.addPig(x + shiftX, y, t),
+            addTNT: (x, y) => g.addTNT(x + shiftX, y),
+            addBoulder: (x, y, r, m) => g.addBoulder(x + shiftX, y, r, m),
+            addRoof: (x, y, w, h, m) => g.addRoof(x + shiftX, y, w, h, m),
+            addStaticPlatform: (x, y, w, h, a, m) => g.addStaticPlatform(x + shiftX, y, w, h, a, m),
+            addBouncyPad: (x, y, w, h, a) => g.addBouncyPad(x + shiftX, y, w, h, a),
+            addHangingTNT: (x1, y1, x2, y2) => g.addHangingTNT(x1 + shiftX, y1, x2 + shiftX, y2),
+            addPendulumBall: (x1, y1, x2, y2, r) => g.addPendulumBall(x1 + shiftX, y1, x2 + shiftX, y2, r)
+        };
+    }
+
+    function tuneBirdsQueue(baseBirds, supportPool, stage, tier) {
+        // 中后期逐步收紧小鸟数量，保留功能鸟并优先精简多余的普通红鸟，提升解谜含金量
+        let list = baseBirds.slice();
+        if (stage <= 3) {
+            return { birds: list.slice(0, 4), addedBirds: 0 };
+        }
+        const cap = tier <= 2 ? 4 : (tier <= 4 ? 4 : 5);
+        const needSpecial = supportPool[0];
+        if (!list.includes(needSpecial) && tier >= 2) {
+            // 用特色功能鸟替换多余的普通红鸟或末位鸟
+            const redIdx = list.indexOf('red');
+            if (redIdx >= 0) list[redIdx] = needSpecial;
+            else if (list.length < cap) list.push(needSpecial);
+        }
+        while (list.length > cap) {
+            const redIdx = list.lastIndexOf('red');
+            if (redIdx >= 0) list.splice(redIdx, 1);
+            else list.pop();
+        }
+        return { birds: list, addedBirds: Math.max(0, list.length - baseBirds.length) };
+    }
 
     levels.forEach((level) => {
         const stage = Number(level.worldLevel.split('-')[1]);
+        const baseBuild = level.build;
+        const baseBounds = measureBoundsX(baseBuild, 660);
+
         if (stage < 4) {
-            // 教学关不加哨站，但仍需保证三星线在世界内平滑递增（原始 parScore 有并列值）
+            // 新手/早期关卡：适度拉大与弹弓距离（右界延伸至约 1690），保持 3~4 只鸟
+            const shiftX = Math.max(20, Math.min(160, 1695 - baseBounds.maxX));
+            level.build = function buildStretchedEarly(g, GY) {
+                baseBuild.call(this, createShiftedBuilder(g, shiftX), GY);
+            };
+            const tuned = tuneBirdsQueue(level.birds, themes[level.world].support, stage, 0);
+            level.birds = tuned.birds;
             level.parScore = Math.max(level.parScore, (previousPar[level.world] || 0) + 1000);
             previousPar[level.world] = level.parScore;
             level.progression = {
                 stage, tier: 0, guardRank: 0, outpostX: null,
-                addedBlocks: 0, addedPigs: 0, addedTnts: 0, addedBirds: 0
+                shiftX: Math.round(shiftX),
+                addedBlocks: 0, addedPigs: 0, addedTnts: 0, addedBirds: 0,
+                birdBudget: level.birds.length
             };
             return;
         }
 
         const theme = themes[level.world];
-        const baseBuild = level.build;
         const t = stage - 4;                    // 0..11
-        const tier = Math.floor(t / 2) + 1;     // 1..6：哨塔层数逐档递增
-        const hardened = (t % 2) === 1;         // 每档第二关：材料与守卫再升一级
-        const guardRank = tier + (hardened ? 1 : 0);  // 1..7，4→15 连续变强
+        const tier = Math.floor(t / 2) + 1;     // 1..6：重装哨堡层数逐档递增
+        const hardened = (t % 2) === 1;         // 每档第二关：护甲材料与守卫再升一级
+        const guardRank = tier + (hardened ? 1 : 0);  // 1..7
         const floors = tier;
-        const extraBirds = tier <= 2 ? 1 : (tier <= 4 ? 2 : 3);
-        const mainMaterial = guardRank >= 5 ? 'stone' : (guardRank >= 3 ? theme.accent : theme.base);
+        const mainMaterial = guardRank >= 4 ? 'stone' : (guardRank >= 2 ? theme.accent : theme.base);
+        const shieldMaterial = guardRank >= 5 ? 'stone' : 'wood';
         const pigType = guardRank >= 6 ? 'foreman' : (guardRank >= 3 ? 'helmet' : 'normal');
         const pigR = pigRadius[pigType] || 22;
 
-        level.build = function buildWithProgression(g, GY) {
-            baseBuild.call(this, g, GY);
+        // 将原堡垒适当右移拉长战线，同时严格停留在前置护盾左侧（<= 1625），留出安全间距
+        const shiftX = Math.max(0, Math.min(115, 1625 - baseBounds.maxX));
+        const hasFrontShield = guardRank >= 3; // 中后期哨堡自带前置重甲护墙
+        const hasRoofCap = guardRank >= 2;     // 带装甲斜顶防护
 
-            // 单塔纵向叠层：越往后越高、越密，但始终留在同一条可见/可达的窄带内。
+        level.build = function buildWithProgression(g, GY) {
+            baseBuild.call(this, createShiftedBuilder(g, shiftX), GY);
+
+            // 1. 多层强化堡垒塔（双柱宽跨 + 顶梁 + 内嵌守卫）
             for (let floor = 0; floor < floors; floor++) {
                 const baseY = GY - floor * STORY_HEIGHT;
-                // 最高层保留较软材料，作为后期关卡的稳定突破口
-                const mat = (floor === floors - 1 && floors >= 4) ? theme.base : mainMaterial;
-                g.addBlock(OUTPOST_X - 36, baseY - 40, 12, 80, mat);
-                g.addBlock(OUTPOST_X + 36, baseY - 40, 12, 80, mat);
-                g.addBlock(OUTPOST_X, baseY - 89, 84, 18, mat);
+                // 仅在极高层保留略脆弱的弱点材料，中下层全面加固
+                const mat = (floor === floors - 1 && floors >= 5) ? theme.accent : mainMaterial;
+                g.addBlock(OUTPOST_X - 42, baseY - 40, 16, 80, mat);
+                g.addBlock(OUTPOST_X + 42, baseY - 40, 16, 80, mat);
+                g.addBlock(OUTPOST_X, baseY - 89, 102, 18, mat);
                 g.addPig(OUTPOST_X, baseY - pigR, pigType);
+            }
+
+            // 2. 前置护盾矮墙：阻挡低平直射，迫使玩家拉高抛物线或爆破开路
+            if (hasFrontShield) {
+                g.addBlock(OUTPOST_X - 66, GY - 48, 16, 96, shieldMaterial);
+            }
+
+            // 3. 顶部装甲斜顶盖：防上方轻量碎裂溅射，增加破顶门槛
+            if (hasRoofCap) {
+                const topY = GY - floors * STORY_HEIGHT;
+                g.addRoof(OUTPOST_X, topY - 22, 92, 42, mainMaterial);
             }
         };
 
-        level.birds = level.birds.concat(theme.support.slice(0, extraBirds));
-        const addedBlocks = floors * 3;
+        const tuned = tuneBirdsQueue(level.birds, theme.support, stage, tier);
+        level.birds = tuned.birds;
+
+        const addedBlocks = floors * 3 + (hasFrontShield ? 1 : 0) + (hasRoofCap ? 1 : 0);
         const addedPigs = floors;
-        const addedScore = addedPigs * 5000 + addedBlocks * 900 + extraBirds * 10000;
+        const addedScore = addedPigs * 5000 + addedBlocks * 1050;
         level.parScore = Math.max(level.parScore + addedScore, (previousPar[level.world] || 0) + 1000);
         previousPar[level.world] = level.parScore;
         level.progression = {
             stage, tier, guardRank,
             outpostX: OUTPOST_X,
-            addedBlocks, addedPigs, addedTnts: 0, addedBirds: extraBirds
+            shiftX: Math.round(shiftX),
+            addedBlocks, addedPigs, addedTnts: 0, addedBirds: tuned.addedBirds,
+            hasFrontShield, hasRoofCap,
+            birdBudget: level.birds.length
         };
     });
 })(window.GAME_LEVELS);

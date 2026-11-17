@@ -802,50 +802,53 @@ body {
     box-shadow: 0 7px 0 #9a3412, 0 14px 28px rgba(249, 115, 22, 0.48);
 }
 
-/* Ricochet Lab Third Flagship Card Styling */
-.rl-badge {
-    background: linear-gradient(90deg, #0ea5e9 0%, #8b5cf6 100%);
-    box-shadow: 0 -2px 12px rgba(56, 189, 248, 0.32);
+/* Dragon Sweeper Third Flagship Card Styling */
+.ds-badge {
+    background: linear-gradient(90deg, #b45309 0%, #be123c 100%);
+    box-shadow: 0 -2px 12px rgba(251, 191, 36, 0.32);
 }
 
-.rl-featured-card {
-    border-color: rgba(56, 189, 248, 0.52);
-    box-shadow: 0 22px 54px rgba(2, 6, 23, 0.68), 0 0 28px rgba(56, 189, 248, 0.14);
+.ds-featured-card {
+    border-color: rgba(251, 191, 36, 0.52);
+    box-shadow: 0 22px 54px rgba(2, 6, 23, 0.68), 0 0 28px rgba(244, 63, 94, 0.14);
 }
 
-.rl-featured-card:hover {
-    border-color: rgba(125, 211, 252, 0.85);
-    box-shadow: 0 28px 68px rgba(2, 6, 23, 0.78), 0 0 36px rgba(139, 92, 246, 0.24);
+.ds-featured-card:hover {
+    border-color: rgba(253, 224, 71, 0.85);
+    box-shadow: 0 28px 68px rgba(2, 6, 23, 0.78), 0 0 36px rgba(225, 29, 72, 0.24);
 }
 
-.rl-visual {
-    background: radial-gradient(circle at 50% 35%, #1e1b4b 0%, #070b19 78%);
+.ds-visual {
+    background: radial-gradient(circle at 50% 35%, #31121d 0%, #090b15 78%);
 }
 
-.rl-visual-badge {
-    border-color: rgba(56, 189, 248, 0.45);
-    color: #bae6fd;
+.ds-visual-badge {
+    border-color: rgba(251, 191, 36, 0.45);
+    color: #fde68a;
 }
 
-.rl-featured-card:hover .lumina-art-svg {
+.ds-featured-card:hover .lumina-art-svg {
     transform: translateY(-4px) scale(1.04);
 }
 
-.pill-world.rl-c2 { background: rgba(245, 158, 11, 0.3); color: #fde68a; }
-.rl-genre { background: #0284c7; }
-.rl-ver   { background: #7c3aed; }
+.pill-world.ds-c1 { background: rgba(74, 222, 128, 0.28); color: #bbf7d0; }
+.pill-world.ds-c2 { background: rgba(192, 132, 252, 0.32); color: #e9d5ff; }
+.pill-world.ds-c3 { background: rgba(244, 63, 94, 0.32); color: #fecdd3; }
+.pill-world.ds-c4 { background: rgba(245, 158, 11, 0.32); color: #fde68a; }
+.ds-genre { background: #be123c; }
+.ds-ver   { background: #d97706; }
 
-.rl-mastery-fill {
-    background: linear-gradient(90deg, #38bdf8 0%, #c084fc 55%, #34d399 100%);
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+.ds-mastery-fill {
+    background: linear-gradient(90deg, #4ade80 0%, #fbbf24 55%, #fb7185 100%);
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
 }
 
-.rl-play-btn {
-    background: linear-gradient(180deg, #0ea5e9 0%, #4f46e5 100%);
-    box-shadow: 0 5px 0 #312e81, 0 10px 24px rgba(56, 189, 248, 0.38);
+.ds-play-btn {
+    background: linear-gradient(180deg, #e11d48 0%, #b45309 100%);
+    box-shadow: 0 5px 0 #7f1d1d, 0 10px 24px rgba(225, 29, 72, 0.38);
 }
 
-.rl-play-btn:hover {
-    background: linear-gradient(180deg, #38bdf8 0%, #6366f1 100%);
-    box-shadow: 0 7px 0 #312e81, 0 14px 28px rgba(99, 102, 241, 0.48);
+.ds-play-btn:hover {
+    background: linear-gradient(180deg, #f43f5e 0%, #d97706 100%);
+    box-shadow: 0 7px 0 #7f1d1d, 0 14px 28px rgba(244, 63, 94, 0.48);
 }

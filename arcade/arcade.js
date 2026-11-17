@@ -135,8 +135,8 @@
         // 5. Fruit Merge live stats sync
         updateFruitMergeCard();
 
-        // 6. Ricochet Lab live stats sync
-        updateRicochetLabCard();
+        // 6. Dragon Sweeper live stats sync
+        updateDragonSweeperCard();
     }
 
     function updateFruitMergeCard() {
@@ -179,47 +179,43 @@
         }
     }
 
-    function updateRicochetLabCard() {
-        const RL_KEY = 'cloudeave_ricochet_lab_v1';
-        const RL_NAMES = [
-            '1-1 初识折射', '1-2 碎晶穿壁', '1-3 双板连弹', '1-4 高塔迂回',
-            '2-1 超级弹床', '2-2 钥匙开闸', '2-3 链式爆破', '2-4 弹珠矩阵',
-            '3-1 星际跃迁', '3-2 黑洞曲射', '3-3 双钥奇点', '3-4 大师终试'
-        ];
-        let rl = null;
+    function updateDragonSweeperCard() {
+        const DS_KEY = 'cloudeave_dragon_sweeper_v1';
+        let ds = null;
         try {
-            const raw = localStorage.getItem(RL_KEY);
-            if (raw) rl = JSON.parse(raw);
-        } catch { rl = null; }
-        if (!rl || typeof rl !== 'object') rl = {};
+            const raw = localStorage.getItem(DS_KEY);
+            if (raw) ds = JSON.parse(raw);
+        } catch { ds = null; }
+        if (!ds || typeof ds !== 'object') ds = {};
 
-        const starsObj = (rl.levelStars && typeof rl.levelStars === 'object') ? rl.levelStars : {};
-        const rlStars = Object.values(starsObj).reduce((s, v) => s + (Number(v) || 0), 0);
-        const rlIdx = Math.max(0, Math.min(11, Number(rl.currentLevelIndex) || 0));
-        const unlocked = Math.max(1, Math.min(12, Number(rl.unlockedLevel) || 1));
-        const rlPct = Math.round((rlStars / 36) * 100);
+        const starsObj = (ds.stageStars && typeof ds.stageStars === 'object') ? ds.stageStars : {};
+        const dsStars = Object.values(starsObj).reduce((s, v) => s + (Number(v) || 0), 0);
+        const bestEndless = Math.max(0, Number(ds.endlessHighScore) || 0);
+        const unlocked = Math.max(1, Math.min(8, Number(ds.unlockedStage) || 1));
+        const slain = Math.max(0, Number(ds.dragonsSlain) || 0);
+        const dsPct = Math.round((dsStars / 24) * 100);
 
-        const starsEl = document.getElementById('rlTotalStars');
-        if (starsEl) starsEl.innerText = `${rlStars} / 36 ★`;
-        const lvlEl = document.getElementById('rlCurrentLvl');
-        if (lvlEl) lvlEl.innerText = RL_NAMES[rlIdx] || '1-1 初识折射';
-        const unlockEl = document.getElementById('rlUnlockedCount');
-        if (unlockEl) unlockEl.innerText = `${unlocked} / 12 关`;
-        const pctEl = document.getElementById('rlMasteryPct');
-        if (pctEl) pctEl.innerText = `${rlPct}%`;
-        const txtEl = document.getElementById('rlMasteryText');
-        if (txtEl) txtEl.innerText = `${rlPct}%`;
-        const fillEl = document.getElementById('rlMasteryFill');
-        if (fillEl) fillEl.style.width = `${rlPct}%`;
+        const starsEl = document.getElementById('dsTotalStars');
+        if (starsEl) starsEl.innerText = `${dsStars} / 24 ★`;
+        const bestEl = document.getElementById('dsEndlessBest');
+        if (bestEl) bestEl.innerText = `${bestEndless.toLocaleString()} 分`;
+        const unlockEl = document.getElementById('dsUnlockedCount');
+        if (unlockEl) unlockEl.innerText = `${unlocked} / 8 层`;
+        const slainEl = document.getElementById('dsDragonsSlain');
+        if (slainEl) slainEl.innerText = `${slain} 只`;
+        const txtEl = document.getElementById('dsMasteryText');
+        if (txtEl) txtEl.innerText = `${dsPct}%`;
+        const fillEl = document.getElementById('dsMasteryFill');
+        if (fillEl) fillEl.style.width = `${dsPct}%`;
 
-        const rlSub = document.getElementById('btnRicochetSub');
-        if (rlSub) rlSub.innerText = rlStars > 0 ? `(继续 ${RL_NAMES[rlIdx]})` : '(3大篇章 12道关卡)';
+        const dsSub = document.getElementById('btnDragonSub');
+        if (dsSub) dsSub.innerText = bestEndless > 0 ? `(无尽MAX ${bestEndless.toLocaleString()}分 · ${dsStars}★)` : '(8大试炼层 / 无尽深渊)';
 
-        const btnRl = document.getElementById('btnPlayRicochet');
-        if (btnRl) {
-            btnRl.href = window.location.pathname.includes('/games/arcade')
-                ? '/games/arcade/ricochet-lab/'
-                : './ricochet-lab/';
+        const btnDs = document.getElementById('btnPlayDragon');
+        if (btnDs) {
+            btnDs.href = window.location.pathname.includes('/games/arcade')
+                ? '/games/arcade/dragon-sweeper/'
+                : './dragon-sweeper/';
         }
     }
 

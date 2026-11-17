@@ -236,36 +236,44 @@ function overlaps(a, b) {
 }
 function takeLast(items, count) { return count > 0 ? items.slice(-count) : []; }
 function expectedOutpost(stage) {
-    if (stage < 4) return { blocks: 0, pigs: 0, tnts: 0, birds: 0 };
-    // 单塔逐档叠层，每层 2 根承重柱 + 1 根顶梁 + 1 只守卫猪
-    const tier = Math.floor((stage - 4) / 2) + 1;   // 1..6
+    if (stage < 4) return { blocks: 0, pigs: 0, tnts: 0 };
+    const t = stage - 4;
+    const tier = Math.floor(t / 2) + 1;   // 1..6
+    const guardRank = tier + (t % 2);
+    const hasFrontShield = guardRank >= 3;
+    const hasRoofCap = guardRank >= 2;
     return {
-        blocks: tier * 3,
+        blocks: tier * 3 + (hasFrontShield ? 1 : 0) + (hasRoofCap ? 1 : 0),
         pigs: tier,
         tnts: 0,
-        birds: tier <= 2 ? 1 : (tier <= 4 ? 2 : 3)
+        guardRank,
+        hasFrontShield,
+        hasRoofCap
     };
 }
 let progressionOk = true, geometryOk = true, separationOk = true, parCurveOk = true;
-let difficultyOk = true, visibilityOk = true, reachableOk = true;
-const STATIC_VISIBLE_RIGHT = 20 + 1280 / 0.74;  // 静止全景可见右边界 ≈ 1749.7
-const SAFE_REACH_X = 1800;                      // 普通弹弓最大自由射程 ≈ 1838，留 38px 余量
+let difficultyOk = true, reachableOk = true, birdBudgetOk = true;
+const SAFE_REACH_X = 1830;                      // 保持原速 LAUNCH_SPEED_NORMAL=0.066 下的安全射程上界
 const lastPar = {};
 const worldTrack = {};
+let maxPigRightX = 0;
 levels.forEach((lv) => {
     const p = lv.progression;
     const stage = Number(lv.worldLevel.split('-')[1]);
     const expected = expectedOutpost(stage);
     if (!p || p.stage !== stage || p.addedBlocks !== expected.blocks ||
-        p.addedPigs !== expected.pigs || p.addedTnts !== expected.tnts ||
-        p.addedBirds !== expected.birds) {
+        p.addedPigs !== expected.pigs || p.addedTnts !== expected.tnts) {
         progressionOk = false;
         console.log('    progression mismatch at ' + lv.worldLevel + ': ' + JSON.stringify(p));
+    }
+    if (lv.birds.length > 5 || (stage <= 10 && lv.birds.length > 4)) {
+        birdBudgetOk = false;
+        console.log('    bird budget too high at ' + lv.worldLevel + ': ' + lv.birds.length);
     }
     if (lastPar[lv.world] !== undefined && lv.parScore <= lastPar[lv.world]) parCurveOk = false;
     lastPar[lv.world] = lv.parScore;
 
-    // 世界内难度必须单调不降，且第 15 关是全场最难（旧版曾出现 15 关弱于 13/14）
+    // 世界内难度必须单调不降，且第 15 关是全场最难
     const track = worldTrack[lv.world] || (worldTrack[lv.world] = { blocks: -1, pigs: -1, rank: -1 });
     if (p.addedBlocks < track.blocks || p.addedPigs < track.pigs || p.guardRank < track.rank) {
         difficultyOk = false;
@@ -281,7 +289,7 @@ levels.forEach((lv) => {
 
     const objects = recordLevel(lv);
     const outpost = [
-        ...takeLast(objects.filter((o) => o.kind === 'block'), expected.blocks),
+        ...takeLast(objects.filter((o) => o.kind === 'block' || o.kind === 'roof'), expected.blocks),
         ...takeLast(objects.filter((o) => o.kind === 'pig'), expected.pigs),
         ...takeLast(objects.filter((o) => o.kind === 'tnt'), expected.tnts),
     ];
@@ -295,11 +303,12 @@ levels.forEach((lv) => {
             console.log('    outpost intersects original footprint at ' + lv.worldLevel);
         }
     }
+    objects.filter((o) => o.kind === 'pig').forEach((pig) => {
+        maxPigRightX = Math.max(maxPigRightX, bounds(pig).right);
+    });
     for (const o of outpost) {
         const b = bounds(o);
-        if (b.left < 1650 || b.right > 1780 || b.top < 0 || b.bottom > 660.5) geometryOk = false;
-        // 通关目标必须在静止画面里看得见，且不能被放到弹弓射程之外。
-        if (o.kind === 'pig' && o.x >= STATIC_VISIBLE_RIGHT) visibilityOk = false;
+        if (b.left < 1650 || b.right > 1800 || b.top < -30 || b.bottom > 660.5) geometryOk = false;
         if (o.x > SAFE_REACH_X) reachableOk = false;
     }
     for (let i = 0; i < outpost.length; i++) {
@@ -311,13 +320,43 @@ levels.forEach((lv) => {
         }
     }
 });
-ok(progressionOk, 'all 75 levels expose the expected staged outpost and support-bird metadata');
+ok(progressionOk, 'all 75 levels expose the expected fortified outpost and support metadata');
+ok(birdBudgetOk, 'mid/late levels tighten bird queue (<=4 through stage 10, <=5 max)');
 ok(difficultyOk, 'difficulty rises monotonically within each world and level 15 is the hardest');
 ok(parCurveOk, 'parScore strictly increases through all 15 levels within every world');
-ok(separationOk, 'every added outpost is fully separated from the original fortress footprint');
-ok(geometryOk, 'added structures stay in bounds and have no unintended AABB overlaps');
-ok(visibilityOk, 'every added pig is visible in the static panoramic camera (x < ' + STATIC_VISIBLE_RIGHT.toFixed(1) + ')');
+ok(separationOk, 'every added outpost is fully separated from the shifted base fortress');
+ok(geometryOk, 'added fortified structures stay in bounds with zero AABB overlaps');
 ok(reachableOk, 'every added structure stays within normal-sling safe reach (x <= ' + SAFE_REACH_X + ')');
+
+// ---------------------------------------------------------------------------
+// 2b. Fullscreen & zoomed-viewport panoramic framing + UI checks
+// ---------------------------------------------------------------------------
+const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const gameJsCheck = fs.readFileSync(path.join(ROOT, 'game.js'), 'utf8');
+ok(!/id="bgmBtn"/.test(indexHtml) && !/id="soundBtn"/.test(indexHtml),
+    'header BGM/SFX buttons moved cleanly out of top bar into Settings modal');
+ok(/id="sfxToggleBtn"/.test(indexHtml) && /id="bgmToggleBtn"/.test(indexHtml),
+    'Settings modal preserves SFX & BGM toggles');
+ok(/const LAUNCH_SPEED_NORMAL\s*=\s*0\.066;/.test(gameJsCheck),
+    'normal bird launch speed factor stays unchanged at 0.066');
+
+function testFraming(vw, vh, rightEdge) {
+    const leftAnchor = 8;
+    const rightAnchor = Math.min(2240, Math.max(1820, rightEdge + 65));
+    const spanX = Math.max(1780, rightAnchor - leftAnchor);
+    const zoom = Math.max(0.24, Math.min(1.45, Math.min(vw / spanX, vh / 740)));
+    const extraW = Math.max(0, vw / zoom - spanX);
+    const camX = leftAnchor - extraW * 0.5;
+    const camY = (660 + 46) - vh / zoom;
+    const leftScreenX = (24 - camX) * zoom;
+    const rightScreenX = (rightEdge - camX) * zoom;
+    const groundScreenY = (660 - camY) * zoom;
+    return leftScreenX >= -0.5 && rightScreenX <= vw + 0.5 && groundScreenY <= vh + 0.5;
+}
+const framingOk = [
+    [2560, 1080], [1920, 960], [1280, 720], [960, 540], [760, 420], [600, 720]
+].every(([vw, vh]) => testFraming(vw, vh, maxPigRightX));
+ok(framingOk, 'responsive framing keeps left birds & rightmost pigs (' + Math.round(maxPigRightX) + 'px) inside viewport at every size/zoom');
 
 // 弹道硬约束：用 game.js 的实际物理常量做纯数值积分（不启动游戏/浏览器），
 // 证明普通弹弓能带着余量打到最远的新增目标，避免再次出现「看不见也打不到」的关卡。
