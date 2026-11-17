@@ -20,18 +20,20 @@
     };
 
     const SPECIAL_TYPES = [
-        { kind: 'vinyl', name: '黑胶音乐盒', bonus: 15, colorTop: '#1e293b', colorLeft: '#0f172a', colorRight: '#334155', accent: '#38bdf8' },
-        { kind: 'parcel', name: '神秘快递盒', bonus: 20, colorTop: '#f59e0b', colorLeft: '#d97706', colorRight: '#b45309', accent: '#fef08a' },
-        { kind: 'store', name: '24h 便利店', bonus: 25, colorTop: '#f8fafc', colorLeft: '#cbd5e1', colorRight: '#94a3b8', accent: '#4ade80' },
-        { kind: 'cube', name: '霓虹魔方台', bonus: 30, colorTop: '#c084fc', colorLeft: '#9333ea', colorRight: '#6b21a8', accent: '#fde047' }
+        { kind: 'vinyl', name: '黑胶唱片机', bonus: 15, colorTop: '#262936', colorLeft: '#181a24', colorRight: '#323646', accent: '#ef4444' },
+        { kind: 'parcel', name: '快递纸箱', bonus: 20, colorTop: '#e3b886', colorLeft: '#c79660', colorRight: '#ab7944', accent: '#f6d8ae' },
+        { kind: 'store', name: '24h 便利店', bonus: 25, colorTop: '#f8fafc', colorLeft: '#cbd5e1', colorRight: '#94a3b8', accent: '#38bdf8' },
+        { kind: 'cube', name: '彩色魔方', bonus: 30, colorTop: '#f8fafc', colorLeft: '#e2e8f0', colorRight: '#cbd5e1', accent: '#f59e0b' },
+        { kind: 'clock', name: '复古时钟台', bonus: 18, colorTop: '#f5efe6', colorLeft: '#d6c7b2', colorRight: '#b8a58d', accent: '#b45309' }
     ];
 
     const STANDARD_PALETTES = [
-        { colorTop: '#f8fafc', colorLeft: '#cbd5e1', colorRight: '#94a3b8' },
-        { colorTop: '#bae6fd', colorLeft: '#38bdf8', colorRight: '#0284c7' },
-        { colorTop: '#fed7aa', colorLeft: '#fb923c', colorRight: '#ea580c' },
-        { colorTop: '#bbf7d0', colorLeft: '#4ade80', colorRight: '#16a34a' },
-        { colorTop: '#fbcfe8', colorLeft: '#f472b6', colorRight: '#db2777' }
+        { style: 'minimal', colorTop: '#ffffff', colorLeft: '#dce3ec', colorRight: '#bec8d6' },
+        { style: 'wood',    colorTop: '#ecd7bc', colorLeft: '#cfa880', colorRight: '#b48a62' },
+        { style: 'grid',    colorTop: '#f1f5f9', colorLeft: '#cbd5e1', colorRight: '#94a3b8' },
+        { style: 'slate',   colorTop: '#64748b', colorLeft: '#475569', colorRight: '#334155' },
+        { style: 'sage',    colorTop: '#d7ebe0', colorLeft: '#a8cfb9', colorRight: '#82b398' },
+        { style: 'cream',   colorTop: '#fbf5e8', colorLeft: '#e2d5bc', colorRight: '#c7b79a' }
     ];
 
     function clamp(v, lo, hi) {
@@ -63,15 +65,16 @@
                 spec = SPECIAL_TYPES[Math.floor(rng() * SPECIAL_TYPES.length)];
             }
             const pal = STANDARD_PALETTES[pIdx % STANDARD_PALETTES.length];
-            const isRound = !spec && (rng() > 0.72);
+            const isRound = !spec && (rng() > 0.68);
             const plat = {
                 id: idSeq++,
                 x,
                 z,
                 halfW: halfSize,
                 halfD: halfSize,
-                height: spec ? 52 : (40 + Math.round(rng() * 14)),
+                height: spec ? 52 : (42 + Math.round(rng() * 14)),
                 isRound,
+                style: spec ? spec.kind : pal.style,
                 special: spec,
                 bonusAwarded: false,
                 colorTop: spec ? spec.colorTop : pal.colorTop,
@@ -79,7 +82,8 @@
                 colorRight: spec ? spec.colorRight : pal.colorRight,
                 accent: spec ? spec.accent : '#38bdf8',
                 squish: 0,
-                bounceVel: 0
+                bounceVel: 0,
+                spawnAnim: 1
             };
             platforms.push(plat);
             return plat;
@@ -88,20 +92,22 @@
         function spawnNextPlatform() {
             const cur = platforms[platforms.length - 1];
             const stepAxis = rng() > 0.48 ? 'x' : 'z';
-            const minGap = cur.halfW + 76;
-            const maxGap = Math.min(285, 195 + Math.min(90, platforms.length * 4));
+            const minGap = cur.halfW + 78;
+            const maxGap = Math.min(280, 195 + Math.min(85, platforms.length * 4));
             const dist = minGap + rng() * (maxGap - minGap);
-            const shrink = Math.min(20, Math.floor(platforms.length / 4) * 2);
-            const halfSize = Math.max(30, 52 - shrink + Math.round((rng() - 0.5) * 10));
-            const isSpecial = platforms.length >= 2 && (platforms.length % 4 === 0 || rng() < 0.16);
+            const shrink = Math.min(18, Math.floor(platforms.length / 4) * 2);
+            const halfSize = Math.max(32, 54 - shrink + Math.round((rng() - 0.5) * 8));
+            const isSpecial = platforms.length >= 2 && (platforms.length % 4 === 0 || rng() < 0.18);
             const nx = cur.x + (stepAxis === 'x' ? dist : 0);
             const nz = cur.z + (stepAxis === 'z' ? dist : 0);
             return addPlatform(nx, nz, halfSize, isSpecial);
         }
 
         // Start platform + First target
-        const startPlat = addPlatform(0, 0, 56, false);
-        addPlatform(175, 0, 52, false);
+        const startPlat = addPlatform(0, 0, 58, false);
+        startPlat.spawnAnim = 0;
+        const firstNext = addPlatform(175, 0, 54, false);
+        firstNext.spawnAnim = 0;
 
         const session = {
             platforms,
@@ -113,9 +119,13 @@
                 dirAxis: 'x', // 'x' (+X right-upward) or 'z' (+Z left-upward)
                 flipRot: 0,
                 fallTilt: 0,
-                fallSide: 0
+                fallSide: 0,
+                landSquash: 0,
+                landVel: 0,
+                wobble: 0,
+                wobbleDir: 1
             },
-            camera: { x: 85, z: 0, targetX: 85, targetZ: 0 },
+            camera: { x: 88, z: 0, targetX: 88, targetZ: 0 },
             state: 'idle', // 'idle' | 'charging' | 'jumping' | 'falling' | 'lost'
             chargeTime: 0,
             jumpState: null,
@@ -185,13 +195,16 @@
             const cleanDt = clamp(dt, 0, 0.05);
             const events = [];
 
-            // Spring wobble physics on platforms
+            // Spring wobble physics on platforms & spawn drop-in settling
             for (const p of platforms) {
+                if (p.spawnAnim > 0) {
+                    p.spawnAnim = Math.max(0, p.spawnAnim - cleanDt * 4.2);
+                }
                 if (session.state === 'charging' && p === platforms[session.currentIndex]) {
                     continue;
                 }
                 if (Math.abs(p.squish) > 0.001 || Math.abs(p.bounceVel) > 0.001) {
-                    const force = -160 * p.squish - 14 * p.bounceVel;
+                    const force = -165 * p.squish - 13 * p.bounceVel;
                     p.bounceVel += force * cleanDt;
                     p.squish += p.bounceVel * cleanDt;
                     if (Math.abs(p.squish) < 0.002 && Math.abs(p.bounceVel) < 0.05) {
@@ -201,15 +214,31 @@
                 }
             }
 
+            // Player landing spring & edge rim wobble
+            const pl = session.player;
+            if (Math.abs(pl.landSquash) > 0.001 || Math.abs(pl.landVel) > 0.001) {
+                const lf = -220 * pl.landSquash - 15 * pl.landVel;
+                pl.landVel += lf * cleanDt;
+                pl.landSquash += pl.landVel * cleanDt;
+                if (Math.abs(pl.landSquash) < 0.002 && Math.abs(pl.landVel) < 0.04) {
+                    pl.landSquash = 0;
+                    pl.landVel = 0;
+                }
+            }
+            if (pl.wobble > 0) {
+                pl.wobble = Math.max(0, pl.wobble - cleanDt * 2.2);
+            }
+
             // Smooth isometric camera tracking
-            session.camera.x += (session.camera.targetX - session.camera.x) * Math.min(1, cleanDt * 5.2);
-            session.camera.z += (session.camera.targetZ - session.camera.z) * Math.min(1, cleanDt * 5.2);
+            session.camera.x += (session.camera.targetX - session.camera.x) * Math.min(1, cleanDt * 4.8);
+            session.camera.z += (session.camera.targetZ - session.camera.z) * Math.min(1, cleanDt * 4.8);
 
             if (session.state === 'charging') {
                 session.chargeTime = Math.min(CONFIG.maxChargeSec, session.chargeTime + cleanDt);
                 const curPlat = platforms[session.currentIndex];
                 curPlat.squish = clamp(session.chargeTime / CONFIG.maxChargeSec, 0, 1) * 0.36;
                 session.player.y = -curPlat.squish * 34;
+                session.player.wobble = 0;
                 return events;
             }
 
@@ -220,7 +249,8 @@
                 session.player.x = js.sx + (js.tx - js.sx) * u;
                 session.player.z = js.sz + (js.tz - js.sz) * u;
                 session.player.y = 4 * CONFIG.peakHeight * u * (1 - u);
-                session.player.flipRot = u * Math.PI * 2;
+                const dirSign = session.player.dirAxis === 'x' ? 1 : -1;
+                session.player.flipRot = dirSign * u * Math.PI * 2;
 
                 if (u >= 1) {
                     session.player.y = 0;
@@ -234,8 +264,19 @@
                         session.jumps += 1;
                         nextPlat.squish = 0.24;
                         nextPlat.bounceVel = 0.8;
+                        pl.landSquash = 0.24;
+                        pl.landVel = -0.6;
 
                         const distToCenter = Math.hypot(session.player.x - nextPlat.x, session.player.z - nextPlat.z);
+                        const edgeMargin = nextPlat.isRound
+                            ? (nextPlat.halfW - distToCenter)
+                            : Math.min(nextPlat.halfW - Math.abs(session.player.x - nextPlat.x), nextPlat.halfD - Math.abs(session.player.z - nextPlat.z));
+                        const nearEdge = edgeMargin < 8.5;
+                        if (nearEdge) {
+                            pl.wobble = 1.0;
+                            pl.wobbleDir = (session.player.dirAxis === 'x' ? 1 : -1);
+                        }
+
                         let pts = 1;
                         let isBullseye = false;
                         if (distToCenter <= CONFIG.bullseyeRadius) {
@@ -266,12 +307,14 @@
                             z: session.player.z,
                             points: pts,
                             bullseye: isBullseye,
+                            nearEdge,
                             streak: session.bullseyeStreak,
                             special: nextPlat.special ? nextPlat.special.kind : null
                         });
                     } else if (curPlat && isInsidePlatform(session.player.x, session.player.z, curPlat)) {
                         // Weak tap stayed safely on current platform
                         curPlat.squish = 0.14;
+                        pl.landSquash = 0.14;
                         session.state = 'idle';
                         session.bullseyeStreak = 0;
                         events.push({ type: 'stay', x: session.player.x, z: session.player.z });
@@ -346,3 +389,4 @@
         normalizeSave
     };
 });
+

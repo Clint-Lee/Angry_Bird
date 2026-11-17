@@ -702,8 +702,8 @@ class AngryBirdsMaster {
                                     (birdType === 'yellow' && d.material === 'wood') ||
                                     (birdType === 'hal');
                                 const isChuckDashed = birdType === 'yellow' && hitter.customData?.abilityUsed;
-                                const baseCarry = isChuckDashed ? 0.90 : (isSpecialistMatch ? 0.80 : 0.48);
-                                const overkillCarry = Math.min(0.92, Math.max(0.32, (1 - hpBefore / (dmg * 1.25)) * 0.28 + baseCarry * 0.72));
+                                const baseCarry = isChuckDashed ? 0.92 : (isSpecialistMatch ? 0.84 : 0.56);
+                                const overkillCarry = Math.min(0.94, Math.max(0.38, (1 - hpBefore / (dmg * 1.25)) * 0.30 + baseCarry * 0.72));
                                 Body.setVelocity(hitter, {
                                     x: pv.x * overkillCarry,
                                     y: pv.y * overkillCarry
@@ -1006,20 +1006,20 @@ class AngryBirdsMaster {
     // LEVEL BUILDER HELPER METHODS (Invoked by levels.js)
     // =========================================================================
     addBlock(x, y, width, height, material) {
-        let hp = 135;
-        let density = 0.0028;
-        let friction = 0.92;
+        let hp = 100;
+        let density = 0.0024;
+        let friction = 0.90;
         let restitution = 0.02;
 
         if (material === 'glass') {
-            hp = 52;
-            density = 0.0017;
-            friction = 0.74;
+            hp = 40;
+            density = 0.0015;
+            friction = 0.72;
             restitution = 0.02;
         } else if (material === 'stone') {
-            hp = 400;
-            density = 0.0068;
-            friction = 0.96;
+            hp = 290;
+            density = 0.0060;
+            friction = 0.95;
             restitution = 0.01;
         }
 
@@ -1064,8 +1064,8 @@ class AngryBirdsMaster {
                 material,
                 width,
                 height,
-                maxHp: material === 'stone' ? 320 : 130,
-                hp: material === 'stone' ? 320 : 130,
+                maxHp: material === 'stone' ? 250 : 105,
+                hp: material === 'stone' ? 250 : 105,
                 dead: false
             }
         });
@@ -1085,8 +1085,8 @@ class AngryBirdsMaster {
                 shape: 'boulder',
                 material,
                 radius,
-                maxHp: 450,
-                hp: 450,
+                maxHp: 320,
+                hp: 320,
                 dead: false
             }
         });
@@ -1097,20 +1097,20 @@ class AngryBirdsMaster {
 
     addPig(x, y, pigType = 'normal') {
         let radius = 22;
-        let hp = 64; // Tougher pig armor
+        let hp = 48; // Balanced armor: harder than v1, fair to topple
 
         if (pigType === 'small') {
             radius = 16;
-            hp = 36;
+            hp = 28;
         } else if (pigType === 'helmet') {
             radius = 23;
-            hp = 132;
+            hp = 100;
         } else if (pigType === 'foreman') {
             radius = 26;
-            hp = 178;
+            hp = 135;
         } else if (pigType === 'king') {
             radius = 36;
-            hp = 330;
+            hp = 260;
         }
 
         const pig = Bodies.circle(x, y, radius, {

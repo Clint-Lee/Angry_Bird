@@ -268,7 +268,7 @@ levels.forEach((lv) => {
         progressionOk = false;
         console.log('    progression mismatch at ' + lv.worldLevel + ': ' + JSON.stringify(p));
     }
-    const maxBirdsForStage = stage <= 3 ? 4 : (stage <= 9 ? 3 : (stage <= 14 ? 4 : 5));
+    const maxBirdsForStage = stage <= 3 ? 4 : (stage <= 8 ? 4 : (stage <= 14 ? 5 : 6));
     if (lv.birds.length > maxBirdsForStage) {
         birdBudgetOk = false;
         console.log('    bird budget too high at ' + lv.worldLevel + ': ' + lv.birds.length + ' > ' + maxBirdsForStage);
@@ -324,7 +324,7 @@ levels.forEach((lv) => {
     }
 });
 ok(progressionOk, 'all 120 levels expose the expected fortified outpost and support metadata');
-ok(birdBudgetOk, 'levels enforce tougher bird caps (<=3 for stages 4-9, <=4 for 10-14, <=5 max)');
+ok(birdBudgetOk, 'levels enforce balanced bird caps (<=4 for stages 4-8, <=5 for 9-14, <=6 max)');
 ok(difficultyOk, 'difficulty rises monotonically within each world and level 15 is the hardest');
 ok(parCurveOk, 'parScore strictly increases through all 15 levels within every world');
 ok(separationOk, 'every added outpost is fully separated from the shifted base fortress');

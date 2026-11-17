@@ -87,3 +87,4 @@ test('Upgrades, Zone unlocks, Prestige multiplier and Audio Limiter work cleanly
 console.log('\n----------------------------------------');
 console.log(`${passed} checks passed, ${failed} failures. ${failed === 0 ? 'ADVENTURE TYCOON TEST OK' : ''}`);
 if (failed > 0) process.exit(1);
+

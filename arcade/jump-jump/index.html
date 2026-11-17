@@ -3,50 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>微信跳一跳 Jump Jump · 云栖工坊</title>
-    <link rel="stylesheet" href="style.css?v=20261117_1700">
+    <title>微信跳一跳 · Jump Jump</title>
+    <link rel="stylesheet" href="style.css?v=20261117_1800">
 </head>
 <body>
-    <div class="jj-shell">
-        <header class="topbar">
-            <div class="top-left">
-                <a href="../index.html" class="nav-pill">← 游戏大厅</a>
-                <h1>跳一跳 · Jump Jump</h1>
-            </div>
-            <div class="top-right">
-                <div class="stat-pill"><span>当前分数</span><b id="scoreVal">0</b></div>
-                <div class="stat-pill max-pill"><span>历史 MAX</span><b id="bestVal">0</b></div>
-                <div class="stat-pill streak-pill" id="streakPill"><span>中心连击</span><b id="streakVal">×0</b></div>
-                <button class="action-pill" id="btnRestart" type="button">↻ 重开</button>
-                <button class="action-pill" id="btnMute" type="button" title="音效开关">🔊</button>
-            </div>
-        </header>
+    <main class="jj-stage">
+        <div class="canvas-wrap">
+            <canvas id="jumpCanvas" width="660" height="680"></canvas>
 
-        <main class="stage-wrap">
-            <div class="canvas-frame">
-                <canvas id="jumpCanvas" width="520" height="640"></canvas>
-                <div class="ctrl-hint">🖱️ <b>按住鼠标</b> 或 ⌨️ <b>长按空格键</b> 蓄力 · 松开立即起跳！<br><small>跳中正中心双倍加分 · 在音乐盒/快递盒等彩蛋台上停留 1 秒可触发隐藏巨额加分</small></div>
+            <!-- Minimal WeChat-inspired floating HUD -->
+            <div class="hud-top-left">
+                <div class="big-score" id="scoreVal">0</div>
+                <div class="sub-meta">
+                    <span>最高 <b id="bestVal">0</b></span>
+                    <span class="streak-tag" id="streakWrap" hidden>连击 <b id="streakVal">×0</b></span>
+                </div>
             </div>
-        </main>
-    </div>
 
-    <!-- Game Over MAX Summary Modal -->
+            <div class="hud-top-right">
+                <a href="../index.html" class="hud-btn">← 大厅</a>
+                <button class="hud-btn" id="btnRestart" type="button">重开</button>
+                <button class="hud-btn icon-btn" id="btnMute" type="button" title="音效开关">🔊</button>
+            </div>
+
+            <div class="whisper-hint" id="whisperHint">
+                按住 <b>鼠标左键 / 触屏</b> 或 <b>空格键</b> 蓄力，松开起跳
+            </div>
+        </div>
+    </main>
+
+    <!-- Clean Settlement Overlay -->
     <div class="modal-backdrop hidden" id="overModal" role="dialog" aria-modal="true">
         <div class="modal-card">
             <div class="over-badge" id="overBadge">GAME OVER</div>
-            <h2 id="overTitle">本局结束！</h2>
+            <h2 id="overTitle">本局得分</h2>
             <div class="over-score" id="overScore">0</div>
             <div class="over-stats">
-                <div class="os-box"><span>历史 MAX</span><b id="overBest">0</b></div>
+                <div class="os-box"><span>历史最高</span><b id="overBest">0</b></div>
                 <div class="os-box"><span>跳跃步数</span><b id="overJumps">0</b></div>
-                <div class="os-box"><span>最高中心连击</span><b id="overCombo">×0</b></div>
+                <div class="os-box"><span>最佳连击</span><b id="overCombo">×0</b></div>
             </div>
-            <button class="cta-btn" id="btnPlayAgain" type="button">再来一局 ↻ <small>[Enter / R]</small></button>
+            <button class="cta-btn" id="btnPlayAgain" type="button">再来一局 <small>[空格 / Enter]</small></button>
         </div>
     </div>
 
-    <script src="engine.js?v=20261117_1700"></script>
-    <script src="audio.js?v=20261117_1700"></script>
-    <script src="game.js?v=20261117_1700"></script>
+    <script src="engine.js?v=20261117_1800"></script>
+    <script src="audio.js?v=20261117_1800"></script>
+    <script src="game.js?v=20261117_1800"></script>
 </body>
 </html>

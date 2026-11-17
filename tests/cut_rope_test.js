@@ -74,3 +74,4 @@ test('Pointer line slicing detects rope intersections accurately & Audio routes 
 console.log('\n----------------------------------------');
 console.log(`${passed} checks passed, ${failed} failures. ${failed === 0 ? 'CUT ROPE TEST OK' : ''}`);
 if (failed > 0) process.exit(1);
+

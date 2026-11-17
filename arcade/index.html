@@ -3,532 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>云檐趣阁网页小游戏平台 - Web Mini-Games Arcade</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%230b1322'/><text x='32' y='44' font-size='34' text-anchor='middle'>🕹️</text></svg>">
-    <link rel="stylesheet" href="style.css?v=20261116_2330">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>云檐趣阁 · 网页小游戏大厅</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%2311161f'/><text x='32' y='44' font-size='34' text-anchor='middle'>🕹️</text></svg>">
+    <link rel="stylesheet" href="style.css?v=20261117_1800">
 </head>
 <body>
-    <div class="arcade-container">
-        <!-- Top Arcade Navigation Bar -->
+    <div class="arcade-shell">
         <header class="arcade-header">
-            <div class="header-brand">
-                <span class="arcade-logo-icon">🕹️</span>
-                <div class="brand-text">
-                    <h1>云檐趣阁小游戏大厅</h1>
-                    <span class="brand-sub">CLOUDEAVE WEB MINI-GAMES ARCADE</span>
-                </div>
+            <div class="brand">
+                <h1>云檐趣阁小游戏</h1>
+                <span class="brand-sub">5 款纯前端小游戏 · 免登录自动存档</span>
             </div>
-
             <div class="header-actions">
-                <div class="storage-indicator" title="当前所有游戏进度已保存在浏览器本地，无需登录随开随玩">
-                    <span class="status-dot"></span>
-                    <span class="storage-text">本地免登录自动存档</span>
-                </div>
-                <a href="https://39.97.50.218:8080/" class="btn-portal-back" title="返回云檐趣阁应用门户">
-                    <span class="icon">🛡️</span> 返回云檐门户
-                </a>
+                <a href="https://39.97.50.218:8080/" class="btn-portal">返回门户</a>
             </div>
         </header>
 
-        <!-- Main Arcade Content -->
-        <main class="arcade-main">
-            <!-- Hero Featured Game Card (Angry Birds Remastered) -->
-            <section class="hero-section">
-                <div class="section-badge">🔥 热门推荐 · 今日主打</div>
-                
-                <div class="featured-card">
-                    <div class="card-visual">
-                        <div class="visual-badge">🟢 官方超清重制版 · 立即开玩</div>
-                        <div class="visual-art">
-                            <span class="hero-emoji-flock">🎯 🐦 💣 🐷</span>
-                        </div>
-                        <div class="worlds-pills">
-                            <span class="pill-world meadow">🌲 翠绿牧场</span>
-                            <span class="pill-world desert">🏜️ 落日峡谷</span>
-                            <span class="pill-world snow">❄️ 冰峰极境</span>
-                            <span class="pill-world castle">🏰 暗夜王城</span>
-                            <span class="pill-world volcano">🌋 炽热熔岩</span>
-                        </div>
+        <main class="games-grid">
+            <!-- 1. 愤怒的小鸟 -->
+            <article class="game-card">
+                <a href="./angry-birds/" class="cover-link" id="linkCoverAb" aria-label="开始愤怒的小鸟">
+                    <canvas class="cover-canvas" data-cover="angry-birds" width="400" height="225"></canvas>
+                    <span class="cover-tag">8 大章节 · 120 关</span>
+                </a>
+                <div class="card-body">
+                    <div class="title-line">
+                        <h2>愤怒的小鸟</h2>
+                        <span class="genre">物理弹弓</span>
                     </div>
-
-                    <div class="card-details">
-                        <div class="card-header">
-                            <div class="game-meta-row">
-                                <span class="tag-genre">物理弹弓对决</span>
-                                <span class="tag-version">Remastered v3.1</span>
-                                <span class="tag-levels">8大章节 · 120关 · 全屏自适应</span>
-                            </div>
-                            <h2 class="game-title">愤怒的小鸟：全章节重制版</h2>
-                            <p class="game-desc">
-                                全屏自适应视野的硬核物理弹弓对决！已全面升级<strong>第4关起硬核配鸟与护盾多翼要塞</strong>，并新增<strong>翠竹禅林、云海浮空岛、星际异星</strong>三大主题世界（保留经典飞行速度，支持任意浏览器缩放自适应同屏）。八大主题世界、7大绝技小鸟，挑战你的精准算度与拆柱技巧！
-                            </p>
-                        </div>
-
-                        <!-- Live LocalStorage Saved Stats for Angry Birds -->
-                        <div class="saved-stats-panel">
-                            <div class="stats-title-row">
-                                <span class="title">💾 本机历史存档记录</span>
-                                <span class="notice">浏览器 LocalStorage 自动同步</span>
-                            </div>
-                            <div class="stats-pills-row">
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">累计星星</span>
-                                    <span class="bubble-val" id="abTotalStars">0 / 360 ⭐</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">当前进度</span>
-                                    <span class="bubble-val highlight" id="abCurrentLvl">1-1 初试锋芒</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">历史总分</span>
-                                    <span class="bubble-val" id="abTotalScore">0 分</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">已解锁关卡</span>
-                                    <span class="bubble-val" id="abUnlockedCount">1 / 120 关</span>
-                                </div>
-                            </div>
-                            <div class="mastery-bar-wrap">
-                                <div class="mastery-meta">
-                                    <span>🏆 全章满星进度</span>
-                                    <strong id="abMasteryPct">0%</strong>
-                                </div>
-                                <div class="mastery-track">
-                                    <div class="mastery-fill" id="abMasteryFill" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Action Launch Buttons -->
-                        <div class="card-actions">
-                            <a href="./angry-birds/" class="btn-play-primary" id="btnResumePlay">
-                                <span>🚀 立即开玩</span>
-                                <span class="action-sub" id="btnPlaySubtitle">(继续第 1-1 关)</span>
-                            </a>
-                            <a href="./angry-birds/" class="btn-play-secondary" id="btnFreshPlay">
-                                <span>↻ 从第一关开始</span>
-                            </a>
+                    <p class="brief">拉动弹弓计算抛物线并触发小鸟特技，击垮绿猪防线。</p>
+                    <div class="card-foot">
+                        <span class="stat-text" id="abSummary">1-1 · 0 / 360 ⭐</span>
+                        <div class="btn-group">
+                            <a href="./angry-birds/" class="btn-quiet" id="btnFreshPlay" title="从第一关重新开始">重开</a>
+                            <a href="./angry-birds/" class="btn-play" id="btnResumePlay">开始游戏</a>
                         </div>
                     </div>
                 </div>
-            </section>
+            </article>
 
-            <!-- Second Featured Playable Game: Fruit Merge -->
-            <section class="hero-section puzzle-hero-section">
-                <div class="section-badge puzzle-badge">🍉 焕新上线 · 物理合成果园</div>
-
-                <div class="featured-card puzzle-featured-card">
-                    <div class="card-visual puzzle-visual">
-                        <div class="visual-badge puzzle-visual-badge">🍓 鲜果 / 萌宠双画风 · 立即开玩</div>
-                        <div class="visual-art puzzle-art-wrap" aria-hidden="true">
-                            <svg class="lumina-art-svg" viewBox="0 0 120 120" fill="none">
-                                <circle cx="62" cy="70" r="34" fill="#22c55e" stroke="#bbf7d0" stroke-width="2.5" />
-                                <path d="M44 43C48 64 46 82 44 96M62 36C65 62 64 84 62 103M80 43C82 64 81 82 78 96" stroke="#15803d" stroke-width="4" stroke-linecap="round" />
-                                <path d="M48 39L53 27L62 35L71 27L76 39Z" fill="#fde047" />
-                                <circle cx="51" cy="68" r="3.5" fill="#1e293b" />
-                                <circle cx="73" cy="68" r="3.5" fill="#1e293b" />
-                                <path d="M56 76Q62 82 68 76" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" />
-                                <circle cx="30" cy="36" r="15" fill="#fda4af" stroke="#ffe4e6" stroke-width="2" />
-                                <circle cx="92" cy="34" r="13" fill="#ffb347" stroke="#fef08a" stroke-width="2" />
-                                <circle cx="26" cy="88" r="11" fill="#ff5252" stroke="#fecdd3" stroke-width="2" />
-                            </svg>
-                        </div>
-                        <div class="worlds-pills">
-                            <span class="pill-world lg-c1">🍓 质感鲜果</span>
-                            <span class="pill-world lg-c2">💥 果汁飞溅</span>
-                            <span class="pill-world lg-c3">🏆 MAX 最高分</span>
-                            <span class="pill-world lg-c4">🐱 萌宠切换</span>
-                        </div>
+            <!-- 2. 合成大西瓜 -->
+            <article class="game-card">
+                <a href="./fruit-merge/" class="cover-link" id="linkCoverFm" aria-label="开始合成大西瓜">
+                    <canvas class="cover-canvas" data-cover="fruit-merge" width="400" height="225"></canvas>
+                    <span class="cover-tag">无尽挑战 · 双皮肤</span>
+                </a>
+                <div class="card-body">
+                    <div class="title-line">
+                        <h2>合成大西瓜</h2>
+                        <span class="genre">物理合成</span>
                     </div>
-
-                    <div class="card-details">
-                        <div class="card-header">
-                            <div class="game-meta-row">
-                                <span class="tag-genre puzzle-genre">2D物理合成果园</span>
-                                <span class="tag-version puzzle-ver">Fruit Merge v2.0</span>
-                                <span class="tag-levels">经典无尽挑战 · 11阶高质感鲜果</span>
-                            </div>
-                            <h2 class="game-title">萌果奇缘 · 合成大西瓜</h2>
-                            <p class="game-desc">
-                                真实 <strong>2D 刚体滚动物理</strong>！全新手绘质感<strong>11 阶鲜果与果汁爆裂飞溅</strong>，支持<strong>鲜果 / 萌宠双套皮肤</strong>与三大救场道具。专注经典无尽高分对决，自动记录你的 <strong>MAX 最高分纪录</strong>，触顶即结、一键重开再破新高！
-                            </p>
-                        </div>
-
-                        <!-- Live LocalStorage Saved Stats for Fruit Merge -->
-                        <div class="saved-stats-panel">
-                            <div class="stats-title-row">
-                                <span class="title" style="color:#fdba74;">🍉 萌果奇缘 · MAX 历史纪录</span>
-                                <span class="notice">浏览器 LocalStorage 自动同步</span>
-                            </div>
-                            <div class="stats-pills-row">
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">MAX 最高分</span>
-                                    <span class="bubble-val highlight" id="fmEndlessBest">0 分</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">最高合成等级</span>
-                                    <span class="bubble-val" id="fmHighestTier">小樱桃</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">历史累计局数</span>
-                                    <span class="bubble-val" id="fmGamesPlayed">0 局</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">黄金大西瓜数</span>
-                                    <span class="bubble-val" id="fmWatermelons">0 颗</span>
-                                </div>
-                            </div>
-                            <div class="mastery-bar-wrap">
-                                <div class="mastery-meta">
-                                    <span>🏆 果实图鉴解锁度</span>
-                                    <strong id="fmMasteryPct">9%</strong>
-                                </div>
-                                <div class="mastery-track">
-                                    <div class="mastery-fill lg-mastery-fill" id="fmMasteryFill" style="width: 9%"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <a href="./fruit-merge/" class="btn-play-primary lg-play-btn" id="btnPlayFruit">
-                                <span>🍉 立即开玩 · 合成大西瓜</span>
-                                <span class="action-sub" id="btnFruitSub">(经典无尽 · MAX最高分)</span>
-                            </a>
-                        </div>
+                    <p class="brief">控制水果下落与滚动碰撞，两两合成更大果实直至大西瓜。</p>
+                    <div class="card-foot">
+                        <span class="stat-text" id="fmSummary">最高 0 分 · 0 局</span>
+                        <a href="./fruit-merge/" class="btn-play" id="btnPlayFruit">开始游戏</a>
                     </div>
                 </div>
-            </section>
+            </article>
 
-            <!-- Third Featured Playable Game: Cut the Rope -->
-            <section class="hero-section cr-hero-section">
-                <div class="section-badge cr-badge">🍬 益智上新 · 物理剪绳喂怪大作战</div>
-
-                <div class="featured-card cr-featured-card">
-                    <div class="card-visual cr-visual">
-                        <div class="visual-badge cr-visual-badge">✂️ 12大机关关卡 · 36★满星挑战</div>
-                        <div class="visual-art puzzle-art-wrap" aria-hidden="true">
-                            <svg class="lumina-art-svg" viewBox="0 0 120 120" fill="none">
-                                <rect x="14" y="14" width="92" height="92" rx="18" fill="rgba(6, 42, 30, 0.78)" stroke="rgba(74, 222, 128, 0.52)" stroke-width="2.5" />
-                                <circle cx="38" cy="24" r="5" fill="#fbbf24" />
-                                <circle cx="82" cy="24" r="5" fill="#fbbf24" />
-                                <path d="M38 24 Q48 48 60 62" stroke="#eab308" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="4 3" />
-                                <path d="M82 24 Q72 46 60 62" stroke="#d97706" stroke-width="3.5" stroke-linecap="round" />
-                                <circle cx="60" cy="64" r="14" fill="#ef4444" stroke="#ffffff" stroke-width="2.5" />
-                                <path d="M49 58 C55 54, 65 74, 71 70" stroke="#fef08a" stroke-width="3" stroke-linecap="round" />
-                                <polygon points="32,76 35,82 41,82 36,86 38,92 32,88 26,92 28,86 23,82 29,82" fill="#facc15" />
-                                <circle cx="86" cy="86" r="13" fill="#22c55e" stroke="#86efac" stroke-width="2" />
-                                <circle cx="82" cy="83" r="2.2" fill="#0f172a" />
-                                <circle cx="90" cy="83" r="2.2" fill="#0f172a" />
-                                <path d="M80 90 Q86 96 92 90" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" fill="#f43f5e" />
-                            </svg>
-                        </div>
-                        <div class="worlds-pills">
-                            <span class="pill-world cr-c1">✂️ Verlet物理绳索</span>
-                            <span class="pill-world cr-c2">🫧 气泡浮升</span>
-                            <span class="pill-world cr-c3">💨 风箱推进</span>
-                            <span class="pill-world cr-c4">🌀 魔术传送帽</span>
-                        </div>
+            <!-- 3. 割绳喂怪 -->
+            <article class="game-card">
+                <a href="./cut-rope/" class="cover-link" id="linkCoverCr" aria-label="开始割绳喂怪">
+                    <canvas class="cover-canvas" data-cover="cut-rope" width="400" height="225"></canvas>
+                    <span class="cover-tag">12 关 · 36★</span>
+                </a>
+                <div class="card-body">
+                    <div class="title-line">
+                        <h2>割绳喂怪大作战</h2>
+                        <span class="genre">物理解谜</span>
                     </div>
-
-                    <div class="card-details">
-                        <div class="card-header">
-                            <div class="game-meta-row">
-                                <span class="tag-genre cr-genre">物理剪绳解谜</span>
-                                <span class="tag-version cr-ver">Candy Rope v1.0</span>
-                                <span class="tag-levels">2大章节 · 12关 · 36★收集</span>
-                            </div>
-                            <h2 class="game-title">割绳喂怪大作战 · Candy Rope Lab</h2>
-                            <p class="game-desc">
-                                真实 <strong>Verlet 多节点柔体绳索物理</strong> 还原经典剪绳乐趣！滑动手指或鼠标一刀划断承重麻绳，让糖果借势摆荡、钻进上升气泡、触发风箱气浪或跃入魔术帽传送门，收齐空中三颗金星并精准送入小吃货嘴里！
-                            </p>
-                        </div>
-
-                        <div class="saved-stats-panel">
-                            <div class="stats-title-row">
-                                <span class="title" style="color:#86efac;">🍬 糖果实验室档案</span>
-                                <span class="notice">浏览器 LocalStorage 自动同步</span>
-                            </div>
-                            <div class="stats-pills-row">
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">收集金星数</span>
-                                    <span class="bubble-val" id="crTotalStars">0 / 36 ⭐</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">当前游玩</span>
-                                    <span class="bubble-val highlight" id="crCurrentLvl">第 1 关</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">已解锁关卡</span>
-                                    <span class="bubble-val" id="crUnlockedCount">1 / 12 关</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">操作方式</span>
-                                    <span class="bubble-val">划断 / 点击机关</span>
-                                </div>
-                            </div>
-                            <div class="mastery-bar-wrap">
-                                <div class="mastery-meta">
-                                    <span>🏆 实验室三星收集度</span>
-                                    <strong id="crMasteryText">0%</strong>
-                                </div>
-                                <div class="mastery-track">
-                                    <div class="mastery-fill cr-mastery-fill" id="crMasteryFill" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <a href="./cut-rope/" class="btn-play-primary cr-play-btn" id="btnPlayCutRope">
-                                <span>🍬 立即开玩 · 割绳喂怪大作战</span>
-                                <span class="action-sub" id="btnCutRopeSub">(12道物理机关 · 36★收集)</span>
-                            </a>
-                        </div>
+                    <p class="brief">划断麻绳配合气泡、风箱与传送帽，收齐金星喂饱小怪兽。</p>
+                    <div class="card-foot">
+                        <span class="stat-text" id="crSummary">第 1 关 · 0 / 36 ⭐</span>
+                        <a href="./cut-rope/" class="btn-play" id="btnPlayCutRope">开始游戏</a>
                     </div>
                 </div>
-            </section>
+            </article>
 
-            <!-- Fourth Featured Playable Game: Adventure Shop Tycoon -->
-            <section class="hero-section at-hero-section">
-                <div class="section-badge at-badge">🏪 模拟经营 · 冒险家商店物语</div>
-
-                <div class="featured-card at-featured-card">
-                    <div class="card-visual at-visual">
-                        <div class="visual-badge at-visual-badge">👑 4大秘境 · 炼金锻造 · 转生倍增</div>
-                        <div class="visual-art puzzle-art-wrap" aria-hidden="true">
-                            <svg class="lumina-art-svg" viewBox="0 0 120 120" fill="none">
-                                <rect x="14" y="14" width="92" height="92" rx="18" fill="rgba(30, 27, 75, 0.78)" stroke="rgba(250, 204, 21, 0.55)" stroke-width="2.5" />
-                                <path d="M26 50 L60 28 L94 50 Z" fill="#b45309" stroke="#fde68a" stroke-width="2" />
-                                <rect x="32" y="50" width="56" height="44" rx="6" fill="#4338ca" stroke="#a5b4fc" stroke-width="2" />
-                                <rect x="44" y="64" width="14" height="30" rx="3" fill="#f59e0b" />
-                                <circle cx="74" cy="70" r="10" fill="#fbbf24" stroke="#fef08a" stroke-width="2" />
-                                <text x="74" y="75" fill="#78350f" font-size="12" font-weight="900" text-anchor="middle">G</text>
-                                <path d="M52 24 L56 17 L60 23 L64 17 L68 24 Z" fill="#facc15" />
-                            </svg>
-                        </div>
-                        <div class="worlds-pills">
-                            <span class="pill-world at-c1">🗺️ 秘境探险</span>
-                            <span class="pill-world at-c2">⚗️ 炼金锻造</span>
-                            <span class="pill-world at-c3">🧙 顾客交易</span>
-                            <span class="pill-world at-c4">✨ 王室转生</span>
-                        </div>
+            <!-- 4. 冒险家商店物语 -->
+            <article class="game-card">
+                <a href="./adventure-tycoon/" class="cover-link" id="linkCoverAt" aria-label="开始冒险家商店物语">
+                    <canvas class="cover-canvas" data-cover="adventure-tycoon" width="400" height="225"></canvas>
+                    <span class="cover-tag">4 大秘境 · 挂机经营</span>
+                </a>
+                <div class="card-body">
+                    <div class="title-line">
+                        <h2>冒险家商店物语</h2>
+                        <span class="genre">模拟经营</span>
                     </div>
-
-                    <div class="card-details">
-                        <div class="card-header">
-                            <div class="game-meta-row">
-                                <span class="tag-genre at-genre">奇幻大冒险经营</span>
-                                <span class="tag-version at-ver">Shop Tycoon v1.0</span>
-                                <span class="tag-levels">4大地下城 · 雇员自动化 · MAX金币榜</span>
-                            </div>
-                            <h2 class="game-title">冒险家商店物语 · Adventure Shop Tycoon</h2>
-                            <p class="game-desc">
-                                集<strong>地下城探险、武器炼金锻造与门店经营</strong>于一体的策略放置经营佳作！派遣小队深入微光森林与炎龙巢穴搜集材料，在工坊锻造神兵药水摆上货架，接待络绎不绝的勇者顾客并完成王室悬赏，解锁学徒全自动挂机与转生倍率！
-                            </p>
-                        </div>
-
-                        <div class="saved-stats-panel">
-                            <div class="stats-title-row">
-                                <span class="title" style="color:#fde68a;">👑 王都商铺账簿</span>
-                                <span class="notice">离线自动结算 · 随时保存</span>
-                            </div>
-                            <div class="stats-pills-row">
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">历史峰值金币 MAX</span>
-                                    <span class="bubble-val highlight" id="atMaxGold">0 金</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">当前金库资金</span>
-                                    <span class="bubble-val" id="atCurGold">0 金</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">商铺声望等级</span>
-                                    <span class="bubble-val" id="atShopLv">Lv.1</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">王室委托 / 转生</span>
-                                    <span class="bubble-val" id="atOrders">0 单 / 0 世</span>
-                                </div>
-                            </div>
-                            <div class="mastery-bar-wrap">
-                                <div class="mastery-meta">
-                                    <span>🗺️ 秘境版图解锁度</span>
-                                    <strong id="atMasteryText">25%</strong>
-                                </div>
-                                <div class="mastery-track">
-                                    <div class="mastery-fill at-mastery-fill" id="atMasteryFill" style="width: 25%"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <a href="./adventure-tycoon/" class="btn-play-primary at-play-btn" id="btnPlayTycoon">
-                                <span>🏪 立即开玩 · 冒险家商店物语</span>
-                                <span class="action-sub" id="btnTycoonSub">(探险搜材 · 炼金卖货 · 自动经营)</span>
-                            </a>
-                        </div>
+                    <p class="brief">派冒险队搜集地下城材料，炼制装备药水卖给勇者赚金币。</p>
+                    <div class="card-foot">
+                        <span class="stat-text" id="atSummary">Lv.1 · 峰值 0 金</span>
+                        <a href="./adventure-tycoon/" class="btn-play" id="btnPlayTycoon">开始游戏</a>
                     </div>
                 </div>
-            </section>
+            </article>
 
-            <!-- Fifth Featured Playable Game: Jump Jump -->
-            <section class="hero-section jj-hero-section">
-                <div class="section-badge jj-badge">🎯 休闲街机 · 微信跳一跳复刻加强版</div>
-
-                <div class="featured-card jj-featured-card">
-                    <div class="card-visual jj-visual">
-                        <div class="visual-badge jj-visual-badge">⌨️ 空格 / 🖱️ 鼠标双模蓄力 · MAX榜</div>
-                        <div class="visual-art puzzle-art-wrap" aria-hidden="true">
-                            <svg class="lumina-art-svg" viewBox="0 0 120 120" fill="none">
-                                <rect x="14" y="14" width="92" height="92" rx="18" fill="rgba(15, 23, 42, 0.8)" stroke="rgba(56, 189, 248, 0.55)" stroke-width="2.5" />
-                                <polygon points="24,84 44,74 64,84 44,94" fill="#38bdf8" />
-                                <polygon points="24,84 44,94 44,104 24,94" fill="#0284c7" />
-                                <polygon points="44,94 64,84 64,94 44,104" fill="#0ea5e9" />
-                                <polygon points="62,60 82,50 102,60 82,70" fill="#a78bfa" />
-                                <polygon points="62,60 82,70 82,82 62,72" fill="#6d28d9" />
-                                <polygon points="82,70 102,60 102,72 82,82" fill="#7c3aed" />
-                                <circle cx="82" cy="60" r="3" fill="#facc15" />
-                                <path d="M44 76 Q63 30 82 58" stroke="#fde047" stroke-width="2.5" stroke-dasharray="4 3" fill="none" />
-                                <circle cx="44" cy="64" r="6" fill="#0f172a" stroke="#f8fafc" stroke-width="2" />
-                                <path d="M38 80 L50 80 L47 68 L41 68 Z" fill="#334155" stroke="#e2e8f0" stroke-width="1.5" />
-                            </svg>
-                        </div>
-                        <div class="worlds-pills">
-                            <span class="pill-world jj-c1">🖱️ 鼠标/触控长按</span>
-                            <span class="pill-world jj-c2">⌨️ 空格键蓄力</span>
-                            <span class="pill-world jj-c3">🎯 中心连击+2/+4</span>
-                            <span class="pill-world jj-c4">🎵 彩蛋方块停留</span>
-                        </div>
+            <!-- 5. 微信跳一跳 -->
+            <article class="game-card">
+                <a href="./jump-jump/" class="cover-link" id="linkCoverJj" aria-label="开始微信跳一跳">
+                    <canvas class="cover-canvas" data-cover="jump-jump" width="400" height="225"></canvas>
+                    <span class="cover-tag">鼠标 / 空格蓄力</span>
+                </a>
+                <div class="card-body">
+                    <div class="title-line">
+                        <h2>微信跳一跳</h2>
+                        <span class="genre">节奏街机</span>
                     </div>
-
-                    <div class="card-details">
-                        <div class="card-header">
-                            <div class="game-meta-row">
-                                <span class="tag-genre jj-genre">节奏蓄力跳台</span>
-                                <span class="tag-version jj-ver">Jump Jump v1.0</span>
-                                <span class="tag-levels">2.5D等距方块 · 彩蛋奖励 · MAX记录</span>
-                            </div>
-                            <h2 class="game-title">微信跳一跳 · Jump Jump</h2>
-                            <p class="game-desc">
-                                原汁原味的 <strong>2.5D 等距方台蓄力跳跃</strong>！按住<strong>鼠标左键 / 屏幕</strong>或<strong>键盘空格键</strong>蓄力（棋子实时挤压、台面弹性下陷），松手立即腾空翻滚！精准落入靶心触发连击 <strong>+2/+4/+6… 递增加分</strong>，并在黑胶机、便利店、魔方等彩蛋台上停留赢取巨额加分！
-                            </p>
-                        </div>
-
-                        <div class="saved-stats-panel">
-                            <div class="stats-title-row">
-                                <span class="title" style="color:#bae6fd;">🎯 跳跃名人堂记录</span>
-                                <span class="notice">实时同步 MAX 最高分</span>
-                            </div>
-                            <div class="stats-pills-row">
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">历史最高分 MAX</span>
-                                    <span class="bubble-val highlight" id="jjBestScore">0 分</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">最远跳跃数</span>
-                                    <span class="bubble-val" id="jjMaxJumps">0 跳</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">最佳中心连击</span>
-                                    <span class="bubble-val" id="jjBestCombo">0 连击</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">累计挑战局数</span>
-                                    <span class="bubble-val" id="jjGames">0 局</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-actions">
-                            <a href="./jump-jump/" class="btn-play-primary jj-play-btn" id="btnPlayJump">
-                                <span>🎯 立即开玩 · 微信跳一跳</span>
-                                <span class="action-sub" id="btnJumpSub">(鼠标 / 空格双模蓄力 · MAX冲榜)</span>
-                            </a>
-                        </div>
+                    <p class="brief">长按蓄力、松手飞跃方块，连续命中中心可翻倍加分。</p>
+                    <div class="card-foot">
+                        <span class="stat-text" id="jjSummary">最高 0 分 · 0 局</span>
+                        <a href="./jump-jump/" class="btn-play" id="btnPlayJump">开始游戏</a>
                     </div>
                 </div>
-            </section>
-
-            <!-- Upcoming Games Grid -->
-            <section class="upcoming-section">
-                <div class="section-header">
-                    <div class="section-title-wrap">
-                        <h3>🕹️ 更多网页小游戏</h3>
-                        <span class="section-sub">《愤怒的小鸟》、《萌果奇缘》、《割绳喂怪大作战》、《冒险家商店物语》与《微信跳一跳》现已开放畅玩，更多 HTML5 微端游戏持续扩充中！</span>
-                    </div>
-                    <span class="badge-pipeline">🚀 开发筹备中 (4款)</span>
-                </div>
-
-                <div class="upcoming-grid">
-
-                    <!-- Game Card 2: Tank 1990 -->
-                    <div class="arcade-card locked">
-                        <div class="card-icon-wrap">
-                            <span class="card-icon">🛡️</span>
-                            <span class="tag-status">敬请期待 · 研发中</span>
-                        </div>
-                        <h4 class="card-name">像素坦克大战 (Tank 1990 Neo)</h4>
-                        <p class="card-brief">童年经典红白机战役复刻！保卫鹰徽基地，拾取五角星火力强化、炸弹清屏与时钟定身道具。</p>
-                        <div class="card-footer">
-                            <span class="genre">复古射击</span>
-                            <span class="dev-state">地图编辑器制作</span>
-                        </div>
-                    </div>
-
-                    <!-- Game Card 3: Neon Breakout -->
-                    <div class="arcade-card locked">
-                        <div class="card-icon-wrap">
-                            <span class="card-icon">🔮</span>
-                            <span class="tag-status">敬请期待 · 研发中</span>
-                        </div>
-                        <h4 class="card-name">霓虹流光弹球 (Neon Breakout)</h4>
-                        <p class="card-brief">赛博朋克流光风格打砖块！炫酷粒子击碎效果、多重弹球分裂、激光底板与反重力磁场特技。</p>
-                        <div class="card-footer">
-                            <span class="genre">街机动作</span>
-                            <span class="dev-state">渲染管线测试</span>
-                        </div>
-                    </div>
-
-                    <!-- Game Card 4: Galaxy Striker -->
-                    <div class="arcade-card locked">
-                        <div class="card-icon-wrap">
-                            <span class="card-icon">🚀</span>
-                            <span class="tag-status">敬请期待 · 研发中</span>
-                        </div>
-                        <h4 class="card-name">太空战机 (Galaxy Striker 2D)</h4>
-                        <p class="card-brief">纵版复古卷轴飞行弹幕射击，雷电核心机体升级树、浮游僚机系统与震撼的全屏追踪导弹超武。</p>
-                        <div class="card-footer">
-                            <span class="genre">弹幕飞行</span>
-                            <span class="dev-state">关卡Boss设计</span>
-                        </div>
-                    </div>
-
-                    <!-- Game Card 5: Dungeon Runner -->
-                    <div class="arcade-card locked">
-                        <div class="card-icon-wrap">
-                            <span class="card-icon">🏰</span>
-                            <span class="tag-status">敬请期待 · 研发中</span>
-                        </div>
-                        <h4 class="card-name">地牢迷宫逃脱 (Dungeon Runner)</h4>
-                        <p class="card-brief">Roguelike 随机迷宫探险，避开地刺机关与游荡幽灵，搜寻远古水晶钥匙开启逃生传送法阵。</p>
-                        <div class="card-footer">
-                            <span class="genre">地牢探险</span>
-                            <span class="dev-state">随机迷宫生成器</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </article>
         </main>
-
-        <!-- Footer -->
-        <footer class="arcade-footer">
-            <p>云檐趣阁微前端小游戏中心 · 纯客户端 HTML5/Canvas 驱动 · 存档安全存放在浏览器 LocalStorage 中</p>
-        </footer>
     </div>
 
-    <script src="arcade.js?v=20261117_1705"></script>
+    <script src="covers.js?v=20261117_1800"></script>
+    <script src="arcade.js?v=20261117_1800"></script>
 </body>
 </html>
-

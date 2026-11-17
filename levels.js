@@ -2522,22 +2522,41 @@ window.GAME_LEVELS = [
         };
     }
 
-    function tuneBirdsQueue(baseBirds, supportPool, stage, tier) {
+    function tuneBirdsQueue(baseBirds, supportPool, stage, tier, hasHeavyStone) {
         let list = baseBirds.slice();
         if (stage <= 3) {
             return { birds: list.slice(0, 4), addedBirds: 0 };
         }
-        // 第3关之后显著收紧出鸟量：4~9关限3只，10~13关限4只，14关限4只，15关终局Boss至多5只
-        const cap = stage <= 9 ? 3 : (stage <= 14 ? 4 : 5);
+        // 折中配鸟预算：4~8关上限4只(6~8关保底4只)，9~14关上限5只(11~14关保底5只)，15关终局Boss至多6只
+        const cap = stage <= 8 ? 4 : (stage <= 14 ? 5 : 6);
+        const minTarget = stage <= 5 ? Math.min(4, Math.max(3, baseBirds.length))
+            : (stage <= 10 ? 4 : (stage <= 14 ? 5 : 5));
+
+        const cyclePool = [];
+        for (const b of baseBirds) if (!cyclePool.includes(b)) cyclePool.push(b);
+        for (const s of supportPool) if (!cyclePool.includes(s)) cyclePool.push(s);
+        let fillIdx = 0;
+        while (list.length < minTarget) {
+            list.push(cyclePool[fillIdx % cyclePool.length]);
+            fillIdx++;
+        }
+
         const needSpecial = supportPool[0];
         if (!list.includes(needSpecial) && tier >= 2) {
             const redIdx = list.indexOf('red');
             if (redIdx >= 0) list[redIdx] = needSpecial;
         }
+        // 若防线含重石结构，确保队列至少拥有 1 只破石主力（黑炸弹 / 大红 / 白蛋）
+        if (hasHeavyStone && !list.some((b) => b === 'bomb' || b === 'terence' || b === 'matilda')) {
+            const heavyBreaker = supportPool.find((b) => b === 'bomb' || b === 'terence' || b === 'matilda') || 'bomb';
+            const swapIdx = list.lastIndexOf('red') >= 0 ? list.lastIndexOf('red') : list.length - 1;
+            list[swapIdx] = heavyBreaker;
+        }
         while (list.length > cap) {
             const redIdx = list.lastIndexOf('red');
             if (redIdx >= 0) list.splice(redIdx, 1);
-            else list.pop();
+            else if (list.length > minTarget) list.pop();
+            else break;
         }
         return { birds: list, addedBirds: Math.max(0, list.length - baseBirds.length) };
     }
@@ -2552,7 +2571,7 @@ window.GAME_LEVELS = [
             level.build = function buildStretchedEarly(g, GY) {
                 baseBuild.call(this, createShiftedBuilder(g, shiftX), GY);
             };
-            const tuned = tuneBirdsQueue(level.birds, themes[level.world].support, stage, 0);
+            const tuned = tuneBirdsQueue(level.birds, themes[level.world].support, stage, 0, false);
             level.birds = tuned.birds;
             level.parScore = Math.max(level.parScore, (previousPar[level.world] || 0) + 1000);
             previousPar[level.world] = level.parScore;
@@ -2567,53 +2586,64 @@ window.GAME_LEVELS = [
 
         const theme = themes[level.world];
         const t = stage - 4;                    // 0..11
-        const tier = Math.floor(t / 2) + 1;     // 1..6：重装哨堡层数逐档递增
+        const tier = Math.floor(t / 2) + 1;     // 1..6：哨堡层数逐档递增
         const hardened = (t % 2) === 1;
         const guardRank = tier + (hardened ? 1 : 0);  // 1..7
         const floors = tier;
-        const mainMaterial = guardRank >= 3 ? 'stone' : (guardRank >= 2 ? theme.accent : theme.base);
-        const shieldMaterial = guardRank >= 4 ? 'stone' : 'wood';
-        const pigType = guardRank >= 5 ? 'foreman' : (guardRank >= 2 ? 'helmet' : 'normal');
+        // 折中材质：避免全部层死硬叠纯石块，保留每栋塔楼的可击破脆弱承重节点（木/冰）以实现坍塌连锁
+        const mainMaterial = guardRank >= 5 ? 'stone' : (guardRank >= 3 ? theme.accent : theme.base);
+        const softAccent = (theme.base === 'stone' || theme.base === mainMaterial) ? theme.accent : theme.base;
+        const beamMaterial = guardRank >= 6 ? theme.accent : (softAccent === 'stone' ? 'wood' : softAccent);
+        const shieldMaterial = guardRank >= 6 ? 'stone' : 'wood';
+        const rearMaterial = guardRank >= 6 ? 'stone' : 'wood';
+        const pigType = guardRank >= 6 ? 'foreman' : (guardRank >= 3 ? 'helmet' : 'normal');
         const pigR = pigRadius[pigType] || 22;
 
         // 拉大基础堡垒距弹弓距离并严格预留与前置盾墙(>=1656)之间的安全间隙
         const shiftX = Math.max(0, Math.min(115, 1625 - baseBounds.maxX));
-        const hasFrontShield = guardRank >= 3;  // 前置重甲高墙
-        const hasRoofCap = guardRank >= 2;      // 装甲顶盖
-        const hasRearButtress = guardRank >= 5; // 后侧重石稳固壁垒（防贯穿一穿到底）
+        const hasFrontShield = guardRank >= 3;  // 前置盾墙
+        const hasRoofCap = guardRank >= 2;      // 顶盖
+        const hasRearButtress = guardRank >= 5; // 后侧稳固壁垒
 
         level.build = function buildWithProgression(g, GY) {
             baseBuild.call(this, createShiftedBuilder(g, shiftX), GY);
 
             for (let floor = 0; floor < floors; floor++) {
                 const baseY = GY - floor * STORY_HEIGHT;
-                const mat = (floor === floors - 1 && floors >= 5) ? theme.accent : mainMaterial;
-                g.addBlock(OUTPOST_X - 42, baseY - 40, 18, 80, mat);
-                g.addBlock(OUTPOST_X + 42, baseY - 40, 18, 80, mat);
-                g.addBlock(OUTPOST_X, baseY - 89, 104, 18, mat);
-                g.addPig(OUTPOST_X, baseY - pigR, pigType);
+                const pillarMat = (floor === 0 && guardRank >= 4)
+                    ? mainMaterial
+                    : (floor % 2 === 1 ? (softAccent === 'stone' ? 'wood' : softAccent) : theme.base);
+                const roofBeamMat = (floor === floors - 1) ? mainMaterial : beamMaterial;
+                const rowPig = (floor === 0) ? pigType : (floor === floors - 1 ? 'small' : 'normal');
+                const rowPigR = pigRadius[rowPig] || 22;
+
+                g.addBlock(OUTPOST_X - 42, baseY - 40, 18, 80, pillarMat);
+                g.addBlock(OUTPOST_X + 42, baseY - 40, 18, 80, pillarMat);
+                g.addBlock(OUTPOST_X, baseY - 89, 104, 18, roofBeamMat);
+                g.addPig(OUTPOST_X, baseY - rowPigR, rowPig);
             }
 
             if (hasFrontShield) {
-                g.addBlock(OUTPOST_X - 70, GY - 60, 18, 120, shieldMaterial);
+                g.addBlock(OUTPOST_X - 70, GY - 48, 18, 96, shieldMaterial);
             }
 
             if (hasRearButtress) {
-                g.addBlock(OUTPOST_X + 68, GY - 55, 18, 110, 'stone');
+                g.addBlock(OUTPOST_X + 68, GY - 48, 18, 96, rearMaterial);
             }
 
             if (hasRoofCap) {
                 const topY = GY - floors * STORY_HEIGHT;
-                g.addRoof(OUTPOST_X, topY - 22, 96, 42, guardRank >= 4 ? 'stone' : mainMaterial);
+                g.addRoof(OUTPOST_X, topY - 22, 96, 42, guardRank >= 6 ? 'stone' : beamMaterial);
             }
         };
 
-        const tuned = tuneBirdsQueue(level.birds, theme.support, stage, tier);
+        const usesStone = mainMaterial === 'stone' || shieldMaterial === 'stone' || theme.base === 'stone' || theme.accent === 'stone';
+        const tuned = tuneBirdsQueue(level.birds, theme.support, stage, tier, usesStone);
         level.birds = tuned.birds;
 
         const addedBlocks = floors * 3 + (hasFrontShield ? 1 : 0) + (hasRearButtress ? 1 : 0) + (hasRoofCap ? 1 : 0);
         const addedPigs = floors;
-        const addedScore = addedPigs * 5000 + addedBlocks * 1100;
+        const addedScore = addedPigs * 5000 + addedBlocks * 950;
         level.parScore = Math.max(level.parScore + addedScore, (previousPar[level.world] || 0) + 1000);
         previousPar[level.world] = level.parScore;
         level.progression = {
