@@ -57,6 +57,39 @@ window.GAME_WORLDS = [
         themeIcon: '🌋',
         desc: '炽热翻滚的熔岩核心要塞，回旋鸟逆风奇袭，连锁TNT引爆终极风暴！',
         description: '炽热翻滚的熔岩核心要塞，回旋鸟逆风奇袭，连锁TNT引爆终极风暴！'
+    },
+    {
+        id: 'bamboo',
+        name: '第六章：翠竹禅林',
+        subtitle: 'Jade Sanctuary · 竹海迷阁',
+        bgKey: 'bamboo',
+        accent: '#10b981',
+        badge: '幽篁秘境',
+        themeIcon: '🎋',
+        desc: '翠绿竹海笼罩的东方高塔群，灯笼炸药与回弹竹鼓潜藏其中，突破竹石防线！',
+        description: '翠绿竹海笼罩的东方高塔群，灯笼炸药与回弹竹鼓潜藏其中，突破竹石防线！'
+    },
+    {
+        id: 'sky',
+        name: '第七章：云海浮空岛',
+        subtitle: 'Cloud Citadel · 浮空天城',
+        bgKey: 'sky',
+        accent: '#38bdf8',
+        badge: '云巅圣殿',
+        themeIcon: '☁️',
+        desc: '悬浮于高空云海的多重石台与高弹跃迁阵，以超长弧线精准空袭空中要塞！',
+        description: '悬浮于高空云海的多重石台与高弹跃迁阵，以超长弧线精准空袭空中要塞！'
+    },
+    {
+        id: 'space',
+        name: '第八章：星际异星',
+        subtitle: 'Cosmic Outpost · 终极星域',
+        bgKey: 'space',
+        accent: '#c084fc',
+        badge: '终焉星堡',
+        themeIcon: '🪐',
+        desc: '异星陨石摆锤与晶体反应堆护卫着星际猪皇，以极限精简编队迎接终极挑战！',
+        description: '异星陨石摆锤与晶体反应堆护卫着星际猪皇，以极限精简编队迎接终极挑战！'
     }
 ];
 
@@ -2141,12 +2174,300 @@ window.GAME_LEVELS = [
     }
 ];
 
-// 每个主题内部采用 15 关严格递增的难度曲线：
+// 追加三大扩展篇章共 45 道专属关卡（第六章竹海 6-1~6-15、第七章浮空岛 7-1~7-15、第八章星际异星 8-1~8-15）
+(function appendExpandedWorlds(levels) {
+    const blueprints = [
+        // Stage 1: Twin gate pagodas
+        (g, GY, matA, matB) => {
+            const A = 1280, B = 1480;
+            g.addBlock(A - 44, GY - 48, 22, 96, matA);
+            g.addBlock(A + 44, GY - 48, 22, 96, matA);
+            g.addBlock(A, GY - 105, 118, 18, matA);
+            g.addPig(A, GY - 22, 'normal');
+            g.addRoof(A, GY - 134, 96, 40, matB);
+            g.addBlock(B - 48, GY - 55, 22, 110, matB);
+            g.addBlock(B + 48, GY - 55, 22, 110, matB);
+            g.addBlock(B, GY - 119, 128, 18, matA);
+            g.addPig(B, GY - 24, 'helmet');
+            g.addPig(B, GY - 148, 'small');
+        },
+        // Stage 2: Crystal greenhouse + core bunker
+        (g, GY, matA, matB) => {
+            const C = 1360;
+            g.addBlock(C - 135, GY - 45, 20, 90, 'glass');
+            g.addBlock(C - 75, GY - 45, 20, 90, 'glass');
+            g.addBlock(C - 105, GY - 99, 92, 18, 'glass');
+            g.addPig(C - 105, GY - 22, 'small');
+            g.addBlock(C + 10, GY - 60, 26, 120, matA);
+            g.addBlock(C + 115, GY - 60, 26, 120, matA);
+            g.addBlock(C + 62, GY - 129, 140, 18, matB);
+            g.addPig(C + 62, GY - 24, 'helmet');
+            g.addTNT(C + 62, GY - 160);
+        },
+        // Stage 3: Bouncy drum trickshot + high platform sanctuary
+        (g, GY, matA, matB, w) => {
+            g.addBouncyPad(1120, GY - 12, 108, 20);
+            g.addStaticPlatform(1420, GY - 205, 210, 22, 0, 'stone');
+            g.addBlock(1360, GY - 255, 22, 80, matA);
+            g.addBlock(1480, GY - 255, 22, 80, matA);
+            g.addBlock(1420, GY - 304, 150, 18, matB);
+            g.addPig(1420, GY - 238, 'helmet');
+            g.addBlock(1390, GY - 50, 24, 100, matA);
+            g.addBlock(1450, GY - 50, 24, 100, matA);
+            g.addBlock(1420, GY - 109, 102, 18, matA);
+            g.addPig(1420, GY - 22, w === 'space' ? 'helmet' : 'normal');
+        },
+        // Stage 4: Double shield trench + multi-pig courtyard
+        (g, GY, matA, matB) => {
+            const M = 1360;
+            g.addBlock(M - 150, GY - 60, 26, 120, matB);
+            g.addBlock(M - 50, GY - 55, 24, 110, matA);
+            g.addBlock(M + 50, GY - 55, 24, 110, matA);
+            g.addBlock(M + 150, GY - 60, 26, 120, matB);
+            g.addBlock(M, GY - 119, 134, 18, matA);
+            g.addPig(M - 98, GY - 22, 'helmet');
+            g.addPig(M, GY - 24, 'foreman');
+            g.addPig(M + 98, GY - 22, 'helmet');
+            g.addRoof(M, GY - 150, 120, 44, matB);
+        },
+        // Stage 5: Hanging chandelier chain reaction
+        (g, GY, matA, matB) => {
+            const C = 1380;
+            g.addStaticPlatform(C, GY - 375, 100, 22, 0, 'stone');
+            g.addHangingTNT(C, GY - 364, C, GY - 260);
+            g.addBlock(C - 95, GY - 60, 26, 120, matB);
+            g.addBlock(C + 95, GY - 60, 26, 120, matB);
+            g.addBlock(C, GY - 129, 224, 20, matA);
+            g.addPig(C - 38, GY - 24, 'helmet');
+            g.addPig(C + 38, GY - 24, 'helmet');
+            g.addBlock(C - 55, GY - 180, 20, 82, 'glass');
+            g.addBlock(C + 55, GY - 180, 20, 82, 'glass');
+            g.addBlock(C, GY - 230, 145, 18, matA);
+            g.addPig(C, GY - 160, 'foreman');
+        },
+        // Stage 6: Rolling boulder avalanche trap
+        (g, GY, matA, matB) => {
+            g.addStaticPlatform(1235, GY - 240, 115, 20, 0.14, 'stone');
+            g.addBoulder(1235, GY - 275, 24, 'stone');
+            const R = 1435;
+            g.addBlock(R - 85, GY - 55, 24, 110, matB);
+            g.addBlock(R + 85, GY - 55, 24, 110, matB);
+            g.addBlock(R, GY - 119, 200, 20, matA);
+            g.addPig(R - 35, GY - 24, 'helmet');
+            g.addPig(R + 35, GY - 24, 'foreman');
+            g.addRoof(R, GY - 150, 130, 44, matB);
+        },
+        // Stage 7: Dual-wing elevated bastion
+        (g, GY, matA, matB) => {
+            g.addStaticPlatform(1260, GY - 175, 140, 20, 0, 'stone');
+            g.addBlock(1220, GY - 220, 20, 70, matA);
+            g.addBlock(1300, GY - 220, 20, 70, matA);
+            g.addBlock(1260, GY - 264, 110, 18, matB);
+            g.addPig(1260, GY - 208, 'helmet');
+            const R = 1465;
+            g.addBlock(R - 55, GY - 65, 26, 130, matB);
+            g.addBlock(R + 55, GY - 65, 26, 130, matB);
+            g.addBlock(R, GY - 139, 145, 20, matB);
+            g.addPig(R, GY - 26, 'foreman');
+            g.addTNT(R, GY - 170);
+        },
+        // Stage 8: Swinging orbital wrecking pendulum
+        (g, GY, matA, matB) => {
+            g.addStaticPlatform(1245, GY - 365, 80, 20, 0, 'stone');
+            g.addPendulumBall(1245, GY - 355, 1175, GY - 225, 28);
+            const F = 1425;
+            g.addBlock(F - 90, GY - 60, 28, 120, matB);
+            g.addBlock(F, GY - 60, 22, 120, matA);
+            g.addBlock(F + 90, GY - 60, 28, 120, matB);
+            g.addBlock(F, GY - 129, 218, 20, matB);
+            g.addPig(F - 45, GY - 24, 'helmet');
+            g.addPig(F + 45, GY - 24, 'foreman');
+            g.addRoof(F - 50, GY - 160, 90, 42, matA);
+            g.addRoof(F + 50, GY - 160, 90, 42, matA);
+        },
+        // Stage 9: Narrow sniper slits with glass skylights
+        (g, GY, matA, matB) => {
+            const C = 1390;
+            g.addBlock(C - 120, GY - 75, 28, 150, 'stone');
+            g.addBlock(C + 120, GY - 75, 28, 150, 'stone');
+            g.addBlock(C, GY - 159, 268, 20, 'glass');
+            g.addPig(C - 55, GY - 24, 'helmet');
+            g.addPig(C + 55, GY - 24, 'foreman');
+            g.addBlock(C - 55, GY - 208, 20, 78, matA);
+            g.addBlock(C + 55, GY - 208, 20, 78, matA);
+            g.addBlock(C, GY - 256, 145, 18, matB);
+            g.addPig(C, GY - 190, 'helmet');
+        },
+        // Stage 10: Bouncy gauntlet to sky bunker
+        (g, GY, matA, matB) => {
+            g.addBouncyPad(1180, GY - 12, 108, 20);
+            g.addBlock(1310, GY - 65, 28, 130, 'stone');
+            g.addStaticPlatform(1445, GY - 210, 175, 22, 0, 'stone');
+            g.addBlock(1390, GY - 265, 22, 88, matA);
+            g.addBlock(1500, GY - 265, 22, 88, matA);
+            g.addBlock(1445, GY - 318, 145, 20, matB);
+            g.addPig(1445, GY - 246, 'foreman');
+            g.addPig(1445, GY - 26, 'helmet');
+            g.addTNT(1355, GY - 22);
+        },
+        // Stage 11: Triple stone pillars + upper twin nests
+        (g, GY, matA, matB) => {
+            const C = 1395;
+            [-115, 0, 115].forEach(dx => g.addBlock(C + dx, GY - 65, 28, 130, 'stone'));
+            g.addBlock(C - 58, GY - 139, 140, 20, matB);
+            g.addBlock(C + 58, GY - 139, 140, 20, matB);
+            g.addPig(C - 58, GY - 24, 'helmet');
+            g.addPig(C + 58, GY - 24, 'foreman');
+            g.addBlock(C - 68, GY - 195, 22, 92, matA);
+            g.addBlock(C + 68, GY - 195, 22, 92, matA);
+            g.addBlock(C, GY - 250, 165, 20, 'stone');
+            g.addPig(C, GY - 176, 'helmet');
+        },
+        // Stage 12: Inverted glass trap + recessed bunker
+        (g, GY, matA, matB) => {
+            const K = 1405;
+            g.addBlock(K - 130, GY - 75, 30, 150, 'stone');
+            g.addBlock(K + 130, GY - 75, 30, 150, 'stone');
+            g.addBlock(K, GY - 160, 285, 22, 'stone');
+            g.addPig(K - 45, GY - 26, 'foreman');
+            g.addPig(K + 45, GY - 26, 'foreman');
+            g.addTNT(K, GY - 192);
+            g.addBlock(K - 75, GY - 210, 20, 80, 'glass');
+            g.addBlock(K + 75, GY - 210, 20, 80, 'glass');
+            g.addBlock(K, GY - 259, 180, 18, matA);
+            g.addPig(K, GY - 290, 'helmet');
+        },
+        // Stage 13: Multi-story maze + orbital boulder
+        (g, GY, matA, matB) => {
+            const C = 1410;
+            g.addStaticPlatform(1210, GY - 280, 90, 20, 0.16, 'stone');
+            g.addBoulder(1210, GY - 314, 24, 'stone');
+            g.addBlock(C - 95, GY - 70, 28, 140, 'stone');
+            g.addBlock(C + 95, GY - 70, 28, 140, 'stone');
+            g.addBlock(C, GY - 149, 224, 20, 'stone');
+            g.addPig(C - 30, GY - 26, 'foreman');
+            g.addPig(C + 35, GY - 24, 'helmet');
+            g.addBlock(C - 55, GY - 208, 22, 98, matB);
+            g.addBlock(C + 55, GY - 208, 22, 98, matB);
+            g.addBlock(C, GY - 266, 155, 20, matA);
+            g.addPig(C, GY - 184, 'foreman');
+        },
+        // Stage 14: Heavy armored siege bastion
+        (g, GY, matA, matB) => {
+            const C = 1385;
+            [-135, -45, 45, 135].forEach(dx => g.addBlock(C + dx, GY - 80, 28, 160, 'stone'));
+            g.addBlock(C - 90, GY - 170, 120, 20, 'stone');
+            g.addBlock(C + 90, GY - 170, 120, 20, 'stone');
+            g.addBlock(C, GY - 170, 130, 20, 'stone');
+            g.addPig(C - 90, GY - 24, 'helmet');
+            g.addPig(C, GY - 26, 'foreman');
+            g.addPig(C + 90, GY - 24, 'helmet');
+            g.addBlock(C - 65, GY - 230, 24, 100, matB);
+            g.addBlock(C + 65, GY - 230, 24, 100, matB);
+            g.addBlock(C, GY - 289, 165, 20, 'stone');
+            g.addPig(C, GY - 206, 'foreman');
+            g.addRoof(C, GY - 320, 120, 44, 'stone');
+        },
+        // Stage 15: Grand World King Pig Boss Fortress
+        (g, GY, matA, matB) => {
+            const K = 1405;
+            g.addStaticPlatform(K, GY - 420, 110, 22, 0, 'stone');
+            g.addHangingTNT(K, GY - 409, K, GY - 310);
+            g.addBlock(K - 155, GY - 75, 32, 150, 'stone');
+            g.addBlock(K - 55, GY - 75, 28, 150, 'stone');
+            g.addBlock(K + 55, GY - 75, 28, 150, 'stone');
+            g.addBlock(K + 155, GY - 75, 32, 150, 'stone');
+            g.addBlock(K - 105, GY - 160, 130, 22, 'stone');
+            g.addBlock(K, GY - 160, 145, 22, 'stone');
+            g.addBlock(K + 105, GY - 160, 130, 22, 'stone');
+            g.addTNT(K - 105, GY - 22);
+            g.addPig(K, GY - 26, 'foreman');
+            g.addTNT(K + 105, GY - 22);
+            g.addBlock(K - 95, GY - 222, 26, 102, matB);
+            g.addBlock(K + 95, GY - 222, 26, 102, matB);
+            g.addBlock(K, GY - 282, 235, 20, 'glass');
+            g.addPig(K, GY - 205, 'king');
+            g.addPig(K - 125, GY - 190, 'helmet');
+            g.addPig(K + 125, GY - 190, 'helmet');
+            g.addRoof(K, GY - 318, 110, 48, 'stone');
+        }
+    ];
+
+    const worldSpecs = [
+        {
+            world: 'bamboo', prefix: '6', matA: 'wood', matB: 'stone', basePar: 32000,
+            titles: [
+                '山门试竹', '翠影琉璃', '竹鼓飞跃', '林间暗哨', '红灯悬阵',
+                '青石滚崖', '双亭揽月', '禅钟铁球', '竹窗暗室', '幽篁跳台',
+                '三柱重楼', '反锁竹阁', '石阵迷踪', '御竹大阵', '竹海仙王决战'
+            ],
+            birdsList: [
+                ['red', 'yellow', 'blue'], ['blue', 'yellow', 'red'], ['yellow', 'blue', 'bomb'],
+                ['yellow', 'bomb', 'red'], ['matilda', 'yellow', 'bomb'], ['terence', 'yellow', 'blue'],
+                ['bomb', 'matilda', 'yellow'], ['hal', 'bomb', 'yellow'], ['blue', 'bomb', 'yellow'],
+                ['yellow', 'hal', 'bomb'], ['terence', 'bomb', 'yellow', 'blue'], ['matilda', 'hal', 'bomb', 'yellow'],
+                ['terence', 'matilda', 'bomb', 'hal'], ['bomb', 'terence', 'yellow', 'hal'], ['terence', 'bomb', 'matilda', 'hal', 'yellow']
+            ]
+        },
+        {
+            world: 'sky', prefix: '7', matA: 'glass', matB: 'stone', basePar: 38000,
+            titles: [
+                '云端哨站', '虹晶玻璃塔', '云台弹跳', '天阙前防', '天灯爆阵',
+                '浮石倾泻', '双岛联动', '星钟铁锤', '天窗狙击', '云梯连跃',
+                '三翼云垒', '琉璃锁阵', '高空奇袭', '云海铁幕', '云霄猪王决战'
+            ],
+            birdsList: [
+                ['blue', 'yellow', 'bomb'], ['blue', 'yellow', 'matilda'], ['yellow', 'blue', 'bomb'],
+                ['matilda', 'blue', 'yellow'], ['bomb', 'hal', 'yellow'], ['terence', 'blue', 'bomb'],
+                ['matilda', 'bomb', 'yellow'], ['hal', 'terence', 'blue'], ['blue', 'matilda', 'bomb'],
+                ['yellow', 'hal', 'bomb'], ['terence', 'bomb', 'blue', 'matilda'], ['bomb', 'matilda', 'yellow', 'hal'],
+                ['terence', 'hal', 'bomb', 'blue'], ['terence', 'bomb', 'matilda', 'yellow'], ['hal', 'terence', 'bomb', 'matilda', 'blue']
+            ]
+        },
+        {
+            world: 'space', prefix: '8', matA: 'stone', matB: 'stone', basePar: 45000,
+            titles: [
+                '星港前哨', '晶体舱壁', '重力跳板', '星环战壕', '引力核雷',
+                '陨石滚落', '双星堡垒', '轨道流星锤', '舱顶天窗', '星轨跃迁',
+                '三重反应堆', '反物质锁舱', '星云重阵', '紫晶壁垒', '星际猪皇终战'
+            ],
+            birdsList: [
+                ['bomb', 'yellow', 'blue'], ['blue', 'bomb', 'terence'], ['bomb', 'matilda', 'yellow'],
+                ['terence', 'bomb', 'yellow'], ['bomb', 'hal', 'matilda'], ['terence', 'bomb', 'hal'],
+                ['matilda', 'bomb', 'terence'], ['hal', 'terence', 'bomb'], ['blue', 'bomb', 'terence'],
+                ['matilda', 'hal', 'bomb'], ['terence', 'bomb', 'hal', 'matilda'], ['bomb', 'terence', 'blue', 'hal'],
+                ['terence', 'matilda', 'bomb', 'yellow'], ['hal', 'terence', 'bomb', 'matilda'], ['terence', 'bomb', 'hal', 'matilda', 'yellow']
+            ]
+        }
+    ];
+
+    let nextId = levels.length + 1;
+    worldSpecs.forEach((ws) => {
+        for (let i = 0; i < 15; i++) {
+            const stageNum = i + 1;
+            const label = `${ws.prefix}-${stageNum}`;
+            levels.push({
+                id: nextId++,
+                world: ws.world,
+                worldLevel: label,
+                name: `${label} ${ws.titles[i]}`,
+                subtitle: stageNum >= 4
+                    ? `高难攻城战：瞄准承重结构与炸药破口，用精简小鸟阵容破阵！`
+                    : `探索全新主题地形与物理机关，精准摧毁绿猪防线！`,
+                birds: ws.birdsList[i].slice(),
+                parScore: ws.basePar + i * 4200,
+                build: (g, GY) => blueprints[i](g, GY, ws.matA, ws.matB, ws.world)
+            });
+        }
+    });
+})(window.GAME_LEVELS);
+
+// 每个主题内部采用 15 关严格递增的难度曲线（现共 8 大主题 · 120 关）：
 //   1. 拉大猪与小鸟弹弓之间的战线距离（在不改变小鸟飞行初速度的前提下，整体将堡垒合理右移并强化防御）；
-//   2. 后期关卡适度精简小鸟数量（严格控制在 3~5 只），淘汰冗余小鸟、拒绝无脑堆数量；
-//   3. 追加多层重装护盾哨堡（前置盾墙 + 强化承重双柱 + 装甲顶盖），结构更立体坚固。
+//   2. 严格加大第 3 关之后的关卡难度：前期第 4~9 关精简到至多 3 只鸟，第 10~13 关至多 4 只鸟，第 14~15 关至多 4~5 只鸟；
+//   3. 追加多层重装护盾哨堡（前置重甲盾墙 + 强化双柱 + 装甲斜顶 + 后卫石壁），结构更立体耐打。
 // 硬约束（由 tests/smoke_test.js 静态校验）：
-//   - 普通弹弓最大自由射程约 1838..1915；新增装甲哨堡统一锚定在 x=1735（整体前沿≤1625），保证普通弹弓稳定可击破；
+//   - 普通弹弓最大自由射程约 1838..1915；新增装甲哨堡锚定在 x=1735（整体前沿≤1625），保证普通弹弓稳定可击破；
 //   - 全屏/缩放自适应相机动态框选弹弓队列至最右猪目标，任何浏览器尺寸下左右双方均可同屏清晰可见。
 (function applyProgressiveDifficulty(levels) {
     const themes = {
@@ -2154,7 +2475,10 @@ window.GAME_LEVELS = [
         desert: { base: 'wood', accent: 'stone', support: ['bomb', 'matilda', 'yellow'] },
         snow: { base: 'glass', accent: 'wood', support: ['blue', 'terence', 'bomb'] },
         castle: { base: 'stone', accent: 'wood', support: ['bomb', 'terence', 'yellow'] },
-        volcano: { base: 'stone', accent: 'glass', support: ['hal', 'bomb', 'terence'] }
+        volcano: { base: 'stone', accent: 'glass', support: ['hal', 'bomb', 'terence'] },
+        bamboo: { base: 'wood', accent: 'stone', support: ['yellow', 'bomb', 'hal'] },
+        sky: { base: 'glass', accent: 'stone', support: ['blue', 'matilda', 'terence'] },
+        space: { base: 'stone', accent: 'glass', support: ['bomb', 'terence', 'hal'] }
     };
     const previousPar = {};
     const pigRadius = { small: 17, normal: 22, helmet: 24, foreman: 27, king: 34 };
@@ -2199,18 +2523,16 @@ window.GAME_LEVELS = [
     }
 
     function tuneBirdsQueue(baseBirds, supportPool, stage, tier) {
-        // 中后期逐步收紧小鸟数量，保留功能鸟并优先精简多余的普通红鸟，提升解谜含金量
         let list = baseBirds.slice();
         if (stage <= 3) {
             return { birds: list.slice(0, 4), addedBirds: 0 };
         }
-        const cap = tier <= 2 ? 4 : (tier <= 4 ? 4 : 5);
+        // 第3关之后显著收紧出鸟量：4~9关限3只，10~13关限4只，14关限4只，15关终局Boss至多5只
+        const cap = stage <= 9 ? 3 : (stage <= 14 ? 4 : 5);
         const needSpecial = supportPool[0];
         if (!list.includes(needSpecial) && tier >= 2) {
-            // 用特色功能鸟替换多余的普通红鸟或末位鸟
             const redIdx = list.indexOf('red');
             if (redIdx >= 0) list[redIdx] = needSpecial;
-            else if (list.length < cap) list.push(needSpecial);
         }
         while (list.length > cap) {
             const redIdx = list.lastIndexOf('red');
@@ -2226,7 +2548,6 @@ window.GAME_LEVELS = [
         const baseBounds = measureBoundsX(baseBuild, 660);
 
         if (stage < 4) {
-            // 新手/早期关卡：适度拉大与弹弓距离（右界延伸至约 1690），保持 3~4 只鸟
             const shiftX = Math.max(20, Math.min(160, 1695 - baseBounds.maxX));
             level.build = function buildStretchedEarly(g, GY) {
                 baseBuild.call(this, createShiftedBuilder(g, shiftX), GY);
@@ -2247,51 +2568,52 @@ window.GAME_LEVELS = [
         const theme = themes[level.world];
         const t = stage - 4;                    // 0..11
         const tier = Math.floor(t / 2) + 1;     // 1..6：重装哨堡层数逐档递增
-        const hardened = (t % 2) === 1;         // 每档第二关：护甲材料与守卫再升一级
+        const hardened = (t % 2) === 1;
         const guardRank = tier + (hardened ? 1 : 0);  // 1..7
         const floors = tier;
-        const mainMaterial = guardRank >= 4 ? 'stone' : (guardRank >= 2 ? theme.accent : theme.base);
-        const shieldMaterial = guardRank >= 5 ? 'stone' : 'wood';
-        const pigType = guardRank >= 6 ? 'foreman' : (guardRank >= 3 ? 'helmet' : 'normal');
+        const mainMaterial = guardRank >= 3 ? 'stone' : (guardRank >= 2 ? theme.accent : theme.base);
+        const shieldMaterial = guardRank >= 4 ? 'stone' : 'wood';
+        const pigType = guardRank >= 5 ? 'foreman' : (guardRank >= 2 ? 'helmet' : 'normal');
         const pigR = pigRadius[pigType] || 22;
 
-        // 将原堡垒适当右移拉长战线，同时严格停留在前置护盾左侧（<= 1625），留出安全间距
+        // 拉大基础堡垒距弹弓距离并严格预留与前置盾墙(>=1656)之间的安全间隙
         const shiftX = Math.max(0, Math.min(115, 1625 - baseBounds.maxX));
-        const hasFrontShield = guardRank >= 3; // 中后期哨堡自带前置重甲护墙
-        const hasRoofCap = guardRank >= 2;     // 带装甲斜顶防护
+        const hasFrontShield = guardRank >= 3;  // 前置重甲高墙
+        const hasRoofCap = guardRank >= 2;      // 装甲顶盖
+        const hasRearButtress = guardRank >= 5; // 后侧重石稳固壁垒（防贯穿一穿到底）
 
         level.build = function buildWithProgression(g, GY) {
             baseBuild.call(this, createShiftedBuilder(g, shiftX), GY);
 
-            // 1. 多层强化堡垒塔（双柱宽跨 + 顶梁 + 内嵌守卫）
             for (let floor = 0; floor < floors; floor++) {
                 const baseY = GY - floor * STORY_HEIGHT;
-                // 仅在极高层保留略脆弱的弱点材料，中下层全面加固
                 const mat = (floor === floors - 1 && floors >= 5) ? theme.accent : mainMaterial;
-                g.addBlock(OUTPOST_X - 42, baseY - 40, 16, 80, mat);
-                g.addBlock(OUTPOST_X + 42, baseY - 40, 16, 80, mat);
-                g.addBlock(OUTPOST_X, baseY - 89, 102, 18, mat);
+                g.addBlock(OUTPOST_X - 42, baseY - 40, 18, 80, mat);
+                g.addBlock(OUTPOST_X + 42, baseY - 40, 18, 80, mat);
+                g.addBlock(OUTPOST_X, baseY - 89, 104, 18, mat);
                 g.addPig(OUTPOST_X, baseY - pigR, pigType);
             }
 
-            // 2. 前置护盾矮墙：阻挡低平直射，迫使玩家拉高抛物线或爆破开路
             if (hasFrontShield) {
-                g.addBlock(OUTPOST_X - 66, GY - 48, 16, 96, shieldMaterial);
+                g.addBlock(OUTPOST_X - 70, GY - 60, 18, 120, shieldMaterial);
             }
 
-            // 3. 顶部装甲斜顶盖：防上方轻量碎裂溅射，增加破顶门槛
+            if (hasRearButtress) {
+                g.addBlock(OUTPOST_X + 68, GY - 55, 18, 110, 'stone');
+            }
+
             if (hasRoofCap) {
                 const topY = GY - floors * STORY_HEIGHT;
-                g.addRoof(OUTPOST_X, topY - 22, 92, 42, mainMaterial);
+                g.addRoof(OUTPOST_X, topY - 22, 96, 42, guardRank >= 4 ? 'stone' : mainMaterial);
             }
         };
 
         const tuned = tuneBirdsQueue(level.birds, theme.support, stage, tier);
         level.birds = tuned.birds;
 
-        const addedBlocks = floors * 3 + (hasFrontShield ? 1 : 0) + (hasRoofCap ? 1 : 0);
+        const addedBlocks = floors * 3 + (hasFrontShield ? 1 : 0) + (hasRearButtress ? 1 : 0) + (hasRoofCap ? 1 : 0);
         const addedPigs = floors;
-        const addedScore = addedPigs * 5000 + addedBlocks * 1050;
+        const addedScore = addedPigs * 5000 + addedBlocks * 1100;
         level.parScore = Math.max(level.parScore + addedScore, (previousPar[level.world] || 0) + 1000);
         previousPar[level.world] = level.parScore;
         level.progression = {
@@ -2299,7 +2621,7 @@ window.GAME_LEVELS = [
             outpostX: OUTPOST_X,
             shiftX: Math.round(shiftX),
             addedBlocks, addedPigs, addedTnts: 0, addedBirds: tuned.addedBirds,
-            hasFrontShield, hasRoofCap,
+            hasFrontShield, hasRearButtress, hasRoofCap,
             birdBudget: level.birds.length
         };
     });

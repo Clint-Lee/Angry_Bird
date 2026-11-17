@@ -802,53 +802,144 @@ body {
     box-shadow: 0 7px 0 #9a3412, 0 14px 28px rgba(249, 115, 22, 0.48);
 }
 
-/* Dragon Sweeper Third Flagship Card Styling */
-.ds-badge {
-    background: linear-gradient(90deg, #b45309 0%, #be123c 100%);
+/* Cut the Rope Third Flagship Card Styling */
+.cr-badge {
+    background: linear-gradient(90deg, #16a34a 0%, #eab308 100%);
+    box-shadow: 0 -2px 12px rgba(74, 222, 128, 0.3);
+}
+
+.cr-featured-card {
+    border-color: rgba(74, 222, 128, 0.5);
+    box-shadow: 0 22px 54px rgba(2, 6, 23, 0.68), 0 0 28px rgba(34, 197, 94, 0.14);
+}
+
+.cr-featured-card:hover {
+    border-color: rgba(134, 239, 172, 0.85);
+    box-shadow: 0 28px 68px rgba(2, 6, 23, 0.78), 0 0 36px rgba(34, 197, 94, 0.24);
+}
+
+.cr-visual {
+    background: radial-gradient(circle at 50% 35%, #064e3b 0%, #052e16 78%);
+}
+
+.cr-visual-badge {
+    border-color: rgba(74, 222, 128, 0.48);
+    color: #bbf7d0;
+}
+
+.cr-featured-card:hover .lumina-art-svg,
+.at-featured-card:hover .lumina-art-svg,
+.jj-featured-card:hover .lumina-art-svg {
+    transform: translateY(-4px) scale(1.04);
+}
+
+.pill-world.cr-c1 { background: rgba(74, 222, 128, 0.28); color: #bbf7d0; }
+.pill-world.cr-c2 { background: rgba(56, 189, 248, 0.28); color: #bae6fd; }
+.pill-world.cr-c3 { background: rgba(250, 204, 21, 0.28); color: #fef08a; }
+.pill-world.cr-c4 { background: rgba(192, 132, 252, 0.3); color: #e9d5ff; }
+.cr-genre { background: #15803d; }
+.cr-ver   { background: #ca8a04; }
+
+.cr-mastery-fill {
+    background: linear-gradient(90deg, #4ade80 0%, #facc15 65%, #fb7185 100%);
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.45);
+}
+
+.cr-play-btn {
+    background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
+    box-shadow: 0 5px 0 #14532d, 0 10px 24px rgba(34, 197, 94, 0.38);
+}
+
+.cr-play-btn:hover {
+    background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+    box-shadow: 0 7px 0 #14532d, 0 14px 28px rgba(74, 222, 128, 0.48);
+}
+
+/* Adventure Shop Tycoon Fourth Flagship Card Styling */
+.at-badge {
+    background: linear-gradient(90deg, #d97706 0%, #4f46e5 100%);
     box-shadow: 0 -2px 12px rgba(251, 191, 36, 0.32);
 }
 
-.ds-featured-card {
-    border-color: rgba(251, 191, 36, 0.52);
-    box-shadow: 0 22px 54px rgba(2, 6, 23, 0.68), 0 0 28px rgba(244, 63, 94, 0.14);
+.at-featured-card {
+    border-color: rgba(251, 191, 36, 0.5);
+    box-shadow: 0 22px 54px rgba(2, 6, 23, 0.68), 0 0 28px rgba(99, 102, 241, 0.16);
 }
 
-.ds-featured-card:hover {
+.at-featured-card:hover {
     border-color: rgba(253, 224, 71, 0.85);
-    box-shadow: 0 28px 68px rgba(2, 6, 23, 0.78), 0 0 36px rgba(225, 29, 72, 0.24);
+    box-shadow: 0 28px 68px rgba(2, 6, 23, 0.78), 0 0 36px rgba(245, 158, 11, 0.24);
 }
 
-.ds-visual {
-    background: radial-gradient(circle at 50% 35%, #31121d 0%, #090b15 78%);
+.at-visual {
+    background: radial-gradient(circle at 50% 35%, #312e81 0%, #0f172a 78%);
 }
 
-.ds-visual-badge {
+.at-visual-badge {
     border-color: rgba(251, 191, 36, 0.45);
     color: #fde68a;
 }
 
-.ds-featured-card:hover .lumina-art-svg {
-    transform: translateY(-4px) scale(1.04);
-}
+.pill-world.at-c1 { background: rgba(74, 222, 128, 0.28); color: #bbf7d0; }
+.pill-world.at-c2 { background: rgba(56, 189, 248, 0.28); color: #bae6fd; }
+.pill-world.at-c3 { background: rgba(251, 191, 36, 0.3); color: #fde68a; }
+.pill-world.at-c4 { background: rgba(167, 139, 250, 0.32); color: #ede9fe; }
+.at-genre { background: #4338ca; }
+.at-ver   { background: #d97706; }
 
-.pill-world.ds-c1 { background: rgba(74, 222, 128, 0.28); color: #bbf7d0; }
-.pill-world.ds-c2 { background: rgba(192, 132, 252, 0.32); color: #e9d5ff; }
-.pill-world.ds-c3 { background: rgba(244, 63, 94, 0.32); color: #fecdd3; }
-.pill-world.ds-c4 { background: rgba(245, 158, 11, 0.32); color: #fde68a; }
-.ds-genre { background: #be123c; }
-.ds-ver   { background: #d97706; }
-
-.ds-mastery-fill {
-    background: linear-gradient(90deg, #4ade80 0%, #fbbf24 55%, #fb7185 100%);
+.at-mastery-fill {
+    background: linear-gradient(90deg, #818cf8 0%, #fbbf24 55%, #f59e0b 100%);
     box-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
 }
 
-.ds-play-btn {
-    background: linear-gradient(180deg, #e11d48 0%, #b45309 100%);
-    box-shadow: 0 5px 0 #7f1d1d, 0 10px 24px rgba(225, 29, 72, 0.38);
+.at-play-btn {
+    background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+    box-shadow: 0 5px 0 #78350f, 0 10px 24px rgba(245, 158, 11, 0.38);
 }
 
-.ds-play-btn:hover {
-    background: linear-gradient(180deg, #f43f5e 0%, #d97706 100%);
-    box-shadow: 0 7px 0 #7f1d1d, 0 14px 28px rgba(244, 63, 94, 0.48);
+.at-play-btn:hover {
+    background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+    box-shadow: 0 7px 0 #78350f, 0 14px 28px rgba(251, 191, 36, 0.48);
+}
+
+/* Jump Jump Fifth Flagship Card Styling */
+.jj-badge {
+    background: linear-gradient(90deg, #0284c7 0%, #7c3aed 100%);
+    box-shadow: 0 -2px 12px rgba(56, 189, 248, 0.32);
+}
+
+.jj-featured-card {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 22px 54px rgba(2, 6, 23, 0.68), 0 0 28px rgba(56, 189, 248, 0.15);
+}
+
+.jj-featured-card:hover {
+    border-color: rgba(125, 211, 252, 0.85);
+    box-shadow: 0 28px 68px rgba(2, 6, 23, 0.78), 0 0 36px rgba(124, 58, 237, 0.24);
+}
+
+.jj-visual {
+    background: radial-gradient(circle at 50% 35%, #0c4a6e 0%, #0f172a 78%);
+}
+
+.jj-visual-badge {
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #bae6fd;
+}
+
+.pill-world.jj-c1 { background: rgba(56, 189, 248, 0.28); color: #bae6fd; }
+.pill-world.jj-c2 { background: rgba(167, 139, 250, 0.3); color: #ede9fe; }
+.pill-world.jj-c3 { background: rgba(250, 204, 21, 0.28); color: #fef08a; }
+.pill-world.jj-c4 { background: rgba(45, 212, 191, 0.28); color: #99f6e4; }
+.jj-genre { background: #0369a1; }
+.jj-ver   { background: #6d28d9; }
+
+.jj-play-btn {
+    background: linear-gradient(180deg, #0ea5e9 0%, #4f46e5 100%);
+    box-shadow: 0 5px 0 #312e81, 0 10px 24px rgba(14, 165, 233, 0.38);
+}
+
+.jj-play-btn:hover {
+    background: linear-gradient(180deg, #38bdf8 0%, #6366f1 100%);
+    box-shadow: 0 7px 0 #312e81, 0 14px 28px rgba(56, 189, 248, 0.48);
 }

@@ -417,11 +417,10 @@ canvas {
 
 .world-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    overflow-x: auto;
     padding-bottom: 10px;
     margin-bottom: 12px;
-    scrollbar-width: thin;
 }
 
 .world-tab-btn {

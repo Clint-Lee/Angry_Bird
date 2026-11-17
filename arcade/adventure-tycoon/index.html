@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>冒险家商店物语 Adventure Shop Tycoon · 云栖工坊</title>
+    <link rel="stylesheet" href="style.css?v=20261117_1655">
+</head>
+<body>
+    <div class="at-shell">
+        <header class="topbar">
+            <div class="top-left">
+                <a href="../index.html" class="nav-pill">← 游戏大厅</a>
+                <div class="title-group">
+                    <span class="shop-badge" id="shopLevelBadge">Lv.1 新手小店</span>
+                    <h1>冒险家商店物语 · Adventure Shop</h1>
+                </div>
+            </div>
+            <div class="top-right">
+                <div class="currency-pill gold-pill">
+                    <span>💰</span>
+                    <b id="goldVal">60 G</b>
+                </div>
+                <div class="currency-pill rep-pill" title="声望越高，店铺等级与VIP收益越高">
+                    <span>⭐ 声望</span>
+                    <b id="repVal">0</b>
+                </div>
+                <div class="currency-pill max-pill" title="历史累计最高金币资产 MAX">
+                    <span>MAX</span>
+                    <b id="maxGoldVal">60 G</b>
+                </div>
+                <button class="action-pill" id="btnPrestige" type="button" title="总营收满 3000G 可开启分店转生，永久 +35% 售价加成">✨ 分店转生</button>
+                <button class="action-pill" id="btnMute" type="button" title="音效开关">🔊</button>
+            </div>
+        </header>
+
+        <!-- Live VIP Special Order Banner -->
+        <div class="vip-banner hidden" id="vipBanner">
+            <div class="vip-left">
+                <span class="vip-tag">👑 皇家特级委托</span>
+                <span id="vipDesc">需求：生命药水 ×2 · 奖励：104 G + 9 声望</span>
+                <span class="vip-timer" id="vipTimer">30s</span>
+            </div>
+            <button class="vip-btn" id="btnFulfillVip" type="button">立即交付!</button>
+        </div>
+
+        <!-- Living Interactive Shop Floor Canvas -->
+        <section class="canvas-stage">
+            <canvas id="shopCanvas" width="680" height="340"></canvas>
+            <div class="mat-strip" id="matStrip"></div>
+        </section>
+
+        <!-- 3-Column Management Controls -->
+        <main class="mgmt-grid">
+            <!-- Col 1: Expeditions -->
+            <section class="panel-box">
+                <div class="box-head">
+                    <h2>🗺️ 勇者探险副本</h2>
+                    <span class="box-sub">点击传送门或按钮加速采材</span>
+                </div>
+                <div class="zones-list" id="zonesList"></div>
+            </section>
+
+            <!-- Col 2: Crafting Workbench & Shelves -->
+            <section class="panel-box">
+                <div class="box-head">
+                    <h2>⚗️ 炼造与货架库存</h2>
+                    <span class="box-sub" id="shelfCapText">货架上限: 5</span>
+                </div>
+                <div class="recipes-list" id="recipesList"></div>
+            </section>
+
+            <!-- Col 3: Staff Automation & Upgrades -->
+            <section class="panel-box">
+                <div class="box-head">
+                    <h2>🛠️ 雇员与店铺升级</h2>
+                    <span class="box-sub" id="prestigeMultText">售价倍率 ×1.00</span>
+                </div>
+                <div class="upgrades-list" id="upgradesList"></div>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast-banner hidden" id="offlineToast"></div>
+
+    <script src="engine.js?v=20261117_1655"></script>
+    <script src="audio.js?v=20261117_1655"></script>
+    <script src="game.js?v=20261117_1655"></script>
+</body>
+</html>

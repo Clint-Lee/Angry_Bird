@@ -52,7 +52,16 @@
         '4-11 绝壁棱堡', '4-12 铁壁铜墙', '4-13 炼狱熔炉', '4-14 禁卫总督', '4-15 猪王决战 (FINAL BOSS)',
         '5-1 熔岩前哨', '5-2 盲区暗袭', '5-3 连锁爆燃', '5-4 浮岛要塞', '5-5 逆风回旋',
         '5-6 熔岩阶梯', '5-7 滚烫落石', '5-8 炽焰跳跃', '5-9 火山双子塔', '5-10 硫磺深坑',
-        '5-11 熔岩钟摆', '5-12 地心穿刺', '5-13 熔岩迷宫', '5-14 巨兽狂怒', '5-15 熔岩领主决战'
+        '5-11 熔岩钟摆', '5-12 地心穿刺', '5-13 熔岩迷宫', '5-14 巨兽狂怒', '5-15 熔岩领主决战',
+        '6-1 山门试竹', '6-2 翠影琉璃', '6-3 竹鼓飞跃', '6-4 林间暗哨', '6-5 红灯悬阵',
+        '6-6 青石滚崖', '6-7 双亭揽月', '6-8 禅钟铁球', '6-9 竹窗暗室', '6-10 幽篁跳台',
+        '6-11 三柱重楼', '6-12 反锁竹阁', '6-13 石阵迷踪', '6-14 御竹大阵', '6-15 竹海仙王决战',
+        '7-1 云端哨站', '7-2 虹晶玻璃塔', '7-3 云台弹跳', '7-4 天阙前防', '7-5 天灯爆阵',
+        '7-6 浮石倾泻', '7-7 双岛联动', '7-8 星钟铁锤', '7-9 天窗狙击', '7-10 云梯连跃',
+        '7-11 三翼云垒', '7-12 琉璃锁阵', '7-13 高空奇袭', '7-14 云海铁幕', '7-15 云霄猪王决战',
+        '8-1 星港前哨', '8-2 晶体舱壁', '8-3 重力跳板', '8-4 星环战壕', '8-5 引力核雷',
+        '8-6 陨石滚落', '8-7 双星堡垒', '8-8 轨道流星锤', '8-9 舱顶天窗', '8-10 星轨跃迁',
+        '8-11 三重反应堆', '8-12 反物质锁舱', '8-13 星云重阵', '8-14 紫晶壁垒', '8-15 星际猪皇终战'
     ];
 
     function updateLobbyUI() {
@@ -62,7 +71,7 @@
         let totalStars = 0;
         let clearedCount = 0;
         let totalScore = 0;
-        const totalLevels = 75;
+        const totalLevels = 120;
         const maxStars = totalLevels * 3;
 
         Object.keys(data.levelStars || {}).forEach(k => {
@@ -135,8 +144,14 @@
         // 5. Fruit Merge live stats sync
         updateFruitMergeCard();
 
-        // 6. Dragon Sweeper live stats sync
-        updateDragonSweeperCard();
+        // 6. Cut the Rope live stats sync
+        updateCutRopeCard();
+
+        // 7. Adventure Shop Tycoon live stats sync
+        updateAdventureTycoonCard();
+
+        // 8. Jump Jump live stats sync
+        updateJumpJumpCard();
     }
 
     function updateFruitMergeCard() {
@@ -179,44 +194,87 @@
         }
     }
 
-    function updateDragonSweeperCard() {
-        const DS_KEY = 'cloudeave_dragon_sweeper_v1';
-        let ds = null;
+    function readJsonSave(key) {
         try {
-            const raw = localStorage.getItem(DS_KEY);
-            if (raw) ds = JSON.parse(raw);
-        } catch { ds = null; }
-        if (!ds || typeof ds !== 'object') ds = {};
-
-        const starsObj = (ds.stageStars && typeof ds.stageStars === 'object') ? ds.stageStars : {};
-        const dsStars = Object.values(starsObj).reduce((s, v) => s + (Number(v) || 0), 0);
-        const bestEndless = Math.max(0, Number(ds.endlessHighScore) || 0);
-        const unlocked = Math.max(1, Math.min(8, Number(ds.unlockedStage) || 1));
-        const slain = Math.max(0, Number(ds.dragonsSlain) || 0);
-        const dsPct = Math.round((dsStars / 24) * 100);
-
-        const starsEl = document.getElementById('dsTotalStars');
-        if (starsEl) starsEl.innerText = `${dsStars} / 24 ★`;
-        const bestEl = document.getElementById('dsEndlessBest');
-        if (bestEl) bestEl.innerText = `${bestEndless.toLocaleString()} 分`;
-        const unlockEl = document.getElementById('dsUnlockedCount');
-        if (unlockEl) unlockEl.innerText = `${unlocked} / 8 层`;
-        const slainEl = document.getElementById('dsDragonsSlain');
-        if (slainEl) slainEl.innerText = `${slain} 只`;
-        const txtEl = document.getElementById('dsMasteryText');
-        if (txtEl) txtEl.innerText = `${dsPct}%`;
-        const fillEl = document.getElementById('dsMasteryFill');
-        if (fillEl) fillEl.style.width = `${dsPct}%`;
-
-        const dsSub = document.getElementById('btnDragonSub');
-        if (dsSub) dsSub.innerText = bestEndless > 0 ? `(无尽MAX ${bestEndless.toLocaleString()}分 · ${dsStars}★)` : '(8大试炼层 / 无尽深渊)';
-
-        const btnDs = document.getElementById('btnPlayDragon');
-        if (btnDs) {
-            btnDs.href = window.location.pathname.includes('/games/arcade')
-                ? '/games/arcade/dragon-sweeper/'
-                : './dragon-sweeper/';
+            const raw = localStorage.getItem(key);
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch {
+            return {};
         }
+    }
+
+    function resolveArcadeUrl(slug) {
+        return window.location.pathname.includes('/games/arcade')
+            ? `/games/arcade/${slug}/`
+            : `./${slug}/`;
+    }
+
+    function setText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text;
+    }
+
+    function updateCutRopeCard() {
+        const cr = readJsonSave('cloudeave_cut_rope_v1');
+        const starsObj = (cr.levelStars && typeof cr.levelStars === 'object') ? cr.levelStars : {};
+        const totalStars = Object.values(starsObj).reduce((s, v) => s + Math.min(3, Math.max(0, Number(v) || 0)), 0);
+        const unlocked = Math.max(1, Math.min(12, Number(cr.unlockedLevel) || 1));
+        const currentLvl = Math.max(1, Math.min(12, (Number(cr.currentLevelIndex) || 0) + 1));
+        const pct = Math.round((totalStars / 36) * 100);
+
+        setText('crTotalStars', `${totalStars} / 36 ⭐`);
+        setText('crCurrentLvl', `第 ${currentLvl} 关`);
+        setText('crUnlockedCount', `${unlocked} / 12 关`);
+        setText('crMasteryText', `${pct}%`);
+        const fillEl = document.getElementById('crMasteryFill');
+        if (fillEl) fillEl.style.width = `${pct}%`;
+
+        setText('btnCutRopeSub', totalStars > 0 ? `(继续第 ${currentLvl} 关 · ${totalStars}/36★)` : '(12道物理机关 · 36★收集)');
+        const btn = document.getElementById('btnPlayCutRope');
+        if (btn) btn.href = resolveArcadeUrl('cut-rope');
+    }
+
+    function updateAdventureTycoonCard() {
+        const at = readJsonSave('cloudeave_adventure_tycoon_v1');
+        const hasSave = Object.keys(at).length > 0;
+        const curGold = hasSave ? Math.max(0, Math.floor(Number(at.gold) || 0)) : 0;
+        const maxGold = hasSave ? Math.max(curGold, Math.floor(Number(at.maxGoldHeld) || 0)) : 0;
+        const shopLv = Math.max(1, Math.floor(Number(at.shopLevel) || 1));
+        const orders = Math.max(0, Math.floor(Number(at.ordersCompleted) || 0));
+        const prestige = Math.max(0, Math.floor(Number(at.prestigeCount) || 0));
+        const zones = Math.max(1, Math.min(4, Number(at.unlockedZones) || 1));
+        const pct = Math.round((zones / 4) * 100);
+
+        setText('atMaxGold', `${maxGold.toLocaleString()} 金`);
+        setText('atCurGold', `${curGold.toLocaleString()} 金`);
+        setText('atShopLv', `Lv.${shopLv}`);
+        setText('atOrders', `${orders} 单 / ${prestige} 世`);
+        setText('atMasteryText', `${pct}%`);
+        const fillEl = document.getElementById('atMasteryFill');
+        if (fillEl) fillEl.style.width = `${pct}%`;
+
+        setText('btnTycoonSub', hasSave ? `(Lv.${shopLv} 商铺 · MAX ${maxGold.toLocaleString()} 金)` : '(探险搜材 · 炼金卖货 · 自动经营)');
+        const btn = document.getElementById('btnPlayTycoon');
+        if (btn) btn.href = resolveArcadeUrl('adventure-tycoon');
+    }
+
+    function updateJumpJumpCard() {
+        const jj = readJsonSave('cloudeave_jump_jump_v1');
+        const bestScore = Math.max(0, Math.floor(Number(jj.bestScore) || 0));
+        const maxJumps = Math.max(0, Math.floor(Number(jj.maxJumps) || 0));
+        const bestCombo = Math.max(0, Math.floor(Number(jj.bestCombo) || 0));
+        const games = Math.max(0, Math.floor(Number(jj.gamesPlayed) || 0));
+
+        setText('jjBestScore', `${bestScore.toLocaleString()} 分`);
+        setText('jjMaxJumps', `${maxJumps} 跳`);
+        setText('jjBestCombo', `${bestCombo} 连击`);
+        setText('jjGames', `${games} 局`);
+
+        setText('btnJumpSub', bestScore > 0 ? `(MAX纪录 ${bestScore.toLocaleString()} 分 · 连击 ${bestCombo}次)` : '(鼠标 / 空格双模蓄力 · MAX冲榜)');
+        const btn = document.getElementById('btnPlayJump');
+        if (btn) btn.href = resolveArcadeUrl('jump-jump');
     }
 
     if (document.readyState === 'loading') {

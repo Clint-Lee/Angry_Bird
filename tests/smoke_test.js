@@ -184,19 +184,19 @@ ok(!imageSrcs.includes('assets/bg_volcano.jpg'),
 console.log('\n[2] Level structure');
 const levels = sandboxWindow.GAME_LEVELS || [];
 const worlds = sandboxWindow.GAME_WORLDS || [];
-ok(levels.length === 75, 'GAME_LEVELS has 75 levels (got ' + levels.length + ')');
-ok(worlds.length === 5, 'GAME_WORLDS has 5 worlds (got ' + worlds.length + ')');
+ok(levels.length === 120, 'GAME_LEVELS has 120 levels (got ' + levels.length + ')');
+ok(worlds.length === 8, 'GAME_WORLDS has 8 worlds (got ' + worlds.length + ')');
 
 const worldIds = worlds.map((w) => w.id).sort();
-ok(JSON.stringify(worldIds) === JSON.stringify(['castle', 'desert', 'meadow', 'snow', 'volcano']),
-    'world ids are meadow/desert/snow/castle/volcano: ' + worldIds.join(','));
+ok(JSON.stringify(worldIds) === JSON.stringify(['bamboo', 'castle', 'desert', 'meadow', 'sky', 'snow', 'space', 'volcano']),
+    'world ids include all 8 themes: ' + worldIds.join(','));
 
 const byWorld = {};
 levels.forEach((lv) => { byWorld[lv.world] = (byWorld[lv.world] || 0) + 1; });
-const all15 = Object.keys(byWorld).length === 5 && Object.values(byWorld).every((c) => c === 15);
-ok(all15, 'each of the 5 worlds contains exactly 15 levels: ' + JSON.stringify(byWorld));
+const all15 = Object.keys(byWorld).length === 8 && Object.values(byWorld).every((c) => c === 15);
+ok(all15, 'each of the 8 worlds contains exactly 15 levels: ' + JSON.stringify(byWorld));
 
-const worldIndex = { meadow: 1, desert: 2, snow: 3, castle: 4, volcano: 5 };
+const worldIndex = { meadow: 1, desert: 2, snow: 3, castle: 4, volcano: 5, bamboo: 6, sky: 7, space: 8 };
 let worldLevelOk = true;
 levels.forEach((lv) => {
     if (!/^\d+-\d+$/.test(lv.worldLevel || '')) worldLevelOk = false;
@@ -242,12 +242,14 @@ function expectedOutpost(stage) {
     const guardRank = tier + (t % 2);
     const hasFrontShield = guardRank >= 3;
     const hasRoofCap = guardRank >= 2;
+    const hasRearButtress = guardRank >= 5;
     return {
-        blocks: tier * 3 + (hasFrontShield ? 1 : 0) + (hasRoofCap ? 1 : 0),
+        blocks: tier * 3 + (hasFrontShield ? 1 : 0) + (hasRearButtress ? 1 : 0) + (hasRoofCap ? 1 : 0),
         pigs: tier,
         tnts: 0,
         guardRank,
         hasFrontShield,
+        hasRearButtress,
         hasRoofCap
     };
 }
@@ -266,9 +268,10 @@ levels.forEach((lv) => {
         progressionOk = false;
         console.log('    progression mismatch at ' + lv.worldLevel + ': ' + JSON.stringify(p));
     }
-    if (lv.birds.length > 5 || (stage <= 10 && lv.birds.length > 4)) {
+    const maxBirdsForStage = stage <= 3 ? 4 : (stage <= 9 ? 3 : (stage <= 14 ? 4 : 5));
+    if (lv.birds.length > maxBirdsForStage) {
         birdBudgetOk = false;
-        console.log('    bird budget too high at ' + lv.worldLevel + ': ' + lv.birds.length);
+        console.log('    bird budget too high at ' + lv.worldLevel + ': ' + lv.birds.length + ' > ' + maxBirdsForStage);
     }
     if (lastPar[lv.world] !== undefined && lv.parScore <= lastPar[lv.world]) parCurveOk = false;
     lastPar[lv.world] = lv.parScore;
@@ -308,7 +311,7 @@ levels.forEach((lv) => {
     });
     for (const o of outpost) {
         const b = bounds(o);
-        if (b.left < 1650 || b.right > 1800 || b.top < -30 || b.bottom > 660.5) geometryOk = false;
+        if (b.left < 1650 || b.right > 1825 || b.top < -30 || b.bottom > 660.5) geometryOk = false;
         if (o.x > SAFE_REACH_X) reachableOk = false;
     }
     for (let i = 0; i < outpost.length; i++) {
@@ -320,8 +323,8 @@ levels.forEach((lv) => {
         }
     }
 });
-ok(progressionOk, 'all 75 levels expose the expected fortified outpost and support metadata');
-ok(birdBudgetOk, 'mid/late levels tighten bird queue (<=4 through stage 10, <=5 max)');
+ok(progressionOk, 'all 120 levels expose the expected fortified outpost and support metadata');
+ok(birdBudgetOk, 'levels enforce tougher bird caps (<=3 for stages 4-9, <=4 for 10-14, <=5 max)');
 ok(difficultyOk, 'difficulty rises monotonically within each world and level 15 is the hardest');
 ok(parCurveOk, 'parScore strictly increases through all 15 levels within every world');
 ok(separationOk, 'every added outpost is fully separated from the shifted base fortress');
@@ -390,8 +393,8 @@ ok(freeRange >= farthestTarget + 60,
 
 // The code-side fallback constant in game.js must agree with the real count.
 const gameJs = fs.readFileSync(path.join(ROOT, 'game.js'), 'utf8');
-ok(/GAME_LEVELS\.length : 75/.test(gameJs),
-    'game.js fallback total-levels constant is 75 (not a stale 60)');
+ok(/GAME_LEVELS\.length : 120/.test(gameJs),
+    'game.js fallback total-levels constant is 120 (8 worlds x 15 levels)');
 
 // ---------------------------------------------------------------------------
 // 3. Audio protection
@@ -444,23 +447,23 @@ ok(createdNodeCount > beforeCritical,
 // ---------------------------------------------------------------------------
 console.log('\n[4] Background rendering');
 const renderer = sandboxWindow.spriteRenderer;
-const worldsToTest = ['meadow', 'desert', 'castle', 'snow', 'volcano'];
+const worldsToTest = ['meadow', 'desert', 'castle', 'snow', 'volcano', 'bamboo', 'sky', 'space'];
 // Simulate the three worlds that DO ship images so the image-draw path is exercised.
 ['meadow', 'desert', 'castle'].forEach((w) => { renderer.images['bg_' + w] = { __mockImg: true }; });
 let bgOk = true;
 worldsToTest.forEach((w) => {
     const ctx = makeMockCtx();
     try {
-        renderer.drawWorldBackground(ctx, w, { x: 0, zoom: 1 }, 1280, 720, 2000, 660, 1.2);
+        renderer.drawWorldBackground(ctx, w, { x: 0, zoom: 1 }, 1280, 720, 2240, 660, 1.2);
     } catch (e) {
         bgOk = false;
         console.log('    threw for ' + w + ': ' + e.message);
     }
     if (!ctx.calls.length) bgOk = false;
 });
-ok(bgOk, 'drawWorldBackground renders all 5 worlds without throwing and issues draw calls');
-ok(!renderer.images['bg_snow'] && !renderer.images['bg_volcano'],
-    'snow/volcano still resolved via procedural fallback (no image registered)');
+ok(bgOk, 'drawWorldBackground renders all 8 worlds without throwing and issues draw calls');
+ok(!renderer.images['bg_snow'] && !renderer.images['bg_volcano'] && !renderer.images['bg_bamboo'] && !renderer.images['bg_sky'] && !renderer.images['bg_space'],
+    'snow/volcano/bamboo/sky/space resolved via procedural fallback (no image registered)');
 
 // ---------------------------------------------------------------------------
 // Summary

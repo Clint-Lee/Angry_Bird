@@ -40,7 +40,7 @@ class SaveManager {
     static normalize(raw) {
         const maxLevels = (typeof window !== 'undefined' && Array.isArray(window.GAME_LEVELS))
             ? window.GAME_LEVELS.length
-            : 75;
+            : 120;
         const data = (raw && typeof raw === 'object') ? { ...raw } : {};
 
         data.currentLevelIndex = Math.max(0, Math.min(maxLevels - 1, parseInt(data.currentLevelIndex, 10) || 0));
@@ -232,7 +232,7 @@ class AngryBirdsMaster {
 
         // Persistent LocalStorage Progress & Settings
         this.saveData = SaveManager.load();
-        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 75;
+        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 120;
         this.currentLevelIndex = Math.max(0, Math.min(this.saveData.currentLevelIndex || 0, totalLevels - 1));
         this.unlockedLevels = this.saveData.unlockedLevels || [0];
         this.highScores = this.saveData.levelScores || {};
@@ -1006,19 +1006,19 @@ class AngryBirdsMaster {
     // LEVEL BUILDER HELPER METHODS (Invoked by levels.js)
     // =========================================================================
     addBlock(x, y, width, height, material) {
-        let hp = 115;
-        let density = 0.0025;
-        let friction = 0.90;
+        let hp = 135;
+        let density = 0.0028;
+        let friction = 0.92;
         let restitution = 0.02;
 
         if (material === 'glass') {
-            hp = 44;
-            density = 0.0015;
-            friction = 0.72;
+            hp = 52;
+            density = 0.0017;
+            friction = 0.74;
             restitution = 0.02;
         } else if (material === 'stone') {
-            hp = 340;
-            density = 0.0064;
+            hp = 400;
+            density = 0.0068;
             friction = 0.96;
             restitution = 0.01;
         }
@@ -1097,20 +1097,20 @@ class AngryBirdsMaster {
 
     addPig(x, y, pigType = 'normal') {
         let radius = 22;
-        let hp = 54; // Reinforced pig toughness
+        let hp = 64; // Tougher pig armor
 
         if (pigType === 'small') {
             radius = 16;
-            hp = 30;
+            hp = 36;
         } else if (pigType === 'helmet') {
             radius = 23;
-            hp = 112;
+            hp = 132;
         } else if (pigType === 'foreman') {
             radius = 26;
-            hp = 152;
+            hp = 178;
         } else if (pigType === 'king') {
             radius = 36;
-            hp = 285;
+            hp = 330;
         }
 
         const pig = Bodies.circle(x, y, radius, {
@@ -2977,7 +2977,7 @@ class AngryBirdsMaster {
         let totalStars = 0;
         let clearedCount = 0;
         let totalScore = 0;
-        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 13;
+        const totalLevels = window.GAME_LEVELS ? window.GAME_LEVELS.length : 120;
         const maxStars = totalLevels * 3;
 
         Object.keys(this.starsUnlocked).forEach(k => {
@@ -3333,7 +3333,10 @@ class AngryBirdsMaster {
             desert: 'rgba(253, 186, 116, 0.42)',
             snow: 'rgba(240, 249, 255, 0.72)',
             castle: 'rgba(196, 181, 253, 0.48)',
-            volcano: 'rgba(251, 146, 60, 0.78)'
+            volcano: 'rgba(251, 146, 60, 0.78)',
+            bamboo: 'rgba(110, 231, 183, 0.62)',
+            sky: 'rgba(254, 240, 138, 0.68)',
+            space: 'rgba(192, 132, 252, 0.74)'
         };
         this.ctx.save();
         this.ctx.fillStyle = palette[worldKey] || palette.meadow;

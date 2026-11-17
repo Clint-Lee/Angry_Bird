@@ -83,8 +83,30 @@ class SpriteRenderer {
                 ctx.arc(px, py, 1.3 + (i % 3) * 0.9, 0, Math.PI * 2);
                 ctx.fill();
             }
+        } else if (worldKey === 'space') {
+            for (let i = 0; i < 34; i++) {
+                ctx.fillStyle = i % 3 === 0 ? 'rgba(192, 132, 252, 0.85)' : 'rgba(186, 230, 253, 0.88)';
+                const px = ((i * 157 + time * 8 * (0.4 + (i % 3) * 0.2)) % (viewW + 40)) - 20;
+                const py = ((i * 97 + Math.sin(time + i) * 6) % (viewH * 0.78));
+                ctx.beginPath();
+                ctx.arc(px, py, 1.0 + (i % 3) * 0.75, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else if (worldKey === 'bamboo') {
+            ctx.fillStyle = 'rgba(110, 231, 183, 0.55)';
+            for (let i = 0; i < 16; i++) {
+                const px = ((i * 167 + time * 24) % (viewW + 40)) - 20;
+                const py = (time * (22 + (i % 4) * 10) + i * 71) % (viewH * 0.85);
+                ctx.save();
+                ctx.translate(px, py);
+                ctx.rotate(Math.sin(time * 2 + i) * 0.6);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 5.5, 2.2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
         } else {
-            ctx.fillStyle = worldKey === 'castle' ? 'rgba(196, 181, 253, 0.45)' : 'rgba(255, 255, 230, 0.35)';
+            ctx.fillStyle = worldKey === 'castle' ? 'rgba(196, 181, 253, 0.45)' : (worldKey === 'sky' ? 'rgba(254, 249, 195, 0.65)' : 'rgba(255, 255, 230, 0.35)');
             for (let i = 0; i < 14; i++) {
                 const px = ((i * 173 + time * 18 * (0.4 + (i % 3) * 0.2)) % (viewW + 40)) - 20;
                 const py = 60 + ((i * 97 + Math.sin(time * 1.5 + i) * 18) % (viewH * 0.65));
@@ -120,6 +142,21 @@ class SpriteRenderer {
             grad.addColorStop(0.35, '#450a0a');
             grad.addColorStop(0.7, '#7f1d1d');
             grad.addColorStop(1, '#ea580c');
+        } else if (worldKey === 'bamboo') {
+            grad.addColorStop(0, '#064e3b');
+            grad.addColorStop(0.42, '#047857');
+            grad.addColorStop(0.78, '#34d399');
+            grad.addColorStop(1, '#d1fae5');
+        } else if (worldKey === 'sky') {
+            grad.addColorStop(0, '#0369a1');
+            grad.addColorStop(0.45, '#38bdf8');
+            grad.addColorStop(0.8, '#bae6fd');
+            grad.addColorStop(1, '#fef3c7');
+        } else if (worldKey === 'space') {
+            grad.addColorStop(0, '#030712');
+            grad.addColorStop(0.4, '#1e1b4b');
+            grad.addColorStop(0.75, '#4c1d95');
+            grad.addColorStop(1, '#831843');
         } else {
             grad.addColorStop(0, '#0284c7');
             grad.addColorStop(0.65, '#7dd3fc');
@@ -188,6 +225,27 @@ class SpriteRenderer {
                 ctx.arc(viewW * 0.5 + shift, horizon - 30, 26, 0, Math.PI * 2);
                 ctx.fill();
                 break;
+            case 'bamboo':
+                this._drawRidge(ctx, viewW, horizon - 38, 66, '#065f46', shift, 0.011, true);
+                break;
+            case 'sky':
+                this._drawRidge(ctx, viewW, horizon - 20, 34, 'rgba(255,255,255,0.45)', shift, 0.012, true);
+                break;
+            case 'space':
+                // Ringed alien planet in upper distance
+                ctx.save();
+                ctx.fillStyle = 'rgba(168, 85, 247, 0.35)';
+                ctx.beginPath();
+                ctx.arc(viewW * 0.72 + shift, horizon * 0.42, 42, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(125, 211, 252, 0.42)';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.ellipse(viewW * 0.72 + shift, horizon * 0.42, 72, 16, -0.22, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+                this._drawRidge(ctx, viewW, horizon - 24, 48, '#2e1065', shift, 0.013, false);
+                break;
             default: // meadow
                 this._drawRidge(ctx, viewW, horizon - 28, 42, '#7cb342', shift, 0.012, true);
         }
@@ -207,6 +265,15 @@ class SpriteRenderer {
                 break;
             case 'volcano':
                 this._drawRidge(ctx, viewW, horizon + 4, 34, '#5b0f0f', shift, 0.016, false);
+                break;
+            case 'bamboo':
+                this._drawRidge(ctx, viewW, horizon - 4, 44, '#047857', shift, 0.014, true);
+                break;
+            case 'sky':
+                this._drawRidge(ctx, viewW, horizon + 8, 28, 'rgba(224, 242, 254, 0.72)', shift, 0.016, true);
+                break;
+            case 'space':
+                this._drawRidge(ctx, viewW, horizon + 2, 34, '#1e1b4b', shift, 0.017, false);
                 break;
             default:
                 this._drawRidge(ctx, viewW, horizon + 4, 38, '#4e8b2f', shift, 0.016, true);
@@ -238,6 +305,24 @@ class SpriteRenderer {
                 ctx.moveTo(0 + shift, horizon + 50);
                 ctx.lineTo(viewW + shift, horizon + 44);
                 ctx.stroke();
+                break;
+            case 'bamboo':
+                this._drawRidge(ctx, viewW, horizon + 38, 24, '#022c22', shift, 0.02, true);
+                ctx.fillStyle = '#064e3b';
+                for (let i = 0; i < 8; i++) {
+                    const bx = (i + 0.4) * (viewW / 8) + shift;
+                    ctx.fillRect(bx, horizon - 35, 6, 82);
+                    ctx.fillStyle = '#10b981';
+                    ctx.fillRect(bx - 1, horizon - 12, 8, 3);
+                    ctx.fillRect(bx - 1, horizon + 12, 8, 3);
+                    ctx.fillStyle = '#064e3b';
+                }
+                break;
+            case 'sky':
+                this._drawRidge(ctx, viewW, horizon + 36, 22, '#f8fafc', shift, 0.022, true);
+                break;
+            case 'space':
+                this._drawRidge(ctx, viewW, horizon + 38, 26, '#0f0720', shift, 0.022, false);
                 break;
             default:
                 this._drawRidge(ctx, viewW, horizon + 40, 26, '#2f5f1f', shift, 0.02, true);
@@ -284,6 +369,18 @@ class SpriteRenderer {
             soilGrad.addColorStop(0, '#292524');
             soilGrad.addColorStop(0.22, '#1c1917');
             soilGrad.addColorStop(1, '#0c0a09');
+        } else if (worldKey === 'bamboo') {
+            soilGrad.addColorStop(0, '#064e3b');
+            soilGrad.addColorStop(0.22, '#022c22');
+            soilGrad.addColorStop(1, '#011c15');
+        } else if (worldKey === 'sky') {
+            soilGrad.addColorStop(0, '#e2e8f0');
+            soilGrad.addColorStop(0.22, '#94a3b8');
+            soilGrad.addColorStop(1, '#475569');
+        } else if (worldKey === 'space') {
+            soilGrad.addColorStop(0, '#2e1065');
+            soilGrad.addColorStop(0.22, '#170b33');
+            soilGrad.addColorStop(1, '#090314');
         } else {
             soilGrad.addColorStop(0, '#5c3a21');
             soilGrad.addColorStop(0.22, '#432818');
@@ -301,8 +398,6 @@ class SpriteRenderer {
             capGrad.addColorStop(0, '#f97316');
             capGrad.addColorStop(0.3, '#ea580c');
             capGrad.addColorStop(1, '#7c2d12');
-            capGrad.addColorStop(0.5, '#ea580c');
-            capGrad.addColorStop(1, '#9a3412');
         } else if (worldKey === 'castle') {
             capGrad.addColorStop(0, '#64748b');
             capGrad.addColorStop(0.5, '#475569');
@@ -312,6 +407,18 @@ class SpriteRenderer {
             capGrad.addColorStop(0.35, '#e0f2fe');
             capGrad.addColorStop(0.75, '#7dd3fc');
             capGrad.addColorStop(1, '#0284c7');
+        } else if (worldKey === 'bamboo') {
+            capGrad.addColorStop(0, '#34d399');
+            capGrad.addColorStop(0.55, '#059669');
+            capGrad.addColorStop(1, '#065f46');
+        } else if (worldKey === 'sky') {
+            capGrad.addColorStop(0, '#fef08a');
+            capGrad.addColorStop(0.45, '#fde047');
+            capGrad.addColorStop(1, '#ca8a04');
+        } else if (worldKey === 'space') {
+            capGrad.addColorStop(0, '#c084fc');
+            capGrad.addColorStop(0.55, '#7e22ce');
+            capGrad.addColorStop(1, '#3b0764');
         } else {
             capGrad.addColorStop(0, '#84cc16');
             capGrad.addColorStop(0.55, '#4d7c0f');
