@@ -47,6 +47,7 @@
     const particles = [];
     const rings = [];
     const popups = [];
+    let jarKickTimer = 0;
 
     // DOM elements
     const scoreValEl = document.getElementById('scoreVal');
@@ -567,6 +568,15 @@
     function renderFrame(dt) {
         ctx.save();
         ctx.scale(DPR, DPR);
+        if (jarKickTimer > 0) {
+            jarKickTimer = Math.max(0, jarKickTimer - dt);
+        }
+        const shakeAmt = (world && world.shakeVisualTimer > 0 ? world.shakeVisualTimer * 10 : 0) + (jarKickTimer * 14);
+        if (shakeAmt > 0.05) {
+            const sx = (Math.random() - 0.5) * shakeAmt;
+            const sy = (Math.random() - 0.5) * shakeAmt * 0.7;
+            ctx.translate(sx, sy);
+        }
         const W = E.ARENA.width;
         const H = E.ARENA.height;
 
@@ -743,8 +753,26 @@
         for (const ev of events) {
             if (ev.type === 'bounce') {
                 audio.playBounce(ev.speed);
+                if (ev.speed > 175 && particles.length < 140) {
+                    const puffCount = ev.speed > 340 ? 5 : 3;
+                    for (let i = 0; i < puffCount; i++) {
+                        const ang = (Math.PI * 2 * i) / puffCount + Math.random() * 0.8;
+                        const spd = 28 + Math.random() * 65;
+                        particles.push({
+                            x: ev.x,
+                            y: ev.y,
+                            vx: Math.cos(ang) * spd,
+                            vy: Math.sin(ang) * spd - 24,
+                            r: 1.8 + Math.random() * 2.2,
+                            color: 'rgba(255, 250, 235, 0.9)',
+                            life: 0.24 + Math.random() * 0.14,
+                            maxLife: 0.38
+                        });
+                    }
+                }
             } else if (ev.type === 'peg') {
                 audio.playPeg();
+                rings.push({ x: ev.x, y: ev.y, r: 10, maxR: 32, color: '#fbbf24', life: 0.22, maxLife: 0.22 });
             } else if (ev.type === 'merge') {
                 const def = E.TIERS[ev.tier];
                 scoreChanged = true;
@@ -752,11 +780,16 @@
                 persistSave();
                 audio.playMerge(ev.tier, ev.combo);
                 spawnJuiceBurst(ev.x, ev.y, def.juice, 14 + ev.tier, 1 + ev.tier * 0.08);
+                rings.push({ x: ev.x, y: ev.y, r: def.r * 0.6, maxR: def.r * 2.1 + 24, color: def.rim, life: 0.32, maxLife: 0.32 });
+                if (ev.tier >= 6) {
+                    jarKickTimer = Math.max(jarKickTimer, Math.min(0.24, 0.08 + (ev.tier - 5) * 0.03));
+                }
                 const msg = ev.combo >= 2 ? `+${ev.scoreDelta} · ${ev.combo}连消!` : `+${ev.scoreDelta}`;
                 spawnPopup(ev.x, ev.y - 10, msg, ev.combo >= 2 ? '#e11d48' : '#d97706');
             } else if (ev.type === 'grandSlam') {
                 scoreChanged = true;
                 audio.playGrandSlam();
+                jarKickTimer = 0.35;
                 spawnJuiceBurst(ev.x, ev.y, '#22c55e', 34, 2.2);
                 spawnJuiceBurst(ev.x, ev.y, '#fde047', 22, 1.9);
                 spawnPopup(ev.x, ev.y - 16, `👑 大西瓜满贯 +${ev.scoreDelta}!`, '#15803d');
@@ -874,7 +907,7 @@
         }
 
         const now = performance.now();
-        if (now - lastDropAt < 300) return;
+        if (now - lastDropAt < 240) return;
         world.setAimX(pt.x);
         const dropped = world.drop(pt.x);
         if (dropped) {
@@ -898,7 +931,7 @@
         } else if (ev.key === ' ' || ev.key === 'Enter' || ev.key === 'ArrowDown') {
             ev.preventDefault();
             const now = performance.now();
-            if (now - lastDropAt >= 300 && !activeTool) {
+            if (now - lastDropAt >= 240 && !activeTool) {
                 const dropped = world.drop(world.aimX);
                 if (dropped) {
                     lastDropAt = now;

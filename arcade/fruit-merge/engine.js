@@ -17,8 +17,9 @@
         floorY: 604,
         dangerY: 112,
         spawnY: 54,
-        gravity: 1280,
-        subSteps: 8,
+        gravity: 1380,
+        subSteps: 6,
+        solverIterations: 4,
         maxDropTier: 4
     };
 
@@ -346,13 +347,13 @@
                 r: def.r,
                 x: spawnX,
                 y: ARENA.spawnY,
-                vx: (rng() - 0.5) * 14,
-                vy: 140,
-                angle: (rng() - 0.5) * 0.3,
-                angVel: (rng() - 0.5) * 1.2,
+                vx: (rng() - 0.5) * 18,
+                vy: 120,
+                angle: (rng() - 0.5) * 0.25,
+                angVel: (rng() - 0.5) * 1.4,
                 age: 0,
                 frozen: false,
-                squash: 0.22,
+                squash: 0.20,
                 happyTimer: 0,
                 blinkPhase: rng() * 6,
                 bornStep: stepCounter
@@ -487,17 +488,36 @@
                                 r: nextDef.r,
                                 x: clamp(midX, ARENA.wallL + nextDef.r, ARENA.wallR - nextDef.r),
                                 y: clamp(midY, ARENA.dangerY - 20, ARENA.floorY - nextDef.r),
-                                vx: clamp((a.vx + b.vx) * 0.35, -180, 180),
-                                vy: -85,
+                                vx: clamp((a.vx + b.vx) * 0.45, -220, 220),
+                                vy: -68,
                                 angle: (a.angle + b.angle) * 0.5,
-                                angVel: 0,
+                                angVel: clamp((a.angVel + b.angVel) * 0.5, -6, 6),
                                 age: 0.45,
                                 frozen: false,
-                                squash: 0.36,
+                                squash: 0.40,
                                 happyTimer: 1.4,
                                 blinkPhase: rng() * 6,
                                 bornStep: stepCounter
                             };
+
+                            // Merge outward shockwave: nudges nearby fruits so stacks shift & chain naturally
+                            const blastR = nextDef.r * 2.35 + 34;
+                            const basePush = 115 + nextDef.r * 1.25;
+                            for (const other of world.bodies) {
+                                if (removed.has(other.id) || other.frozen) continue;
+                                const ox = other.x - spawned.x;
+                                const oy = other.y - spawned.y;
+                                const od = Math.hypot(ox, oy) || 0.001;
+                                if (od < blastR) {
+                                    const falloff = 1 - od / blastR;
+                                    const massRatio = clamp(nextDef.r / Math.max(12, other.r), 0.45, 1.85);
+                                    const imp = basePush * falloff * massRatio;
+                                    other.vx += (ox / od) * imp;
+                                    other.vy += (oy / od) * imp - 35 * falloff;
+                                    other.angVel += (ox >= 0 ? 1 : -1) * falloff * 1.8;
+                                }
+                            }
+
                             additions.push(spawned);
                             thawNearby(spawned.x, spawned.y, nextDef.r, events);
                             grantEnergy(events);
@@ -620,139 +640,207 @@
             }
 
             for (let s = 0; s < ARENA.subSteps; s++) {
+                // 1. Integrate gravity, minimal air drag & angular motion
+                const airDrag = 1 - 0.14 * subDt;
+                const spinAirDrag = 1 - 0.28 * subDt;
                 for (const b of world.bodies) {
                     if (b.frozen) continue;
                     b.vy += ARENA.gravity * subDt;
-                    b.vx *= 0.9992;
-                    b.vy *= 0.9994;
+                    b.vx *= airDrag;
+                    b.vy *= airDrag;
                     b.x += b.vx * subDt;
                     b.y += b.vy * subDt;
                     b.angle += b.angVel * subDt;
-                    b.angVel *= 0.992;
+                    b.angVel *= spinAirDrag;
+                }
 
-                    // Arena walls and floor
-                    if (b.x - b.r < ARENA.wallL) {
-                        b.x = ARENA.wallL + b.r;
-                        if (b.vx < 0) {
-                            b.vx = -b.vx * 0.28;
-                            b.angVel += b.vy * 0.003;
+                // 2. Multi-iteration rigid-body impulse & position solver
+                const iters = ARENA.solverIterations;
+                const n = world.bodies.length;
+                for (let iter = 0; iter < iters; iter++) {
+                    // 2a. Walls, Floor & Pegs
+                    for (const b of world.bodies) {
+                        if (b.frozen) continue;
+                        const m = b.r * b.r;
+                        const invM = 1 / m;
+                        const invI = 2 / (m * b.r * b.r); // Solid disk I = 0.5 * m * r^2
+
+                        // Left / Right Glass Walls
+                        if (b.x - b.r < ARENA.wallL) {
+                            b.x = ARENA.wallL + b.r;
+                            if (b.vx < 0) {
+                                const rest = -b.vx > 55 ? 0.30 : 0.0;
+                                const jn = -(1 + rest) * b.vx * m;
+                                b.vx += jn * invM;
+                                // Vertical slip along left wall: contact at (-r, 0), vt = vy - angVel * r
+                                const vt = b.vy - b.angVel * b.r;
+                                const jt = clamp(-vt / (3 * invM), -0.14 * jn, 0.14 * jn);
+                                b.vy += jt * invM;
+                                b.angVel -= (jt * b.r) * invI;
+                            }
+                        } else if (b.x + b.r > ARENA.wallR) {
+                            b.x = ARENA.wallR - b.r;
+                            if (b.vx > 0) {
+                                const rest = b.vx > 55 ? 0.30 : 0.0;
+                                const jn = (1 + rest) * b.vx * m; // magnitude
+                                b.vx -= jn * invM;
+                                // Vertical slip along right wall: contact at (+r, 0), vt = vy + angVel * r
+                                const vt = b.vy + b.angVel * b.r;
+                                const jt = clamp(-vt / (3 * invM), -0.14 * jn, 0.14 * jn);
+                                b.vy += jt * invM;
+                                b.angVel += (jt * b.r) * invI;
+                            }
                         }
-                    } else if (b.x + b.r > ARENA.wallR) {
-                        b.x = ARENA.wallR - b.r;
-                        if (b.vx > 0) {
-                            b.vx = -b.vx * 0.28;
-                            b.angVel -= b.vy * 0.003;
+
+                        // Floor contact with true rolling friction (no artificial glue!)
+                        if (b.y + b.r > ARENA.floorY) {
+                            b.y = ARENA.floorY - b.r;
+                            if (iter === 0 && b.vy > 95 && events.length < 10) {
+                                events.push({ type: 'bounce', speed: b.vy, x: b.x, y: ARENA.floorY });
+                            }
+                            if (b.vy > 0) {
+                                if (iter === 0 && b.vy > 110) {
+                                    b.squash = Math.max(b.squash, Math.min(0.20, b.vy / 2200));
+                                }
+                                const rest = b.vy > 55 ? 0.28 : 0.0;
+                                const jn = (1 + rest) * b.vy * m;
+                                b.vy = -b.vy * rest;
+
+                                // Contact point at bottom (0, +r): vt = vx - angVel * r
+                                const vt = b.vx - b.angVel * b.r;
+                                const maxFric = Math.max(jn * 0.22, m * ARENA.gravity * subDt * 0.22);
+                                const jt = clamp(-vt / (3 * invM), -maxFric, maxFric);
+                                b.vx += jt * invM;
+                                b.angVel -= (jt * b.r) * invI;
+
+                                // Subtle rolling resistance so fruits roll smoothly and eventually settle
+                                if (iter === 0) {
+                                    const rollDamp = 1 - 0.55 * subDt;
+                                    b.vx *= rollDamp;
+                                    b.angVel *= rollDamp;
+                                }
+                            }
+                        }
+
+                        // Pegs (infinite mass static bumpers)
+                        for (const p of world.pegs) {
+                            const dx = b.x - p.x;
+                            const dy = b.y - p.y;
+                            const minD = b.r + p.r;
+                            const d2 = dx * dx + dy * dy;
+                            if (d2 < minD * minD) {
+                                const d = Math.sqrt(d2) || 0.001;
+                                const nx = dx / d;
+                                const ny = dy / d;
+                                const overlap = minD - d;
+                                b.x += nx * overlap;
+                                b.y += ny * overlap;
+
+                                const vn = b.vx * nx + b.vy * ny;
+                                if (vn < 0) {
+                                    const rest = -vn > 45 ? 0.46 : 0.05;
+                                    const jn = -(1 + rest) * vn * m;
+                                    b.vx += jn * invM * nx;
+                                    b.vy += jn * invM * ny;
+
+                                    const tx = -ny;
+                                    const ty = nx;
+                                    // Peg contact on b is at -b.r*(nx, ny) -> rim tangential contrib is -b.angVel*b.r
+                                    const vt = (b.vx * tx + b.vy * ty) - b.angVel * b.r;
+                                    const jt = clamp(-vt / (3 * invM), -0.22 * jn, 0.22 * jn);
+                                    b.vx += jt * invM * tx;
+                                    b.vy += jt * invM * ty;
+                                    b.angVel -= (jt * b.r) * invI;
+
+                                    if (iter === 0 && -vn > 100 && events.length < 10) {
+                                        events.push({ type: 'peg', x: p.x, y: p.y, speed: -vn });
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    if (b.y + b.r > ARENA.floorY) {
-                        b.y = ARENA.floorY - b.r;
-                        if (b.vy > 90 && events.length < 10) {
-                            events.push({ type: 'bounce', speed: b.vy, x: b.x, y: ARENA.floorY });
-                        }
-                        if (b.vy > 0) {
-                            if (b.vy > 110) b.squash = Math.max(b.squash, Math.min(0.18, b.vy / 2400));
-                            b.vy = -b.vy * 0.18;
-                            b.vx *= 0.955;
-                            b.angVel = b.vx / Math.max(12, b.r);
-                        }
-                    }
+                    // 2b. Circle-circle dynamic rigid-body resolution (action-reaction + spin)
+                    for (let i = 0; i < n; i++) {
+                        const a = world.bodies[i];
+                        const massA = a.frozen ? 1e9 : a.r * a.r;
+                        const invMA = a.frozen ? 0 : 1 / massA;
+                        const invIA = a.frozen ? 0 : 2 / (massA * a.r * a.r);
 
-                    // Pegs (infinite mass static bumpers)
-                    for (const p of world.pegs) {
-                        const dx = b.x - p.x;
-                        const dy = b.y - p.y;
-                        const minD = b.r + p.r;
-                        const d2 = dx * dx + dy * dy;
-                        if (d2 < minD * minD) {
+                        for (let j = i + 1; j < n; j++) {
+                            const b = world.bodies[j];
+                            const dx = b.x - a.x;
+                            const dy = b.y - a.y;
+                            const minD = a.r + b.r;
+                            const d2 = dx * dx + dy * dy;
+                            if (d2 >= minD * minD) continue;
+
                             const d = Math.sqrt(d2) || 0.001;
                             const nx = dx / d;
                             const ny = dy / d;
                             const overlap = minD - d;
-                            b.x += nx * overlap;
-                            b.y += ny * overlap;
-                            const vn = b.vx * nx + b.vy * ny;
+
+                            const massB = b.frozen ? 1e9 : b.r * b.r;
+                            const invMB = b.frozen ? 0 : 1 / massB;
+                            const invIB = b.frozen ? 0 : 2 / (massB * b.r * b.r);
+                            const invSum = invMA + invMB;
+                            if (invSum <= 0) continue;
+
+                            // Smooth Baumgarte separation across solver iterations
+                            const corr = Math.max(0, overlap - 0.08) * 0.46 / invSum;
+                            a.x -= nx * corr * invMA;
+                            a.y -= ny * corr * invMA;
+                            b.x += nx * corr * invMB;
+                            b.y += ny * corr * invMB;
+
+                            const rvx = b.vx - a.vx;
+                            const rvy = b.vy - a.vy;
+                            const vn = rvx * nx + rvy * ny;
                             if (vn < 0) {
-                                b.vx -= 1.42 * vn * nx;
-                                b.vy -= 1.42 * vn * ny;
-                                b.angVel += (nx * b.vy - ny * b.vx) * 0.012;
-                                if (-vn > 110 && events.length < 10) {
-                                    events.push({ type: 'peg', x: p.x, y: p.y, speed: -vn });
+                                const restitution = -vn > 70 ? 0.24 : 0.02;
+                                const jn = -(1 + restitution) * vn / invSum;
+                                a.vx -= jn * invMA * nx;
+                                a.vy -= jn * invMA * ny;
+                                b.vx += jn * invMB * nx;
+                                b.vy += jn * invMB * ny;
+
+                                // Contact tangential velocity including surface rotation of both circles
+                                const tx = -ny;
+                                const ty = nx;
+                                const vt = (rvx * tx + rvy * ty) - (a.angVel * a.r + b.angVel * b.r);
+                                const invEffT = invMA + invMB + (a.r * a.r) * invIA + (b.r * b.r) * invIB;
+                                const mu = 0.085; // Low fruit-skin friction so fruits roll off curved tops into gaps
+                                const jt = clamp(-vt / invEffT, -jn * mu, jn * mu);
+
+                                a.vx -= jt * invMA * tx;
+                                a.vy -= jt * invMA * ty;
+                                b.vx += jt * invMB * tx;
+                                b.vy += jt * invMB * ty;
+
+                                a.angVel -= (jt * a.r) * invIA;
+                                b.angVel -= (jt * b.r) * invIB;
+
+                                if (iter === 0 && -vn > 110) {
+                                    const sq = Math.min(0.16, (-vn) / 2400);
+                                    if (!a.frozen) a.squash = Math.max(a.squash, sq);
+                                    if (!b.frozen) b.squash = Math.max(b.squash, sq);
+                                    if (events.length < 10) {
+                                        events.push({ type: 'bounce', speed: -vn, x: a.x + nx * a.r, y: a.y + ny * a.r });
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                // Circle-circle dynamic resolution
-                const n = world.bodies.length;
-                for (let i = 0; i < n; i++) {
-                    const a = world.bodies[i];
-                    for (let j = i + 1; j < n; j++) {
-                        const b = world.bodies[j];
-                        const dx = b.x - a.x;
-                        const dy = b.y - a.y;
-                        const minD = a.r + b.r;
-                        const d2 = dx * dx + dy * dy;
-                        if (d2 >= minD * minD) continue;
-
-                        const d = Math.sqrt(d2) || 0.001;
-                        const nx = dx / d;
-                        const ny = dy / d;
-                        const overlap = minD - d;
-
-                        const massA = a.frozen ? 1e9 : a.r * a.r;
-                        const massB = b.frozen ? 1e9 : b.r * b.r;
-                        const invA = a.frozen ? 0 : 1 / massA;
-                        const invB = b.frozen ? 0 : 1 / massB;
-                        const invSum = invA + invB;
-                        if (invSum <= 0) continue;
-
-                        const corr = Math.max(0, overlap - 0.12) * 0.88 / invSum;
-                        a.x -= nx * corr * invA;
-                        a.y -= ny * corr * invA;
-                        b.x += nx * corr * invB;
-                        b.y += ny * corr * invB;
-
-                        const rvx = b.vx - a.vx;
-                        const rvy = b.vy - a.vy;
-                        const vn = rvx * nx + rvy * ny;
-                        if (vn < 0) {
-                            const restitution = -vn > 85 ? 0.22 : 0.04;
-                            const jImp = -(1 + restitution) * vn / invSum;
-                            a.vx -= jImp * invA * nx;
-                            a.vy -= jImp * invA * ny;
-                            b.vx += jImp * invB * nx;
-                            b.vy += jImp * invB * ny;
-
-                            // Tangential friction
-                            const tx = -ny;
-                            const ty = nx;
-                            const vt = rvx * tx + rvy * ty;
-                            const jt = clamp(-vt * 0.14 / invSum, -Math.abs(jImp) * 0.35, Math.abs(jImp) * 0.35);
-                            a.vx -= jt * invA * tx;
-                            a.vy -= jt * invA * ty;
-                            b.vx += jt * invB * tx;
-                            b.vy += jt * invB * ty;
-
-                            a.angVel += jt * 0.0004;
-                            b.angVel -= jt * 0.0004;
-
-                            if (-vn > 150 && events.length < 10) {
-                                events.push({ type: 'bounce', speed: -vn, x: a.x + nx * a.r, y: a.y + ny * a.r });
-                            }
-                        }
-                    }
-                }
-
-                // Settle micro-jitter damp inside floor stacks
+                // 3. Final boundary clamp & gentle sleep threshold (only at near-zero micro-jitter)
                 for (const b of world.bodies) {
                     if (b.frozen) continue;
                     b.x = clamp(b.x, ARENA.wallL + b.r, ARENA.wallR - b.r);
                     if (b.y + b.r > ARENA.floorY) b.y = ARENA.floorY - b.r;
-                    if (b.vx * b.vx + b.vy * b.vy < 180) {
-                        b.vx *= 0.94;
-                        b.angVel *= 0.90;
+                    if (Math.abs(b.vx) < 2.2 && Math.abs(b.vy) < 2.2 && Math.abs(b.angVel) < 0.06) {
+                        b.vx *= 0.88;
+                        b.angVel *= 0.86;
                     }
                 }
 

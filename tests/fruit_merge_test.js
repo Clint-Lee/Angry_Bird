@@ -127,6 +127,50 @@ test('Newly dropped fruit above danger line never causes premature loss; prolong
     assert.strictEqual(w.status, 'lost');
 });
 
+test('Fruit landing off-center rolls onto floor and continues rolling smoothly without gluing', () => {
+    const w = Engine.createWorld({ mode: 'endless', rng: () => 0.5 });
+    const baseDef = Engine.TIERS[4]; // r=42 at center floor
+    w.bodies.push({
+        id: 701, tier: 4, r: baseDef.r, x: 210, y: Engine.ARENA.floorY - baseDef.r,
+        vx: 0, vy: 0, angle: 0, angVel: 0, age: 2.0, frozen: false, squash: 0, happyTimer: 0, blinkPhase: 0, bornStep: 0
+    });
+    w.currentTier = 1; // Strawberry r=22 dropped slightly right of center shoulder
+    w.drop(236);
+    for (let i = 0; i < 65; i++) w.step(1 / 60);
+    const small = w.bodies.find((b) => b.tier === 1);
+    assert.ok(small, 'Dropped strawberry should remain distinct from base apple');
+    assert.ok(small.x > 250, `Expected fruit to roll rightward down shoulder onto floor, got x=${small.x.toFixed(1)}`);
+    assert.ok(Math.abs(small.angVel) > 0.2 || Math.abs(small.angle) > 0.4, 'Expected rolling rotation on descent');
+});
+
+test('Heavy collision transfers realistic action-reaction velocity and angular spin', () => {
+    const w = Engine.createWorld({ mode: 'endless', rng: () => 0.5 });
+    const smallR = Engine.TIERS[1].r;
+    const bigR = Engine.TIERS[6].r;
+    w.bodies.push(
+        { id: 801, tier: 1, r: smallR, x: 180, y: Engine.ARENA.floorY - smallR, vx: 0, vy: 0, angle: 0, angVel: 0, age: 1, frozen: false, squash: 0, happyTimer: 0, blinkPhase: 0, bornStep: 0 },
+        { id: 802, tier: 6, r: bigR, x: 268, y: Engine.ARENA.floorY - bigR - 18, vx: -180, vy: 0, angle: 0, angVel: 0, age: 1, frozen: false, squash: 0, happyTimer: 0, blinkPhase: 0, bornStep: 0 }
+    );
+    for (let i = 0; i < 12; i++) w.step(1 / 60);
+    const small = w.bodies.find((b) => b.id === 801);
+    assert.ok(small.vx < -60, `Expected strong leftward reaction velocity on lighter fruit, got vx=${small.vx.toFixed(1)}`);
+    assert.ok(Math.abs(small.angVel) > 0.5, `Expected angular spin after off-axis collision, got angVel=${small.angVel.toFixed(2)}`);
+});
+
+test('Merging two fruits generates outward shockwave push on neighboring fruit', () => {
+    const w = Engine.createWorld({ mode: 'endless', rng: () => 0.5 });
+    const r2 = Engine.TIERS[2].r;
+    const r0 = Engine.TIERS[0].r;
+    w.bodies.push(
+        { id: 811, tier: 2, r: r2, x: 195, y: Engine.ARENA.floorY - r2, vx: 20, vy: 0, angle: 0, angVel: 0, age: 1, frozen: false, squash: 0, happyTimer: 0, blinkPhase: 0, bornStep: 0 },
+        { id: 812, tier: 2, r: r2, x: 225, y: Engine.ARENA.floorY - r2, vx: -20, vy: 0, angle: 0, angVel: 0, age: 1, frozen: false, squash: 0, happyTimer: 0, blinkPhase: 0, bornStep: 0 },
+        { id: 813, tier: 0, r: r0, x: 292, y: Engine.ARENA.floorY - r0, vx: 0, vy: 0, angle: 0, angVel: 0, age: 1, frozen: false, squash: 0, happyTimer: 0, blinkPhase: 0, bornStep: 0 }
+    );
+    w.step(1 / 60);
+    const neighbor = w.bodies.find((b) => b.id === 813);
+    assert.ok(neighbor.vx > 20, `Expected outward rightward shockwave impulse on neighbor, got vx=${neighbor.vx.toFixed(1)}`);
+});
+
 console.log('\n[4] Audio Compressor Limiter');
 test('FruitMergeAudio connects master -> DynamicsCompressorNode -> destination', () => {
     const calls = [];

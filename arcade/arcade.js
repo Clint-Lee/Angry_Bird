@@ -134,6 +134,9 @@
 
         // 5. Fruit Merge live stats sync
         updateFruitMergeCard();
+
+        // 6. Prism Loom live stats sync
+        updatePrismLoomCard();
     }
 
     function updateFruitMergeCard() {
@@ -179,6 +182,51 @@
             btnFruit.href = window.location.pathname.includes('/games/arcade')
                 ? '/games/arcade/fruit-merge/'
                 : './fruit-merge/';
+        }
+    }
+
+    function updatePrismLoomCard() {
+        const PL_KEY = 'cloudeave_prism_loom_v1';
+        const PL_NAMES = [
+            '1-1 初光试镜', '1-2 之字迂回', '1-3 暗礁回廊', '1-4 双轨交织', '1-5 螺旋回环',
+            '2-1 一分为二', '2-2 十字星阵', '2-3 虫洞初跃', '2-4 四象共振', '2-5 星门矩阵',
+            '3-1 琥珀之吻', '3-2 紫晶交响', '3-3 三原归一', '3-4 分光滤境', '3-5 极光圣殿'
+        ];
+        let pl = null;
+        try {
+            const raw = localStorage.getItem(PL_KEY);
+            if (raw) pl = JSON.parse(raw);
+        } catch { pl = null; }
+        if (!pl || typeof pl !== 'object') pl = {};
+
+        const starsObj = (pl.levelStars && typeof pl.levelStars === 'object') ? pl.levelStars : {};
+        const plStars = Object.values(starsObj).reduce((s, v) => s + (Number(v) || 0), 0);
+        const plIdx = Math.max(0, Math.min(14, Number(pl.currentLevelIndex) || 0));
+        const unlocked = Math.max(1, Math.min(15, Number(pl.unlockedLevel) || 1));
+        const solved = Math.max(0, Number(pl.endlessSolved) || 0);
+        const plPct = Math.round((plStars / 45) * 100);
+
+        const starsEl = document.getElementById('plTotalStars');
+        if (starsEl) starsEl.innerText = `${plStars} / 45 ⭐`;
+        const lvlEl = document.getElementById('plCurrentLvl');
+        if (lvlEl) lvlEl.innerText = PL_NAMES[plIdx] || '1-1 初光试镜';
+        const solvedEl = document.getElementById('plEndlessSolved');
+        if (solvedEl) solvedEl.innerText = `${solved} 局`;
+        const unlockEl = document.getElementById('plUnlockedCount');
+        if (unlockEl) unlockEl.innerText = `${unlocked} / 15 关`;
+        const pctEl = document.getElementById('plMasteryPct');
+        if (pctEl) pctEl.innerText = `${plPct}%`;
+        const fillEl = document.getElementById('plMasteryFill');
+        if (fillEl) fillEl.style.width = `${plPct}%`;
+
+        const plSub = document.getElementById('btnPrismSub');
+        if (plSub) plSub.innerText = plStars > 0 ? `(继续 ${PL_NAMES[plIdx]})` : '(3大篇章 15关 / 无限星局)';
+
+        const btnPrism = document.getElementById('btnPlayPrism');
+        if (btnPrism) {
+            btnPrism.href = window.location.pathname.includes('/games/arcade')
+                ? '/games/arcade/prism-loom/'
+                : './prism-loom/';
         }
     }
 
