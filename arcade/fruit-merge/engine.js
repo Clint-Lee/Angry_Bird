@@ -887,6 +887,8 @@
             muted: !!(raw && raw.muted),
             endlessHighScore: Math.max(0, Math.floor(Number(raw && raw.endlessHighScore) || 0)),
             highestTier: clamp(Math.floor(Number(raw && raw.highestTier) || 0), 0, TIERS.length - 1),
+            gamesPlayed: Math.max(0, Math.floor(Number(raw && raw.gamesPlayed) || 0)),
+            totalWatermelons: Math.max(0, Math.floor(Number(raw && raw.totalWatermelons) || 0)),
             unlockedLevel: clamp(Math.floor(Number(raw && raw.unlockedLevel) || 1), 1, LEVELS.length),
             currentLevelIndex: clamp(Math.floor(Number(raw && raw.currentLevelIndex) || 0), 0, LEVELS.length - 1),
             levelStars: {},

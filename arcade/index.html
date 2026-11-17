@@ -137,9 +137,9 @@
                             </svg>
                         </div>
                         <div class="worlds-pills">
-                            <span class="pill-world lg-c1">🍓 晨露果园</span>
-                            <span class="pill-world lg-c2">❄️ 冰霜甜品</span>
-                            <span class="pill-world lg-c3">👑 金瓜传说</span>
+                            <span class="pill-world lg-c1">🍓 质感鲜果</span>
+                            <span class="pill-world lg-c2">💥 果汁飞溅</span>
+                            <span class="pill-world lg-c3">🏆 MAX 最高分</span>
                             <span class="pill-world lg-c4">🐱 萌宠切换</span>
                         </div>
                     </div>
@@ -148,136 +148,135 @@
                         <div class="card-header">
                             <div class="game-meta-row">
                                 <span class="tag-genre puzzle-genre">2D物理合成果园</span>
-                                <span class="tag-version puzzle-ver">Fruit Merge v1.0</span>
-                                <span class="tag-levels">3大主题 12关 + 无尽大西瓜</span>
+                                <span class="tag-version puzzle-ver">Fruit Merge v2.0</span>
+                                <span class="tag-levels">经典无尽挑战 · 11阶高质感鲜果</span>
                             </div>
                             <h2 class="game-title">萌果奇缘 · 合成大西瓜</h2>
                             <p class="game-desc">
-                                真实 <strong>2D 弹跳重力物理</strong>！落下的可爱小果会在罐内滚动碰撞，两两相逢瞬间 Q 弹合体进化成更大一阶鲜果，支持<strong>鲜果 / 萌宠双套皮肤</strong>一键切换、寒霜冰果解封、弹跳木栓与「魔棒/小勺/摇果罐」三大救场道具，更有黄金双瓜超级大满贯！
+                                真实 <strong>2D 刚体滚动物理</strong>！全新手绘质感<strong>11 阶鲜果与果汁爆裂飞溅</strong>，支持<strong>鲜果 / 萌宠双套皮肤</strong>与三大救场道具。专注经典无尽高分对决，自动记录你的 <strong>MAX 最高分纪录</strong>，触顶即结、一键重开再破新高！
                             </p>
                         </div>
 
                         <!-- Live LocalStorage Saved Stats for Fruit Merge -->
                         <div class="saved-stats-panel">
                             <div class="stats-title-row">
-                                <span class="title" style="color:#fdba74;">🍉 萌果奇缘存档纪录</span>
+                                <span class="title" style="color:#fdba74;">🍉 萌果奇缘 · MAX 历史纪录</span>
                                 <span class="notice">浏览器 LocalStorage 自动同步</span>
                             </div>
                             <div class="stats-pills-row">
                                 <div class="stat-bubble">
-                                    <span class="bubble-label">闯关总星数</span>
-                                    <span class="bubble-val" id="fmTotalStars">0 / 36 ⭐</span>
+                                    <span class="bubble-label">MAX 最高分</span>
+                                    <span class="bubble-val highlight" id="fmEndlessBest">0 分</span>
                                 </div>
                                 <div class="stat-bubble">
-                                    <span class="bubble-label">当前关卡</span>
-                                    <span class="bubble-val highlight" id="fmCurrentLvl">1-1 樱桃初遇</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">无尽最高分</span>
-                                    <span class="bubble-val" id="fmEndlessBest">0 分</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">最高解锁果实</span>
+                                    <span class="bubble-label">最高合成等级</span>
                                     <span class="bubble-val" id="fmHighestTier">小樱桃</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">历史累计局数</span>
+                                    <span class="bubble-val" id="fmGamesPlayed">0 局</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">黄金大西瓜数</span>
+                                    <span class="bubble-val" id="fmWatermelons">0 颗</span>
                                 </div>
                             </div>
                             <div class="mastery-bar-wrap">
                                 <div class="mastery-meta">
-                                    <span>🏆 全章满星进度</span>
-                                    <strong id="fmMasteryPct">0%</strong>
+                                    <span>🏆 果实图鉴解锁度</span>
+                                    <strong id="fmMasteryPct">9%</strong>
                                 </div>
                                 <div class="mastery-track">
-                                    <div class="mastery-fill lg-mastery-fill" id="fmMasteryFill" style="width: 0%"></div>
+                                    <div class="mastery-fill lg-mastery-fill" id="fmMasteryFill" style="width: 9%"></div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="card-actions">
                             <a href="./fruit-merge/" class="btn-play-primary lg-play-btn" id="btnPlayFruit">
-                                <span>🍉 立即开玩 · 萌果奇缘</span>
-                                <span class="action-sub" id="btnFruitSub">(3大章节 12关 / 无尽)</span>
+                                <span>🍉 立即开玩 · 合成大西瓜</span>
+                                <span class="action-sub" id="btnFruitSub">(经典无尽 · MAX最高分)</span>
                             </a>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Third Featured Playable Game: Prism Loom -->
-            <section class="hero-section prism-hero-section">
-                <div class="section-badge prism-badge">🔮 益智上新 · 光学折射解谜</div>
+            <!-- Third Featured Playable Game: Ricochet Lab -->
+            <section class="hero-section rl-hero-section">
+                <div class="section-badge rl-badge">⚡ 益智上新 · 硬核物理弹射机关解谜</div>
 
-                <div class="featured-card prism-featured-card">
-                    <div class="card-visual prism-visual">
-                        <div class="visual-badge prism-visual-badge">✨ 霓虹光束 · 15关+无限星局</div>
+                <div class="featured-card rl-featured-card">
+                    <div class="card-visual rl-visual">
+                        <div class="visual-badge rl-visual-badge">🛸 3大篇章 · 12道精校脑力关</div>
                         <div class="visual-art puzzle-art-wrap" aria-hidden="true">
                             <svg class="lumina-art-svg" viewBox="0 0 120 120" fill="none">
-                                <polygon points="60,18 96,86 24,86" fill="rgba(56,189,248,0.16)" stroke="#7dd3fc" stroke-width="2.6" />
-                                <line x1="10" y1="64" x2="46" y2="54" stroke="#f8fafc" stroke-width="4" stroke-linecap="round" />
-                                <line x1="72" y1="50" x2="110" y2="34" stroke="#ff4d6d" stroke-width="3.6" stroke-linecap="round" />
-                                <line x1="74" y1="58" x2="110" y2="58" stroke="#34d399" stroke-width="3.6" stroke-linecap="round" />
-                                <line x1="72" y1="66" x2="110" y2="84" stroke="#38bdf8" stroke-width="3.6" stroke-linecap="round" />
-                                <circle cx="60" cy="58" r="6" fill="#c084fc" />
+                                <circle cx="24" cy="86" r="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2.5" />
+                                <path d="M 30 80 L 58 46 L 94 34 L 92 86" stroke="#7dd3fc" stroke-width="2.4" stroke-dasharray="4 4" fill="none" />
+                                <rect x="48" y="34" width="26" height="7" rx="3.5" transform="rotate(-32 61 37)" fill="#38bdf8" stroke="#e0f2fe" stroke-width="1.2" />
+                                <circle cx="94" cy="34" r="6" fill="#fde047" />
+                                <circle cx="92" cy="86" r="11" fill="rgba(52, 211, 153, 0.2)" stroke="#34d399" stroke-width="2.5" stroke-dasharray="4 3" />
                             </svg>
                         </div>
                         <div class="worlds-pills">
-                            <span class="pill-world lg-c2">🪞 折光初境</span>
-                            <span class="pill-world pr-c2">💠 分束星门</span>
-                            <span class="pill-world lg-c1">🌈 虹彩混光</span>
-                            <span class="pill-world lg-c3">∞ 无限星局</span>
+                            <span class="pill-world lg-c2">⟋ 动能折射</span>
+                            <span class="pill-world rl-c2">💥 机巧爆破</span>
+                            <span class="pill-world lg-c1">🕳️ 黑洞曲射</span>
+                            <span class="pill-world lg-c3">🌀 虫洞跃迁</span>
                         </div>
                     </div>
 
                     <div class="card-details">
                         <div class="card-header">
                             <div class="game-meta-row">
-                                <span class="tag-genre prism-genre">光学折射益智</span>
-                                <span class="tag-version prism-ver">Prism Loom v1.0</span>
-                                <span class="tag-levels">3大篇章 15关 + 无限星局</span>
+                                <span class="tag-genre rl-genre">物理机关益智</span>
+                                <span class="tag-version rl-ver">Ricochet Lab v1.0</span>
+                                <span class="tag-levels">3大篇章 12道高难挑战关</span>
                             </div>
-                            <h2 class="game-title">流光棱镜 · Prism Loom</h2>
+                            <h2 class="game-title">星轨弹珠 · Ricochet Lab</h2>
                             <p class="game-desc">
-                                高颜值霓虹光学益智解谜！旋转<strong>45°斜镜</strong>与<strong>半透分光镜</strong>，穿过<strong>跃迁虫洞</strong>与<strong>原色滤镜</strong>，运用红绿蓝 RGB 光学叠加原理融合出琥珀金、星紫与极光白光，一次唤醒星盘上的所有星辰晶体！
+                                硬核抛物线与机关构筑谜题！在蓝图锚点部署与旋转<strong>4向折射板</strong>和<strong>超级弹床</strong>，细调发射仰角，击碎玻璃、拿钥匙开激光闸门、引爆 <strong>TNT</strong> 炸开巨石、借<strong>黑洞引力</strong>与<strong>空间虫洞</strong>迂回穿行，收集全部星核直入终点漩涡！
                             </p>
                         </div>
 
                         <div class="saved-stats-panel">
                             <div class="stats-title-row">
-                                <span class="title" style="color:#7dd3fc;">🔮 流光棱镜存档纪录</span>
+                                <span class="title" style="color:#7dd3fc;">🛸 星轨实验室档案</span>
                                 <span class="notice">浏览器 LocalStorage 自动同步</span>
                             </div>
                             <div class="stats-pills-row">
                                 <div class="stat-bubble">
-                                    <span class="bubble-label">星图总星数</span>
-                                    <span class="bubble-val" id="plTotalStars">0 / 45 ⭐</span>
+                                    <span class="bubble-label">实验总星数</span>
+                                    <span class="bubble-val" id="rlTotalStars">0 / 36 ★</span>
                                 </div>
                                 <div class="stat-bubble">
-                                    <span class="bubble-label">当前篇章</span>
-                                    <span class="bubble-val highlight" id="plCurrentLvl">1-1 初光试镜</span>
-                                </div>
-                                <div class="stat-bubble">
-                                    <span class="bubble-label">无限已破局</span>
-                                    <span class="bubble-val" id="plEndlessSolved">0 局</span>
+                                    <span class="bubble-label">当前试验关</span>
+                                    <span class="bubble-val highlight" id="rlCurrentLvl">1-1 初识折射</span>
                                 </div>
                                 <div class="stat-bubble">
                                     <span class="bubble-label">已解锁关卡</span>
-                                    <span class="bubble-val" id="plUnlockedCount">1 / 15 关</span>
+                                    <span class="bubble-val" id="rlUnlockedCount">1 / 12 关</span>
+                                </div>
+                                <div class="stat-bubble">
+                                    <span class="bubble-label">全关三星率</span>
+                                    <span class="bubble-val" id="rlMasteryPct">0%</span>
                                 </div>
                             </div>
                             <div class="mastery-bar-wrap">
                                 <div class="mastery-meta">
-                                    <span>🏆 星图满星进度</span>
-                                    <strong id="plMasteryPct">0%</strong>
+                                    <span>🏆 实验室通关进度</span>
+                                    <strong id="rlMasteryText">0%</strong>
                                 </div>
                                 <div class="mastery-track">
-                                    <div class="mastery-fill pl-mastery-fill" id="plMasteryFill" style="width: 0%"></div>
+                                    <div class="mastery-fill rl-mastery-fill" id="rlMasteryFill" style="width: 0%"></div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="card-actions">
-                            <a href="./prism-loom/" class="btn-play-primary pl-play-btn" id="btnPlayPrism">
-                                <span>🔮 立即开玩 · 流光棱镜</span>
-                                <span class="action-sub" id="btnPrismSub">(3大篇章 15关 / 无限星局)</span>
+                            <a href="./ricochet-lab/" class="btn-play-primary rl-play-btn" id="btnPlayRicochet">
+                                <span>🛸 立即开玩 · 星轨弹珠</span>
+                                <span class="action-sub" id="btnRicochetSub">(3大篇章 12道关卡)</span>
                             </a>
                         </div>
                     </div>
@@ -289,7 +288,7 @@
                 <div class="section-header">
                     <div class="section-title-wrap">
                         <h3>🕹️ 更多网页小游戏</h3>
-                        <span class="section-sub">《愤怒的小鸟》、《萌果奇缘》与《流光棱镜》现已开放畅玩，更多 HTML5 微端游戏持续扩充中！</span>
+                        <span class="section-sub">《愤怒的小鸟》、《萌果奇缘》与《星轨弹珠》现已开放畅玩，更多 HTML5 微端游戏持续扩充中！</span>
                     </div>
                     <span class="badge-pipeline">🚀 开发筹备中 (4款)</span>
                 </div>

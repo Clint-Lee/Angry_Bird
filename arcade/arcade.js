@@ -135,17 +135,12 @@
         // 5. Fruit Merge live stats sync
         updateFruitMergeCard();
 
-        // 6. Prism Loom live stats sync
-        updatePrismLoomCard();
+        // 6. Ricochet Lab live stats sync
+        updateRicochetLabCard();
     }
 
     function updateFruitMergeCard() {
         const FM_KEY = 'cloudeave_fruit_merge_v1';
-        const FM_NAMES = [
-            '1-1 樱桃初遇', '1-2 蜜桃香气', '1-3 双木分流', '1-4 限时步算',
-            '2-1 破冰救樱', '2-2 极光漏斗', '2-3 三栓迷阵', '2-4 冰封三子',
-            '3-1 哈密奇缘', '3-2 步步生甜', '3-3 金瓜前哨', '3-4 果王传说'
-        ];
         const TIER_NAMES = ['小樱桃', '红草莓', '紫葡萄', '砂糖橘', '红富士', '香甜梨', '水蜜桃', '金菠萝', '青椰子', '哈密瓜', '黄金西瓜'];
         let fm = null;
         try {
@@ -154,28 +149,27 @@
         } catch { fm = null; }
         if (!fm || typeof fm !== 'object') fm = {};
 
-        const starsObj = (fm.levelStars && typeof fm.levelStars === 'object') ? fm.levelStars : {};
-        const fmStars = Object.values(starsObj).reduce((s, v) => s + (Number(v) || 0), 0);
-        const fmIdx = Math.max(0, Math.min(11, Number(fm.currentLevelIndex) || 0));
         const fmBest = Math.max(0, Number(fm.endlessHighScore) || 0);
         const maxTier = Math.max(0, Math.min(10, Number(fm.highestTier) || 0));
-        const fmPct = Math.round((fmStars / 36) * 100);
+        const gamesPlayed = Math.max(0, Number(fm.gamesPlayed) || 0);
+        const watermelons = Math.max(0, Number(fm.totalWatermelons) || 0);
+        const tierPct = Math.round(((maxTier + 1) / 11) * 100);
 
-        const starsEl = document.getElementById('fmTotalStars');
-        if (starsEl) starsEl.innerText = `${fmStars} / 36 ⭐`;
-        const lvlEl = document.getElementById('fmCurrentLvl');
-        if (lvlEl) lvlEl.innerText = FM_NAMES[fmIdx] || '1-1 樱桃初遇';
         const bestEl = document.getElementById('fmEndlessBest');
         if (bestEl) bestEl.innerText = `${fmBest.toLocaleString()} 分`;
         const tierEl = document.getElementById('fmHighestTier');
         if (tierEl) tierEl.innerText = TIER_NAMES[maxTier] || '小樱桃';
+        const gamesEl = document.getElementById('fmGamesPlayed');
+        if (gamesEl) gamesEl.innerText = `${gamesPlayed} 局`;
+        const melonEl = document.getElementById('fmWatermelons');
+        if (melonEl) melonEl.innerText = `${watermelons} 颗`;
         const pctEl = document.getElementById('fmMasteryPct');
-        if (pctEl) pctEl.innerText = `${fmPct}%`;
+        if (pctEl) pctEl.innerText = `${tierPct}%`;
         const fillEl = document.getElementById('fmMasteryFill');
-        if (fillEl) fillEl.style.width = `${fmPct}%`;
+        if (fillEl) fillEl.style.width = `${tierPct}%`;
 
         const fmSub = document.getElementById('btnFruitSub');
-        if (fmSub) fmSub.innerText = fmStars > 0 ? `(继续 ${FM_NAMES[fmIdx]})` : '(3大章节 12关 / 无尽)';
+        if (fmSub) fmSub.innerText = fmBest > 0 ? `(MAX纪录 ${fmBest.toLocaleString()} 分)` : '(经典无尽 · MAX最高分)';
 
         const btnFruit = document.getElementById('btnPlayFruit');
         if (btnFruit) {
@@ -185,48 +179,47 @@
         }
     }
 
-    function updatePrismLoomCard() {
-        const PL_KEY = 'cloudeave_prism_loom_v1';
-        const PL_NAMES = [
-            '1-1 初光试镜', '1-2 之字迂回', '1-3 暗礁回廊', '1-4 双轨交织', '1-5 螺旋回环',
-            '2-1 一分为二', '2-2 十字星阵', '2-3 虫洞初跃', '2-4 四象共振', '2-5 星门矩阵',
-            '3-1 琥珀之吻', '3-2 紫晶交响', '3-3 三原归一', '3-4 分光滤境', '3-5 极光圣殿'
+    function updateRicochetLabCard() {
+        const RL_KEY = 'cloudeave_ricochet_lab_v1';
+        const RL_NAMES = [
+            '1-1 初识折射', '1-2 碎晶穿壁', '1-3 双板连弹', '1-4 高塔迂回',
+            '2-1 超级弹床', '2-2 钥匙开闸', '2-3 链式爆破', '2-4 弹珠矩阵',
+            '3-1 星际跃迁', '3-2 黑洞曲射', '3-3 双钥奇点', '3-4 大师终试'
         ];
-        let pl = null;
+        let rl = null;
         try {
-            const raw = localStorage.getItem(PL_KEY);
-            if (raw) pl = JSON.parse(raw);
-        } catch { pl = null; }
-        if (!pl || typeof pl !== 'object') pl = {};
+            const raw = localStorage.getItem(RL_KEY);
+            if (raw) rl = JSON.parse(raw);
+        } catch { rl = null; }
+        if (!rl || typeof rl !== 'object') rl = {};
 
-        const starsObj = (pl.levelStars && typeof pl.levelStars === 'object') ? pl.levelStars : {};
-        const plStars = Object.values(starsObj).reduce((s, v) => s + (Number(v) || 0), 0);
-        const plIdx = Math.max(0, Math.min(14, Number(pl.currentLevelIndex) || 0));
-        const unlocked = Math.max(1, Math.min(15, Number(pl.unlockedLevel) || 1));
-        const solved = Math.max(0, Number(pl.endlessSolved) || 0);
-        const plPct = Math.round((plStars / 45) * 100);
+        const starsObj = (rl.levelStars && typeof rl.levelStars === 'object') ? rl.levelStars : {};
+        const rlStars = Object.values(starsObj).reduce((s, v) => s + (Number(v) || 0), 0);
+        const rlIdx = Math.max(0, Math.min(11, Number(rl.currentLevelIndex) || 0));
+        const unlocked = Math.max(1, Math.min(12, Number(rl.unlockedLevel) || 1));
+        const rlPct = Math.round((rlStars / 36) * 100);
 
-        const starsEl = document.getElementById('plTotalStars');
-        if (starsEl) starsEl.innerText = `${plStars} / 45 ⭐`;
-        const lvlEl = document.getElementById('plCurrentLvl');
-        if (lvlEl) lvlEl.innerText = PL_NAMES[plIdx] || '1-1 初光试镜';
-        const solvedEl = document.getElementById('plEndlessSolved');
-        if (solvedEl) solvedEl.innerText = `${solved} 局`;
-        const unlockEl = document.getElementById('plUnlockedCount');
-        if (unlockEl) unlockEl.innerText = `${unlocked} / 15 关`;
-        const pctEl = document.getElementById('plMasteryPct');
-        if (pctEl) pctEl.innerText = `${plPct}%`;
-        const fillEl = document.getElementById('plMasteryFill');
-        if (fillEl) fillEl.style.width = `${plPct}%`;
+        const starsEl = document.getElementById('rlTotalStars');
+        if (starsEl) starsEl.innerText = `${rlStars} / 36 ★`;
+        const lvlEl = document.getElementById('rlCurrentLvl');
+        if (lvlEl) lvlEl.innerText = RL_NAMES[rlIdx] || '1-1 初识折射';
+        const unlockEl = document.getElementById('rlUnlockedCount');
+        if (unlockEl) unlockEl.innerText = `${unlocked} / 12 关`;
+        const pctEl = document.getElementById('rlMasteryPct');
+        if (pctEl) pctEl.innerText = `${rlPct}%`;
+        const txtEl = document.getElementById('rlMasteryText');
+        if (txtEl) txtEl.innerText = `${rlPct}%`;
+        const fillEl = document.getElementById('rlMasteryFill');
+        if (fillEl) fillEl.style.width = `${rlPct}%`;
 
-        const plSub = document.getElementById('btnPrismSub');
-        if (plSub) plSub.innerText = plStars > 0 ? `(继续 ${PL_NAMES[plIdx]})` : '(3大篇章 15关 / 无限星局)';
+        const rlSub = document.getElementById('btnRicochetSub');
+        if (rlSub) rlSub.innerText = rlStars > 0 ? `(继续 ${RL_NAMES[rlIdx]})` : '(3大篇章 12道关卡)';
 
-        const btnPrism = document.getElementById('btnPlayPrism');
-        if (btnPrism) {
-            btnPrism.href = window.location.pathname.includes('/games/arcade')
-                ? '/games/arcade/prism-loom/'
-                : './prism-loom/';
+        const btnRl = document.getElementById('btnPlayRicochet');
+        if (btnRl) {
+            btnRl.href = window.location.pathname.includes('/games/arcade')
+                ? '/games/arcade/ricochet-lab/'
+                : './ricochet-lab/';
         }
     }
 

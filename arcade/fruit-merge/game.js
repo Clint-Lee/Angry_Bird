@@ -34,7 +34,6 @@
         } catch { /* ignore storage quota errors */ }
     }
 
-    let currentMode = 'campaign';
     let world = null;
     let lastDropAt = 0;
     let activeTool = null; // null | 'wand' | 'spoon'
@@ -43,8 +42,9 @@
     let rafId = null;
     let lastTs = 0;
 
-    // Visual particle & popup effects
+    // Visual particle, juice splash & popup effects
     const particles = [];
+    const splashes = [];
     const rings = [];
     const popups = [];
     let jarKickTimer = 0;
@@ -112,20 +112,17 @@
             scoreValEl.classList.add('pop');
         }
         scoreValEl.textContent = world.score.toLocaleString();
-
-        if (world.mode === 'campaign' && world.level) {
-            goalLabelEl.textContent = '目标分数';
-            goalValEl.textContent = (world.level.targetScore || 0).toLocaleString();
-            stagePillEl.textContent = `${world.level.label} ${world.level.name}`;
-            movesBadgeEl.textContent = world.dropsLeft === null ? '不限步数' : `剩余 ${world.dropsLeft} 步`;
-            missionDescEl.textContent = world.level.goalText;
-        } else {
-            goalLabelEl.textContent = '无尽最高分';
-            goalValEl.textContent = Math.max(save.endlessHighScore, world.score).toLocaleString();
-            stagePillEl.textContent = '无尽大西瓜';
-            movesBadgeEl.textContent = `已落 ${world.dropsUsed} 枚`;
-            missionDescEl.textContent = '合成 11 阶黄金西瓜，两颗大西瓜触碰更可引爆超大满贯！';
+        if (world.score > save.endlessHighScore) {
+            save.endlessHighScore = world.score;
+            persistSave();
+            const nr = document.getElementById('newRecordTag');
+            if (nr) nr.hidden = false;
         }
+        goalLabelEl.childNodes[0].textContent = '历史最高 MAX ';
+        goalValEl.textContent = save.endlessHighScore.toLocaleString();
+        stagePillEl.textContent = '经典无尽高分';
+        movesBadgeEl.textContent = `已落 ${world.dropsUsed} 枚`;
+        missionDescEl.textContent = `最高合体：${tierLabel(world.maxTierSeen)} · 两颗大西瓜触碰更可引爆超级满贯！`;
 
         const ratio = Math.min(1, world.overflowTime / world.overflowLimit);
         dangerFillEl.style.width = `${Math.round(ratio * 100)}%`;
@@ -170,140 +167,70 @@
 
     function spawnJuiceBurst(x, y, color, count, radiusScale) {
         const n = count || 14;
+        const sc = radiusScale || 1;
         for (let i = 0; i < n; i++) {
-            const ang = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.4;
-            const spd = (90 + Math.random() * 190) * (radiusScale || 1);
+            const ang = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.45;
+            const spd = (95 + Math.random() * 200) * sc;
             particles.push({
                 x, y,
                 vx: Math.cos(ang) * spd,
-                vy: Math.sin(ang) * spd - 45,
-                r: 2.5 + Math.random() * 4,
+                vy: Math.sin(ang) * spd - 52,
+                r: 2.6 + Math.random() * 4.2,
                 color,
-                life: 0.42 + Math.random() * 0.25,
-                maxLife: 0.65
+                life: 0.45 + Math.random() * 0.25,
+                maxLife: 0.70
             });
         }
-        rings.push({ x, y, r: 8, maxR: 48 * (radiusScale || 1), color, life: 0.34, maxLife: 0.34 });
+        if (splashes.length < 18) {
+            const lobes = [];
+            for (let k = 0; k < 6; k++) {
+                const a = (Math.PI * 2 * k) / 6 + Math.random() * 0.4;
+                lobes.push({ dx: Math.cos(a) * (14 + Math.random() * 14) * sc, dy: Math.sin(a) * (14 + Math.random() * 14) * sc, r: (5 + Math.random() * 6) * sc });
+            }
+            splashes.push({ x, y, r: 22 * sc, color, lobes, life: 0.9, maxLife: 0.9 });
+        }
+        rings.push({ x, y, r: 8, maxR: 52 * sc, color, life: 0.36, maxLife: 0.36 });
     }
 
     function spawnPopup(x, y, text, color) {
         popups.push({ x, y, text, color: color || '#ea580c', life: 0.95, maxLife: 0.95 });
     }
 
-    function startSession(mode, levelIndex) {
-        currentMode = mode === 'campaign' ? 'campaign' : 'endless';
-        if (typeof levelIndex === 'number') {
-            save.currentLevelIndex = Math.max(0, Math.min(E.LEVELS.length - 1, levelIndex));
-            persistSave();
-        }
-        world = E.createWorld({
-            mode: currentMode,
-            levelIndex: save.currentLevelIndex
-        });
+    function startSession() {
+        world = E.createWorld({ mode: 'endless' });
         particles.length = 0;
+        splashes.length = 0;
         rings.length = 0;
         popups.length = 0;
         lastDropAt = performance.now() - 100;
+        const nr = document.getElementById('newRecordTag');
+        if (nr) nr.hidden = true;
         setActiveTool(null);
         document.getElementById('resultModal').hidden = true;
-        document.getElementById('btnModeCampaign').classList.toggle('active', currentMode === 'campaign');
-        document.getElementById('btnModeEndless').classList.toggle('active', currentMode === 'endless');
         syncHud(false);
     }
 
     function openResultModal() {
         const modal = document.getElementById('resultModal');
-        const won = world.status === 'won';
         const emojiEl = document.getElementById('resultEmoji');
         const titleEl = document.getElementById('resultTitle');
         const subEl = document.getElementById('resultSub');
-        const starsWrap = document.getElementById('resultStars');
-        const stars = starsWrap.querySelectorAll('.r-star');
-        const nextBtn = document.getElementById('btnResultNext');
-
+        const prevMax = save.endlessHighScore;
+        const isNewRecord = world.score >= prevMax && world.score > 0;
+        if (world.score > save.endlessHighScore) {
+            save.endlessHighScore = world.score;
+        }
+        save.gamesPlayed = (save.gamesPlayed || 0) + 1;
+        persistSave();
+        audio.playLoss();
         document.getElementById('resScore').textContent = world.score.toLocaleString();
         document.getElementById('resCombo').textContent = `×${Math.max(1, world.bestCombo)}`;
         document.getElementById('resMerges').textContent = String(world.merges);
 
-        if (world.mode === 'campaign') {
-            starsWrap.style.display = 'flex';
-            if (won) {
-                const earned = world.evaluateStars();
-                const lvlId = world.level.id;
-                save.levelStars[lvlId] = Math.max(save.levelStars[lvlId] || 0, earned);
-                save.levelScores[lvlId] = Math.max(save.levelScores[lvlId] || 0, world.score);
-                if (world.levelIndex + 1 >= save.unlockedLevel && save.unlockedLevel < E.LEVELS.length) {
-                    save.unlockedLevel = world.levelIndex + 2;
-                }
-                persistSave();
-                audio.playWin();
-
-                emojiEl.textContent = earned === 3 ? '👑' : '🎉';
-                titleEl.textContent = `${world.level.label} 通关大捷！`;
-                subEl.textContent = `已解锁最高阶：${tierLabel(world.maxTierSeen)}`;
-                stars.forEach((s, idx) => {
-                    s.classList.toggle('lit', idx < earned);
-                    s.style.animationDelay = `${idx * 0.12}s`;
-                });
-                nextBtn.style.display = 'block';
-                nextBtn.textContent = world.levelIndex + 1 < E.LEVELS.length ? '下一关 →' : '挑战无尽模式';
-            } else {
-                audio.playLoss();
-                emojiEl.textContent = '💦';
-                titleEl.textContent = '差一点就成了！';
-                subEl.textContent = world.lossReason || '调整落点角度再来一次吧';
-                stars.forEach((s) => s.classList.remove('lit'));
-                nextBtn.style.display = 'none';
-            }
-        } else {
-            audio.playLoss();
-            starsWrap.style.display = 'none';
-            const isNewRecord = world.score > save.endlessHighScore;
-            if (isNewRecord) {
-                save.endlessHighScore = world.score;
-                persistSave();
-            }
-            emojiEl.textContent = isNewRecord ? '🏆' : '🍉';
-            titleEl.textContent = isNewRecord ? '刷新历史纪录！' : '甜蜜结算';
-            subEl.textContent = `历史最高：${save.endlessHighScore.toLocaleString()} 分`;
-            nextBtn.style.display = 'none';
-        }
+        emojiEl.textContent = isNewRecord ? '🏆' : '🍉';
+        titleEl.textContent = isNewRecord ? '刷新历史最高 MAX！' : '果罐已满 · 本局结束';
+        subEl.textContent = `历史最高 MAX：${save.endlessHighScore.toLocaleString()} 分 · 最高合成：${tierLabel(world.maxTierSeen)}`;
         modal.hidden = false;
-    }
-
-    function openLevelsModal() {
-        const container = document.getElementById('chaptersContainer');
-        document.getElementById('levelsSummaryText').textContent = `已集齐 ${E.totalCampaignStars(save)} / ${E.LEVELS.length * 3} ⭐`;
-        container.innerHTML = '';
-
-        E.CHAPTERS.forEach((ch) => {
-            const block = document.createElement('div');
-            block.className = 'chapter-block';
-            block.innerHTML = `<h3 style="color:${ch.accent}">● 第 ${ch.id} 章 · ${ch.name}</h3><p>${ch.subtitle}</p>`;
-            const grid = document.createElement('div');
-            grid.className = 'levels-grid';
-            E.LEVELS.filter((l) => l.chapter === ch.id).forEach((lvl) => {
-                const idx = E.LEVELS.findIndex((x) => x.id === lvl.id);
-                const locked = lvl.id > save.unlockedLevel;
-                const stars = save.levelStars[lvl.id] || 0;
-                const btn = document.createElement('button');
-                btn.className = 'lvl-btn' + (idx === save.currentLevelIndex && currentMode === 'campaign' ? ' is-current' : '');
-                btn.disabled = locked;
-                btn.innerHTML = `
-                    <span class="lvl-num">${locked ? '🔒' : lvl.label}</span>
-                    <span class="lvl-name">${lvl.name}</span>
-                    <span class="lvl-stars">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>
-                `;
-                btn.addEventListener('click', () => {
-                    document.getElementById('levelsModal').hidden = true;
-                    startSession('campaign', idx);
-                });
-                grid.appendChild(btn);
-            });
-            block.appendChild(grid);
-            container.appendChild(block);
-        });
-        document.getElementById('levelsModal').hidden = false;
     }
 
     /* ---------------- Canvas Vector Art Renderer ---------------- */
@@ -320,23 +247,40 @@
             c.scale(sx, sy);
         }
 
-        // Outer soft drop shadow
+        // Outer soft drop shadow + ambient rim aura for large fruits
+        if (tier >= 8) {
+            c.beginPath();
+            c.arc(0, 0, r + 4, 0, Math.PI * 2);
+            c.fillStyle = tier === 10 ? 'rgba(250, 204, 21, 0.20)' : 'rgba(52, 211, 153, 0.14)';
+            c.fill();
+        }
         c.beginPath();
-        c.arc(0, 2, r, 0, Math.PI * 2);
-        c.fillStyle = 'rgba(120, 53, 15, 0.14)';
+        c.arc(0, 3, r, 0, Math.PI * 2);
+        c.fillStyle = 'rgba(120, 53, 15, 0.18)';
         c.fill();
 
-        // Main glossy gradient sphere
-        const grad = c.createRadialGradient(-r * 0.32, -r * 0.32, r * 0.12, 0, 0, r);
+        // Main volumetric spherical gradient
+        const grad = c.createRadialGradient(-r * 0.32, -r * 0.34, r * 0.08, 0, 0, r);
         grad.addColorStop(0, def.rim);
-        grad.addColorStop(0.45, def.colorA);
+        grad.addColorStop(0.42, def.colorA);
+        grad.addColorStop(0.88, def.colorB);
         grad.addColorStop(1, def.colorB);
         c.beginPath();
         c.arc(0, 0, r, 0, Math.PI * 2);
         c.fillStyle = grad;
         c.fill();
-        c.lineWidth = Math.max(1.2, r * 0.055);
-        c.strokeStyle = 'rgba(255, 255, 255, 0.42)';
+
+        // Subtle warm bounced rim light along lower arc for true 3D depth
+        c.beginPath();
+        c.arc(0, 0, Math.max(2, r - 1.5), 0.25 * Math.PI, 0.78 * Math.PI);
+        c.strokeStyle = 'rgba(255, 255, 255, 0.26)';
+        c.lineWidth = Math.max(1.5, r * 0.06);
+        c.stroke();
+
+        c.beginPath();
+        c.arc(0, 0, r, 0, Math.PI * 2);
+        c.lineWidth = Math.max(1.3, r * 0.055);
+        c.strokeStyle = 'rgba(255, 255, 255, 0.48)';
         c.stroke();
 
         // Theme details
@@ -346,13 +290,17 @@
             drawFruitDetails(c, r, tier);
         }
 
-        // Top glossy shine crescent
+        // Crisp upper specular highlight crescent + pinpoint glint
         c.beginPath();
-        c.ellipse(-r * 0.3, -r * 0.36, r * 0.32, r * 0.16, -0.5, 0, Math.PI * 2);
+        c.ellipse(-r * 0.32, -r * 0.38, r * 0.30, r * 0.14, -0.52, 0, Math.PI * 2);
+        c.fillStyle = 'rgba(255, 255, 255, 0.48)';
+        c.fill();
+        c.beginPath();
+        c.arc(-r * 0.46, -r * 0.20, Math.max(1.2, r * 0.065), 0, Math.PI * 2);
         c.fillStyle = 'rgba(255, 255, 255, 0.42)';
         c.fill();
 
-        // Expressive Eyes & Mouth (keep faces mostly upright relative to body rotation? Keep with body for playful spin!)
+        // Expressive Eyes & Mouth
         drawCuteFace(c, r, state);
 
         // Ice Seal Overlay for frozen puzzle fruits
@@ -380,73 +328,260 @@
 
     function drawFruitDetails(c, r, tier) {
         c.save();
-        if (tier === 0 || tier === 4 || tier === 6) {
-            // Stem + little leaf
+        if (tier === 0) {
+            // Cherry: curved stem + bright cherry leaf + top crease
             c.strokeStyle = '#65a30d';
-            c.lineWidth = Math.max(1.5, r * 0.09);
+            c.lineWidth = Math.max(1.8, r * 0.11);
+            c.lineCap = 'round';
             c.beginPath();
-            c.moveTo(0, -r * 0.76);
-            c.quadraticCurveTo(r * 0.12, -r * 1.05, r * 0.25, -r * 1.12);
+            c.moveTo(0, -r * 0.72);
+            c.quadraticCurveTo(r * 0.14, -r * 1.15, r * 0.35, -r * 1.24);
             c.stroke();
             c.beginPath();
-            c.ellipse(r * 0.24, -r * 0.92, r * 0.22, r * 0.11, -0.4, 0, Math.PI * 2);
+            c.ellipse(r * 0.28, -r * 0.98, r * 0.26, r * 0.12, -0.35, 0, Math.PI * 2);
             c.fillStyle = '#4ade80';
             c.fill();
         } else if (tier === 1) {
-            // Strawberry golden seeds + calyx leaves
-            c.fillStyle = '#fef08a';
-            for (let i = 0; i < 6; i++) {
-                const a = (i * 1.05) + 0.4;
+            // Strawberry: golden seeds with shadow dots + 5-petal emerald calyx
+            for (let i = 0; i < 8; i++) {
+                const a = (i * 0.78) + 0.35;
+                const rad = (i % 2 === 0 ? 0.56 : 0.34) * r;
+                const sx = Math.cos(a) * rad;
+                const sy = Math.sin(a) * rad + r * 0.12;
+                c.fillStyle = 'rgba(127, 29, 29, 0.35)';
                 c.beginPath();
-                c.arc(Math.cos(a) * r * 0.48, Math.sin(a) * r * 0.45 + r * 0.1, 1.5, 0, Math.PI * 2);
+                c.arc(sx, sy + 0.9, 1.5, 0, Math.PI * 2);
+                c.fill();
+                c.fillStyle = '#fef08a';
+                c.beginPath();
+                c.ellipse(sx, sy, 1.3, 1.8, a * 0.2, 0, Math.PI * 2);
                 c.fill();
             }
-            c.fillStyle = '#22c55e';
-            for (let k = -1; k <= 1; k++) {
+            c.fillStyle = '#16a34a';
+            for (let k = -2; k <= 2; k++) {
                 c.beginPath();
-                c.ellipse(k * r * 0.24, -r * 0.8, r * 0.2, r * 0.09, k * 0.3, 0, Math.PI * 2);
+                c.ellipse(k * r * 0.18, -r * 0.80, r * 0.18, r * 0.08, k * 0.28, 0, Math.PI * 2);
                 c.fill();
             }
         } else if (tier === 2) {
-            // Grape bubbly highlights
-            c.fillStyle = 'rgba(255,255,255,0.16)';
+            // Grape: clustered velvety berry highlights + curly vine
+            c.save();
             c.beginPath();
-            c.arc(r * 0.28, r * 0.22, r * 0.34, 0, Math.PI * 2);
-            c.arc(-r * 0.3, r * 0.25, r * 0.26, 0, Math.PI * 2);
-            c.fill();
-        } else if (tier === 7) {
-            // Pineapple crosshatch
-            c.strokeStyle = 'rgba(161, 98, 7, 0.32)';
-            c.lineWidth = 1.6;
-            c.beginPath();
-            c.arc(0, 0, r * 0.82, 0, Math.PI * 2);
+            c.arc(0, 0, r * 0.94, 0, Math.PI * 2);
             c.clip();
-            for (let d = -r * 1.4; d <= r * 1.4; d += r * 0.42) {
-                c.moveTo(d, -r); c.lineTo(d + r, r);
-                c.moveTo(d + r, -r); c.lineTo(d, r);
+            const orbs = [[-0.36, -0.25, 0.34], [0.34, -0.22, 0.32], [-0.28, 0.34, 0.32], [0.30, 0.32, 0.30], [0, 0.45, 0.28]];
+            for (const [ox, oy, rr] of orbs) {
+                const g = c.createRadialGradient(ox * r - 2, oy * r - 2, 1, ox * r, oy * r, rr * r);
+                g.addColorStop(0, 'rgba(237, 233, 254, 0.28)');
+                g.addColorStop(1, 'rgba(91, 33, 182, 0.18)');
+                c.fillStyle = g;
+                c.beginPath();
+                c.arc(ox * r, oy * r, rr * r, 0, Math.PI * 2);
+                c.fill();
+            }
+            c.restore();
+            c.strokeStyle = '#65a30d';
+            c.lineWidth = 2;
+            c.beginPath();
+            c.moveTo(0, -r * 0.84);
+            c.bezierCurveTo(r * 0.2, -r * 1.15, -r * 0.15, -r * 1.25, r * 0.18, -r * 1.28);
+            c.stroke();
+        } else if (tier === 3) {
+            // Tangerine: citrus dimple stipples + green navel leaf
+            c.fillStyle = 'rgba(180, 83, 9, 0.24)';
+            for (let i = 0; i < 14; i++) {
+                const a = i * 2.39996;
+                const d = Math.sqrt((i + 1) / 15) * r * 0.78;
+                c.beginPath();
+                c.arc(Math.cos(a) * d, Math.sin(a) * d, 1.3, 0, Math.PI * 2);
+                c.fill();
+            }
+            c.fillStyle = '#15803d';
+            c.beginPath();
+            c.arc(0, -r * 0.84, r * 0.11, 0, Math.PI * 2);
+            c.fill();
+            c.beginPath();
+            c.ellipse(r * 0.22, -r * 0.90, r * 0.20, r * 0.09, -0.35, 0, Math.PI * 2);
+            c.fillStyle = '#4ade80';
+            c.fill();
+        } else if (tier === 4) {
+            // Fuji Apple: creamy golden blush + vertical stripe glaze + stem & leaf
+            c.save();
+            c.beginPath();
+            c.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+            c.clip();
+            const cheek = c.createRadialGradient(r * 0.32, r * 0.28, 2, r * 0.32, r * 0.28, r * 0.68);
+            cheek.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+            cheek.addColorStop(1, 'rgba(254, 240, 138, 0)');
+            c.fillStyle = cheek;
+            c.fillRect(-r, -r, r * 2, r * 2);
+            c.restore();
+            c.strokeStyle = '#78350f';
+            c.lineWidth = Math.max(2, r * 0.08);
+            c.lineCap = 'round';
+            c.beginPath();
+            c.moveTo(0, -r * 0.72);
+            c.quadraticCurveTo(r * 0.08, -r * 1.02, r * 0.16, -r * 1.10);
+            c.stroke();
+            c.beginPath();
+            c.ellipse(r * 0.24, -r * 0.92, r * 0.24, r * 0.11, -0.45, 0, Math.PI * 2);
+            c.fillStyle = '#22c55e';
+            c.fill();
+        } else if (tier === 5) {
+            // Sweet Pear: warm rosy blush + subtle russet freckles + top leaf
+            c.save();
+            c.beginPath();
+            c.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+            c.clip();
+            const blush = c.createRadialGradient(r * 0.38, r * 0.18, 2, r * 0.38, r * 0.18, r * 0.55);
+            blush.addColorStop(0, 'rgba(251, 113, 133, 0.32)');
+            blush.addColorStop(1, 'rgba(251, 113, 133, 0)');
+            c.fillStyle = blush;
+            c.fillRect(-r, -r, r * 2, r * 2);
+            c.fillStyle = 'rgba(146, 64, 14, 0.22)';
+            for (let i = 0; i < 12; i++) {
+                const a = i * 1.9 + 0.5;
+                const d = (0.35 + (i % 4) * 0.14) * r;
+                c.beginPath();
+                c.arc(Math.cos(a) * d, Math.sin(a) * d, 1.3, 0, Math.PI * 2);
+                c.fill();
+            }
+            c.restore();
+            c.strokeStyle = '#78350f';
+            c.lineWidth = 2.4;
+            c.beginPath();
+            c.moveTo(0, -r * 0.80);
+            c.lineTo(0, -r * 1.08);
+            c.stroke();
+        } else if (tier === 6) {
+            // Peach: creamy sunlit tip + soft vertical cleft dimple + twin leaves
+            c.save();
+            c.beginPath();
+            c.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+            c.clip();
+            const tip = c.createRadialGradient(-r * 0.25, -r * 0.35, 2, 0, 0, r);
+            tip.addColorStop(0, 'rgba(255, 251, 235, 0.42)');
+            tip.addColorStop(1, 'rgba(255, 251, 235, 0)');
+            c.fillStyle = tip;
+            c.fillRect(-r, -r, r * 2, r * 2);
+            c.strokeStyle = 'rgba(190, 24, 93, 0.24)';
+            c.lineWidth = 2.2;
+            c.beginPath();
+            c.moveTo(0, -r * 0.92);
+            c.quadraticCurveTo(r * 0.14, -r * 0.45, 0, -r * 0.16);
+            c.stroke();
+            c.restore();
+            c.fillStyle = '#22c55e';
+            for (const dir of [-1, 1]) {
+                c.beginPath();
+                c.ellipse(dir * r * 0.20, -r * 0.92, r * 0.22, r * 0.09, dir * 0.4, 0, Math.PI * 2);
+                c.fill();
+            }
+        } else if (tier === 7) {
+            // Pineapple: crisp diamond crosshatch + scale centers + spiky emerald crown
+            c.save();
+            c.beginPath();
+            c.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+            c.clip();
+            c.strokeStyle = 'rgba(146, 64, 14, 0.34)';
+            c.lineWidth = 1.8;
+            const step = r * 0.38;
+            for (let d = -r * 1.6; d <= r * 1.6; d += step) {
+                c.moveTo(d, -r); c.lineTo(d + r * 1.1, r);
+                c.moveTo(d + r * 1.1, -r); c.lineTo(d, r);
             }
             c.stroke();
-        } else if (tier === 9 || tier === 10) {
-            // Watermelon / Melon stripes
-            c.strokeStyle = tier === 10 ? 'rgba(6, 95, 70, 0.48)' : 'rgba(77, 124, 15, 0.36)';
-            c.lineWidth = Math.max(3, r * 0.09);
-            c.lineCap = 'round';
-            for (const off of [-0.46, 0, 0.46]) {
+            c.restore();
+            // Emerald spiky crown above top edge
+            c.fillStyle = '#15803d';
+            for (let k = -2; k <= 2; k++) {
                 c.beginPath();
-                c.moveTo(off * r, -r * 0.78);
-                c.quadraticCurveTo((off + 0.16) * r, 0, off * r, r * 0.78);
+                c.moveTo(k * r * 0.13 - r * 0.08, -r * 0.84);
+                c.lineTo(k * r * 0.20, -r * (1.28 - Math.abs(k) * 0.08));
+                c.lineTo(k * r * 0.13 + r * 0.08, -r * 0.84);
+                c.closePath();
+                c.fill();
+            }
+        } else if (tier === 8) {
+            // Coconut: tropical jade rind + subtle white equatorial highlight + hibiscus leaf
+            c.save();
+            c.beginPath();
+            c.arc(0, 0, r * 0.94, 0, Math.PI * 2);
+            c.clip();
+            c.strokeStyle = 'rgba(6, 78, 59, 0.28)';
+            c.lineWidth = 2.2;
+            for (const off of [-0.52, -0.18, 0.18, 0.52]) {
+                c.beginPath();
+                c.moveTo(off * r, -r * 0.95);
+                c.quadraticCurveTo(off * r * 1.25, 0, off * r, r * 0.95);
                 c.stroke();
             }
+            c.restore();
+            // Cute coconut straw & tropical leaf
+            c.strokeStyle = '#fef3c7';
+            c.lineWidth = 4;
+            c.lineCap = 'round';
+            c.beginPath();
+            c.moveTo(r * 0.24, -r * 0.78);
+            c.lineTo(r * 0.38, -r * 1.12);
+            c.lineTo(r * 0.55, -r * 1.14);
+            c.stroke();
+        } else if (tier === 9 || tier === 10) {
+            // Cantaloupe netted cork lines OR King Watermelon jagged stripes + jeweled crown
+            c.save();
+            c.beginPath();
+            c.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+            c.clip();
+            if (tier === 9) {
+                c.strokeStyle = 'rgba(236, 252, 203, 0.42)';
+                c.lineWidth = 1.6;
+                for (let d = -r * 1.5; d <= r * 1.5; d += r * 0.34) {
+                    c.beginPath();
+                    c.moveTo(d, -r);
+                    c.bezierCurveTo(d + r * 0.25, -r * 0.2, d - r * 0.25, r * 0.2, d, r);
+                    c.stroke();
+                    c.beginPath();
+                    c.moveTo(-r, d);
+                    c.bezierCurveTo(-r * 0.2, d + r * 0.2, r * 0.2, d - r * 0.2, r, d);
+                    c.stroke();
+                }
+            } else {
+                // Iconic jagged watermelon tiger stripes
+                c.strokeStyle = 'rgba(6, 78, 59, 0.56)';
+                c.lineWidth = Math.max(4, r * 0.085);
+                c.lineCap = 'round';
+                c.lineJoin = 'round';
+                for (const off of [-0.56, -0.22, 0.16, 0.52]) {
+                    c.beginPath();
+                    c.moveTo(off * r, -r * 0.92);
+                    for (let stepY = -0.6; stepY <= 0.8; stepY += 0.35) {
+                        const jx = (Math.round(stepY * 10) % 2 === 0 ? 0.09 : -0.06) * r;
+                        c.lineTo((off + jx / r * 0.6) * r + jx, stepY * r);
+                    }
+                    c.stroke();
+                }
+            }
+            c.restore();
+
             if (tier === 10) {
-                // Tiny golden crown on King Watermelon
+                // Golden King Crown with ruby gem
                 c.fillStyle = '#fde047';
+                c.strokeStyle = '#ca8a04';
+                c.lineWidth = 1.6;
                 c.beginPath();
-                c.moveTo(-14, -r + 4);
-                c.lineTo(-10, -r - 10);
-                c.lineTo(0, -r - 2);
-                c.lineTo(10, -r - 10);
-                c.lineTo(14, -r + 4);
+                c.moveTo(-16, -r + 4);
+                c.lineTo(-12, -r - 12);
+                c.lineTo(-4, -r - 4);
+                c.lineTo(0, -r - 15);
+                c.lineTo(4, -r - 4);
+                c.lineTo(12, -r - 12);
+                c.lineTo(16, -r + 4);
                 c.closePath();
+                c.fill();
+                c.stroke();
+                c.fillStyle = '#ef4444';
+                c.beginPath();
+                c.arc(0, -r - 4, 2.6, 0, Math.PI * 2);
                 c.fill();
             }
         }
@@ -687,6 +822,26 @@
             }
         }
 
+        // Translucent fruit juice splash decals on merges
+        for (let i = splashes.length - 1; i >= 0; i--) {
+            const sp = splashes[i];
+            sp.life -= dt;
+            if (sp.life <= 0) { splashes.splice(i, 1); continue; }
+            const alpha = Math.min(0.24, (sp.life / sp.maxLife) * 0.28);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = sp.color;
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2);
+            ctx.fill();
+            for (const lb of sp.lobes) {
+                ctx.beginPath();
+                ctx.arc(sp.x + lb.dx, sp.y + lb.dy, lb.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
         // Expanding rings
         for (let i = rings.length - 1; i >= 0; i--) {
             const rg = rings[i];
@@ -777,6 +932,7 @@
                 const def = E.TIERS[ev.tier];
                 scoreChanged = true;
                 save.highestTier = Math.max(save.highestTier, ev.tier);
+                if (ev.tier === 10) save.totalWatermelons = (save.totalWatermelons || 0) + 1;
                 persistSave();
                 audio.playMerge(ev.tier, ev.combo);
                 spawnJuiceBurst(ev.x, ev.y, def.juice, 14 + ev.tier, 1 + ev.tier * 0.08);
@@ -921,7 +1077,7 @@
 
     window.addEventListener('keydown', (ev) => {
         if (!world || world.status !== 'playing') return;
-        if (!document.getElementById('levelsModal').hidden || !document.getElementById('resultModal').hidden) return;
+        if (!document.getElementById('resultModal').hidden) return;
         if (ev.key === 'ArrowLeft' || ev.key === 'a' || ev.key === 'A') {
             ev.preventDefault();
             world.setAimX(world.aimX - 18);
@@ -944,13 +1100,7 @@
 
     /* ---------------- Wire UI Buttons ---------------- */
 
-    document.getElementById('btnModeCampaign').addEventListener('click', () => startSession('campaign'));
-    document.getElementById('btnModeEndless').addEventListener('click', () => startSession('endless'));
-    document.getElementById('btnLevels').addEventListener('click', openLevelsModal);
-    document.getElementById('btnCloseLevels').addEventListener('click', () => {
-        document.getElementById('levelsModal').hidden = true;
-    });
-    document.getElementById('btnRestart').addEventListener('click', () => startSession(currentMode));
+    document.getElementById('btnRestart').addEventListener('click', () => startSession());
     document.getElementById('btnCancelTool').addEventListener('click', () => setActiveTool(null));
 
     document.getElementById('toolWand').addEventListener('click', () => setActiveTool('wand'));
@@ -972,7 +1122,9 @@
         const isCritters = save.theme === 'critters';
         document.getElementById('themeBadgeIcon').textContent = isCritters ? '🐱' : '🍓';
         document.getElementById('themeBadgeLabel').textContent = isCritters ? '萌宠' : '鲜果';
-        document.getElementById('subtitleLabel').textContent = isCritters ? '2D物理萌宠泡泡大合成' : '2D物理甜心大合成';
+        document.getElementById('subtitleLabel').textContent = isCritters
+            ? '经典无尽物理萌宠大合成 · 冲击历史 MAX 高分'
+            : '经典无尽物理甜心大合成 · 冲击历史 MAX 高分';
     }
 
     document.getElementById('btnToggleTheme').addEventListener('click', () => {
@@ -994,15 +1146,7 @@
     });
 
     document.getElementById('btnResultRetry').addEventListener('click', () => {
-        startSession(currentMode);
-    });
-
-    document.getElementById('btnResultNext').addEventListener('click', () => {
-        if (world && world.levelIndex + 1 < E.LEVELS.length) {
-            startSession('campaign', world.levelIndex + 1);
-        } else {
-            startSession('endless');
-        }
+        startSession();
     });
 
     // Resolve back-to-arcade link cleanly
@@ -1014,7 +1158,7 @@
     // Boot
     syncThemeUi();
     syncMuteBtn();
-    startSession('campaign', save.currentLevelIndex);
+    startSession();
     rafId = requestAnimationFrame(tick);
 
     window.__fruitMerge = {

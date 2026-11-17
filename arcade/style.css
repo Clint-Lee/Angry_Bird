@@ -802,50 +802,50 @@ body {
     box-shadow: 0 7px 0 #9a3412, 0 14px 28px rgba(249, 115, 22, 0.48);
 }
 
-/* Prism Loom Third Flagship Card Styling */
-.prism-badge {
+/* Ricochet Lab Third Flagship Card Styling */
+.rl-badge {
     background: linear-gradient(90deg, #0ea5e9 0%, #8b5cf6 100%);
     box-shadow: 0 -2px 12px rgba(56, 189, 248, 0.32);
 }
 
-.prism-featured-card {
+.rl-featured-card {
     border-color: rgba(56, 189, 248, 0.52);
     box-shadow: 0 22px 54px rgba(2, 6, 23, 0.68), 0 0 28px rgba(56, 189, 248, 0.14);
 }
 
-.prism-featured-card:hover {
+.rl-featured-card:hover {
     border-color: rgba(125, 211, 252, 0.85);
     box-shadow: 0 28px 68px rgba(2, 6, 23, 0.78), 0 0 36px rgba(139, 92, 246, 0.24);
 }
 
-.prism-visual {
+.rl-visual {
     background: radial-gradient(circle at 50% 35%, #1e1b4b 0%, #070b19 78%);
 }
 
-.prism-visual-badge {
+.rl-visual-badge {
     border-color: rgba(56, 189, 248, 0.45);
     color: #bae6fd;
 }
 
-.prism-featured-card:hover .lumina-art-svg {
+.rl-featured-card:hover .lumina-art-svg {
     transform: translateY(-4px) scale(1.04);
 }
 
-.pill-world.pr-c2 { background: rgba(168, 85, 247, 0.35); color: #e9d5ff; }
-.prism-genre { background: #0284c7; }
-.prism-ver   { background: #7c3aed; }
+.pill-world.rl-c2 { background: rgba(245, 158, 11, 0.3); color: #fde68a; }
+.rl-genre { background: #0284c7; }
+.rl-ver   { background: #7c3aed; }
 
-.pl-mastery-fill {
-    background: linear-gradient(90deg, #38bdf8 0%, #c084fc 55%, #fbbf24 100%);
+.rl-mastery-fill {
+    background: linear-gradient(90deg, #38bdf8 0%, #c084fc 55%, #34d399 100%);
     box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
 }
 
-.pl-play-btn {
+.rl-play-btn {
     background: linear-gradient(180deg, #0ea5e9 0%, #4f46e5 100%);
     box-shadow: 0 5px 0 #312e81, 0 10px 24px rgba(56, 189, 248, 0.38);
 }
 
-.pl-play-btn:hover {
+.rl-play-btn:hover {
     background: linear-gradient(180deg, #38bdf8 0%, #6366f1 100%);
     box-shadow: 0 7px 0 #312e81, 0 14px 28px rgba(99, 102, 241, 0.48);
 }
