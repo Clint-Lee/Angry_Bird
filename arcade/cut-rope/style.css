@@ -16,21 +16,22 @@
 
 body {
     min-height: 100vh;
+    min-height: 100dvh;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     color: var(--text);
     background:
         radial-gradient(circle at 25% 15%, rgba(251, 146, 60, 0.16), transparent 45%),
         radial-gradient(circle at 80% 80%, rgba(74, 222, 128, 0.12), transparent 45%),
         var(--bg);
-    padding: 12px 16px 24px;
+    padding: 10px 14px 16px;
 }
 
 .cr-shell {
-    max-width: 720px;
+    max-width: 680px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 9px;
 }
 
 .topbar {
@@ -39,8 +40,8 @@ body {
     justify-content: space-between;
     gap: 10px;
     flex-wrap: wrap;
-    padding: 10px 14px;
-    border-radius: 16px;
+    padding: 8px 13px;
+    border-radius: 15px;
     background: var(--panel);
     border: 1.5px solid var(--border);
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
@@ -117,7 +118,8 @@ body {
 .canvas-card {
     position: relative;
     width: 100%;
-    max-width: 476px;
+    max-width: min(460px, calc((100vh - 104px) * 460 / 620));
+    max-width: min(460px, calc((100dvh - 104px) * 460 / 620));
     padding: 8px;
     border-radius: 22px;
     background: linear-gradient(155deg, #b0895e, #6b492c);

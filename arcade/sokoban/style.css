@@ -9,18 +9,19 @@
 
 body {
     min-height: 100vh;
-    background: #1c1917;
+    min-height: 100dvh;
+    background: radial-gradient(circle at 50% 10%, #272220 0%, #1c1917 70%);
     color: #f5f5f4;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
-    padding: 16px 14px 28px;
+    padding: 12px 14px 18px;
 }
 
 .sk-shell {
-    max-width: 640px;
+    max-width: 620px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
 }
 
 .sk-topbar {
@@ -125,7 +126,8 @@ body {
 #sokobanCanvas {
     display: block;
     width: 100%;
-    max-width: 560px;
+    max-width: min(560px, calc((100vh - 178px) * 560 / 520));
+    max-width: min(560px, calc((100dvh - 178px) * 560 / 520));
     height: auto;
     aspect-ratio: 560 / 520;
     border-radius: 8px;
@@ -318,3 +320,4 @@ body {
 .btn-primary:hover {
     background: #f59e0b;
 }
+

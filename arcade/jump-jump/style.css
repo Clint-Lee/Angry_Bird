@@ -9,18 +9,22 @@
 
 body {
     min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
-    background: #cedcd0;
+    background: radial-gradient(circle at 50% 25%, #dae7dc 0%, #c7d7c9 100%);
     color: #1e293b;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px;
+    overflow: hidden;
+    padding: 10px 12px;
 }
 
 .jj-stage {
     width: 100%;
-    max-width: 680px;
+    max-width: min(580px, calc((100vh - 24px) * 660 / 680));
+    max-width: min(580px, calc((100dvh - 24px) * 660 / 680));
 }
 
 .canvas-wrap {
@@ -43,13 +47,13 @@ body {
 
 .hud-top-left {
     position: absolute;
-    top: 22px;
-    left: 26px;
+    top: 18px;
+    left: 22px;
     pointer-events: none;
 }
 
 .big-score {
-    font-size: 54px;
+    font-size: clamp(36px, 5.8vw, 52px);
     font-weight: 800;
     line-height: 1;
     color: #202530;

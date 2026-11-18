@@ -1119,3 +1119,32 @@ canvas {
     background: rgba(250, 204, 21, 0.18);
     color: #fef08a;
 }
+
+@media (max-width: 1380px) {
+    .header-bar {
+        padding: 7px 14px;
+        gap: 8px;
+    }
+    .logo-text {
+        font-size: 21px;
+    }
+    .score-box {
+        padding: 4px 12px;
+    }
+    .score-box .val {
+        font-size: 17px;
+    }
+    .controls-section {
+        gap: 6px;
+    }
+    .controls-section .btn {
+        font-size: 12px;
+        padding: 7px 10px;
+    }
+}
+
+@media (max-width: 960px) {
+    .level-sub {
+        display: none;
+    }
+}
