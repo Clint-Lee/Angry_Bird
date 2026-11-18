@@ -16,7 +16,7 @@ body {
 }
 
 .arcade-shell {
-    max-width: 1060px;
+    max-width: 1160px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -73,14 +73,14 @@ body {
     color: #fff;
 }
 
-/* Compact 3-Column Game Grid */
+/* Compact 4-Column Game Grid (4 + 3 balanced rows on desktop) */
 .games-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
 }
 
-@media (max-width: 1020px) {
+@media (max-width: 1080px) {
     .games-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

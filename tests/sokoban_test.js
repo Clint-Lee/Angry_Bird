@@ -74,9 +74,9 @@ function solveSokoban(level, maxStates = 350000) {
     return -1;
 }
 
-console.log('\n[1] Classic Sokoban 15 Stages Solvability & Mechanics');
-test('All 15 levels have equal boxes and goals, and every single level is mathematically solvable', () => {
-    assert.strictEqual(Engine.LEVELS.length, 15);
+console.log('\n[1] Classic Sokoban 60 Stages Solvability & Mechanics');
+test('All 60 levels have equal boxes and goals, and every single level is mathematically solvable', () => {
+    assert.strictEqual(Engine.LEVELS.length, 60);
     Engine.LEVELS.forEach((lvl) => {
         const parsed = Engine.parseLevel(lvl);
         assert.strictEqual(parsed.boxes.size, parsed.goals.size, `${lvl.name}: boxes != goals`);

@@ -134,8 +134,8 @@
     function updateSokoban() {
         const sk = readJson('cloudeave_sokoban_v1');
         const stars = Object.values(sk.levelStars || {}).reduce((s, v) => s + Math.min(3, Math.max(0, Number(v) || 0)), 0);
-        const curLvl = Math.max(1, Math.min(15, (Number(sk.currentLevelIndex) || 0) + 1));
-        setText('skSummary', `第 ${curLvl} 关 · ${stars} / 45 ⭐`);
+        const curLvl = Math.max(1, Math.min(60, (Number(sk.currentLevelIndex) || 0) + 1));
+        setText('skSummary', `第 ${curLvl} 关 · ${stars} / 180 ⭐`);
 
         const url = resolveUrl('sokoban');
         const link = document.getElementById('linkCoverSk');
@@ -147,6 +147,24 @@
         }
     }
 
+    function updateMota() {
+        const mt = readJson('cloudeave_mota_v1');
+        const sess = (mt && mt.session && typeof mt.session === 'object') ? mt.session : null;
+        const floor = sess ? Math.max(1, Math.min(21, Number(sess.currentFloor) || 1)) : 1;
+        const lv = (sess && sess.player) ? Math.max(1, Number(sess.player.level) || 1) : 1;
+        const won = !!(sess && sess.player && sess.player.won);
+        setText('mtSummary', won ? `已通关 · Lv.${lv}` : `第 ${floor} / 21 层 · Lv.${lv}`);
+
+        const url = resolveUrl('mota');
+        const link = document.getElementById('linkCoverMt');
+        if (link) link.href = url;
+        const btn = document.getElementById('btnPlayMota');
+        if (btn) {
+            btn.href = url;
+            btn.innerText = sess ? (won ? '再战魔塔' : `继续 ${floor}F`) : '开始游戏';
+        }
+    }
+
     function syncLobby() {
         updateAngryBirds();
         updateFruitMerge();
@@ -154,6 +172,7 @@
         updateAdventureTycoon();
         updateJumpJump();
         updateSokoban();
+        updateMota();
     }
 
     if (document.readyState === 'loading') {

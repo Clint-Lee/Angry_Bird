@@ -222,8 +222,38 @@ body {
 }
 
 .modal-wide {
-    max-width: 480px;
+    max-width: 540px;
+    max-height: 88dvh;
+    overflow-y: auto;
     text-align: left;
+}
+
+.chapter-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.chap-pill {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #1c1917;
+    color: #d6d3d1;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+
+.chap-pill:hover {
+    border-color: #d6b88d;
+}
+
+.chap-pill.active {
+    background: #d97706;
+    border-color: #f59e0b;
+    color: #fff;
 }
 
 .modal-head {

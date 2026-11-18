@@ -20,6 +20,7 @@
         btnMute: document.getElementById('btnMute'),
         deadlockBar: document.getElementById('deadlockBar'),
         levelsModal: document.getElementById('levelsModal'),
+        chapterTabs: document.getElementById('chapterTabs'),
         levelsGrid: document.getElementById('levelsGrid'),
         btnCloseLevels: document.getElementById('btnCloseLevels'),
         winModal: document.getElementById('winModal'),
@@ -172,9 +173,38 @@
         el.winModal.classList.remove('hidden');
     }
 
-    function openLevels() {
+    const CHAPTERS = [
+        { label: '1-15 基础', start: 0, end: 15 },
+        { label: '16-30 中阶', start: 15, end: 30 },
+        { label: '31-45 进阶', start: 30, end: 45 },
+        { label: '46-60 宗师', start: 45, end: 60 }
+    ];
+    let selectedChapter = 0;
+
+    function renderChapterLevels() {
+        const chap = CHAPTERS[selectedChapter] || CHAPTERS[0];
+        if (el.chapterTabs) {
+            el.chapterTabs.innerHTML = '';
+            CHAPTERS.forEach((c, cIdx) => {
+                let cStars = 0;
+                for (let i = c.start; i < c.end && i < E.LEVELS.length; i++) {
+                    cStars += save.levelStars[E.LEVELS[i].id] || 0;
+                }
+                const tab = document.createElement('button');
+                tab.type = 'button';
+                tab.className = 'chap-pill' + (cIdx === selectedChapter ? ' active' : '');
+                tab.textContent = `${c.label} (${cStars}/${(c.end - c.start) * 3}★)`;
+                tab.onclick = () => {
+                    selectedChapter = cIdx;
+                    renderChapterLevels();
+                };
+                el.chapterTabs.appendChild(tab);
+            });
+        }
+
         el.levelsGrid.innerHTML = '';
-        E.LEVELS.forEach((lvl, idx) => {
+        for (let idx = chap.start; idx < chap.end && idx < E.LEVELS.length; idx++) {
+            const lvl = E.LEVELS[idx];
             const unlocked = lvl.id <= save.unlockedLevel;
             const stars = save.levelStars[lvl.id] || 0;
             const best = save.bestMoves[lvl.id];
@@ -188,7 +218,12 @@
             `;
             btn.onclick = () => startLevel(idx);
             el.levelsGrid.appendChild(btn);
-        });
+        }
+    }
+
+    function openLevels() {
+        selectedChapter = Math.min(CHAPTERS.length - 1, Math.floor((game ? game.session.levelIndex : 0) / 15));
+        renderChapterLevels();
         el.levelsModal.classList.remove('hidden');
     }
 

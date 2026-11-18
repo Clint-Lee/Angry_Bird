@@ -532,13 +532,99 @@
         }
     }
 
+    function drawMota(ctx) {
+        // Dark dungeon stone tile floor
+        ctx.fillStyle = '#141923';
+        ctx.fillRect(0, 0, W, H);
+        const ts = 36;
+        for (let r = 0; r < 7; r++) {
+            for (let c = 0; c < 12; c++) {
+                ctx.fillStyle = (r + c) % 2 === 0 ? '#1c2331' : '#181e2b';
+                ctx.fillRect(c * ts, r * ts, ts, ts);
+            }
+        }
+
+        // Brick walls flanking inner sanctum
+        const wallColorTop = '#475569';
+        const wallColorSide = '#293548';
+        const wallBlocks = [
+            [0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0],[11,0],
+            [0,1],[0,2],[0,3],[0,4],[0,5],
+            [11,1],[11,2],[11,3],[11,4],[11,5],
+            [3,1],[3,2],[8,1],[8,2]
+        ];
+        wallBlocks.forEach(([c, r]) => {
+            const x = c * ts, y = r * ts;
+            ctx.fillStyle = wallColorSide;
+            ctx.fillRect(x, y, ts, ts);
+            ctx.fillStyle = wallColorTop;
+            ctx.fillRect(x + 2, y + 2, ts - 4, ts - 7);
+        });
+
+        // Glowing colored doors
+        [[4, 2, '#facc15'], [7, 2, '#38bdf8'], [5, 1, '#f87171']].forEach(([c, r, col]) => {
+            const x = c * ts + 4, y = r * ts + 4;
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(x, y, ts - 8, ts - 8);
+            ctx.fillStyle = col;
+            ctx.fillRect(x + 3, y + 3, ts - 14, ts - 14);
+        });
+
+        // Gems & Potion
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.moveTo(92, 92); ctx.lineTo(104, 106); ctx.lineTo(92, 120); ctx.lineTo(80, 106);
+        ctx.closePath(); ctx.fill();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(312, 92); ctx.lineTo(324, 106); ctx.lineTo(312, 120); ctx.lineTo(300, 106);
+        ctx.closePath(); ctx.fill();
+
+        // Demon Boss at top center
+        const bx = 216, by = 114;
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.moveTo(bx - 16, by + 16); ctx.lineTo(bx - 16, by - 8); ctx.lineTo(bx - 8, by - 17);
+        ctx.lineTo(bx, by - 10); ctx.lineTo(bx + 8, by - 17); ctx.lineTo(bx + 16, by - 8);
+        ctx.lineTo(bx + 16, by + 16);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(bx - 8, by - 3, 5, 5);
+        ctx.fillRect(bx + 3, by - 3, 5, 5);
+
+        // Damage badge on Boss
+        ctx.fillStyle = 'rgba(21, 128, 61, 0.92)';
+        roundPath(ctx, bx + 10, by + 6, 30, 15, 4);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('180', bx + 25, by + 17);
+        ctx.textAlign = 'left';
+
+        // Hero Knight
+        const hx = 148, hy = 164;
+        ctx.fillStyle = '#2563eb';
+        roundPath(ctx, hx - 12, hy - 2, 24, 18, 5);
+        ctx.fill();
+        ctx.fillStyle = '#e2e8f0';
+        ctx.beginPath(); ctx.arc(hx, hy - 8, 10, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath(); ctx.arc(hx, hy - 11, 9.5, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(hx - 3, hy - 9, 2.5, 3);
+        ctx.fillRect(hx + 2, hy - 9, 2.5, 3);
+    }
+
     const PAINTERS = {
         'angry-birds': drawAngryBirds,
         'fruit-merge': drawFruitMerge,
         'cut-rope': drawCutRope,
         'adventure-tycoon': drawAdventureTycoon,
         'jump-jump': drawJumpJump,
-        'sokoban': drawSokoban
+        'sokoban': drawSokoban,
+        'mota': drawMota
     };
 
     function renderAllCovers() {
