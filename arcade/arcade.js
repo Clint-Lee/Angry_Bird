@@ -148,12 +148,12 @@
     }
 
     function updateMota() {
-        const mt = readJson('cloudeave_mota_v1');
+        const mt = readJson('cloudeave_mota_v2');
         const sess = (mt && mt.session && typeof mt.session === 'object') ? mt.session : null;
-        const floor = sess ? Math.max(1, Math.min(21, Number(sess.currentFloor) || 1)) : 1;
+        const floor = sess ? Math.max(1, Math.min(30, Number(sess.currentFloor) || 1)) : 1;
         const lv = (sess && sess.player) ? Math.max(1, Number(sess.player.level) || 1) : 1;
         const won = !!(sess && sess.player && sess.player.won);
-        setText('mtSummary', won ? `已通关 · Lv.${lv}` : `第 ${floor} / 21 层 · Lv.${lv}`);
+        setText('mtSummary', won ? `已通关 · Lv.${lv}` : `第 ${floor} / 30 层 · Lv.${lv}`);
 
         const url = resolveUrl('mota');
         const link = document.getElementById('linkCoverMt');

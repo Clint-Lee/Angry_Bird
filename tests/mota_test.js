@@ -18,45 +18,76 @@ function test(name, fn) {
     }
 }
 
-console.log('\n[1] Magic Tower 21 Floors Structural Integrity & Math');
-test('All 21 floors exist, are 11x11, and include required stairs', () => {
-    assert.strictEqual(Engine.FLOOR_TEMPLATES.length, Engine.TOTAL_FLOORS);
+console.log('\n[1] Magic Tower 30 Floors (15x15) Structural Integrity & Math');
+test('All 30 floors exist, are 15x15, 100% connected, and place Bosses every 10th floor', () => {
+    assert.strictEqual(Engine.GRID, 15);
+    assert.strictEqual(Engine.TOTAL_FLOORS, 30);
+    assert.strictEqual(Engine.FLOOR_TEMPLATES.length, 30);
+
+    const g = Engine.createSession();
     Engine.FLOOR_TEMPLATES.forEach((tpl, idx) => {
-        const expectedFloor = idx + 1;
-        assert.strictEqual(tpl.floor, expectedFloor);
-        assert.strictEqual(tpl.map.length, Engine.GRID);
-        tpl.map.forEach((row) => assert.strictEqual(row.length, Engine.GRID, `Floor ${expectedFloor} row length mismatch`));
+        const fNum = idx + 1;
+        assert.strictEqual(tpl.floor, fNum);
+        assert.strictEqual(tpl.map.length, 15);
+        tpl.map.forEach((row, r) => assert.strictEqual(row.length, 15, `Floor ${fNum} row ${r} len ${row.length}`));
 
         const flat = tpl.map.join('');
-        if (expectedFloor < Engine.TOTAL_FLOORS) {
-            assert.ok(flat.includes('U'), `Floor ${expectedFloor} missing stairs_up (U)`);
+        if (fNum < 30) assert.ok(flat.includes('U'), `Floor ${fNum} missing stairs_up`);
+        if (fNum > 1) assert.ok(flat.includes('S'), `Floor ${fNum} missing stairs_down`);
+
+        // Boss check every 10 floors
+        if (fNum === 10) assert.ok(flat.includes('Z'), 'Floor 10 must contain Boss Z');
+        if (fNum === 20) assert.ok(flat.includes('Q'), 'Floor 20 must contain Boss Q');
+        if (fNum === 30) assert.ok(flat.includes('M'), 'Floor 30 must contain Final Boss M');
+
+        // Verify 100% tile connectivity
+        const fObj = g.state.floors[fNum];
+        const sp = fObj.startPos;
+        const q = [sp], vis = new Set([`${sp.x},${sp.y}`]);
+        while (q.length) {
+            const c = q.shift();
+            for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+                const nx = c.x + dx, ny = c.y + dy, nk = `${nx},${ny}`;
+                if (nx < 0 || nx >= 15 || ny < 0 || ny >= 15 || vis.has(nk) || fObj.grid[ny][nx] === 1) continue;
+                vis.add(nk); q.push({ x: nx, y: ny });
+            }
         }
-        if (expectedFloor > 1) {
-            assert.ok(flat.includes('S'), `Floor ${expectedFloor} missing stairs_down (S)`);
+        for (let y = 0; y < 15; y++) {
+            for (let x = 0; x < 15; x++) {
+                if (fObj.grid[y][x] === 0) assert.ok(vis.has(`${x},${y}`), `Floor ${fNum} cell (${x},${y}) disconnected!`);
+            }
         }
     });
-    assert.ok(Engine.FLOOR_TEMPLATES[20].map.join('').includes('M'), 'Floor 21 must have Final Boss (M)');
 });
 
-test('Battle math, attack breakpoint threshold, and undo stack work accurately', () => {
+test('Unbeatable monster blocks movement with clear reason, while winnable builds battle timeline', () => {
     const g = Engine.createSession();
-    const resZero = Engine.calculateBattle({ hp: 1000, atk: 12, def: 10 }, { hp: 140, atk: 44, def: 13 });
-    assert.strictEqual(resZero.canWin, false);
-    assert.strictEqual(resZero.atkNeeded, 2);
+    const resNoBreak = Engine.calculateBattle({ hp: 1000, atk: 12, def: 10 }, { hp: 155, atk: 46, def: 15 });
+    assert.strictEqual(resNoBreak.canWin, false);
+    assert.strictEqual(resNoBreak.reason, 'no_break');
+    assert.strictEqual(resNoBreak.atkNeeded, 4);
 
-    const r = g.step(-1, 0); // move from (5,9) to (4,9)
+    const resLowHp = Engine.calculateBattle({ hp: 50, atk: 20, def: 10 }, { hp: 200, atk: 35, def: 5 });
+    assert.strictEqual(resLowHp.canWin, false);
+    assert.strictEqual(resLowHp.reason, 'low_hp');
+
+    const timeline = Engine.buildBattleTimeline({ hp: 500, atk: 20, def: 10 }, { hp: 45, atk: 16, def: 2 });
+    assert.ok(timeline.length >= 3);
+    assert.strictEqual(timeline[0].actor, 'hero');
+    assert.strictEqual(timeline[timeline.length - 1].enemyHp, 0);
+
+    // Move & undo check (Floor 1 starts at 7,13 -> move left to 6,13)
+    const r = g.step(-1, 0);
     assert.ok(r.ok);
-    assert.strictEqual(g.state.player.x, 4);
+    assert.strictEqual(g.state.player.x, 6);
     assert.strictEqual(g.undo(), true);
-    assert.strictEqual(g.state.player.x, 5);
+    assert.strictEqual(g.state.player.x, 7);
 });
 
-console.log('\n[2] Full Tower 1F -> 21F Simulated Playthrough (Softlock & Balance Proof)');
-test('Simulated tactical hero navigates all 21 floors, shops wisely, and defeats Final Boss', () => {
+console.log('\n[2] Full Tower 1F -> 30F Simulated Playthrough (Softlock & Balance Proof)');
+test('Simulated hero navigates all 30 floors (15x15), beats 10F/20F/30F Bosses cleanly', () => {
     const g = Engine.createSession();
 
-    // Multi-floor BFS / greedy tactical agent: collects safe free items, keys, unlocks doors,
-    // fights lowest-damage affordable monsters, upgrades at Gold Altar / EXP Sage / Flyer, and climbs stairs.
     function reachableOnFloor(floorObj, startX, startY) {
         const q = [{ x: startX, y: startY, path: [] }];
         const vis = new Set([`${startX},${startY}`]);
@@ -75,7 +106,6 @@ test('Simulated tactical hero navigates all 21 floors, shops wisely, and defeats
                 const nextPath = cur.path.concat([[dx, dy]]);
                 if (ent) {
                     hits.push({ key: nk, x: nx, y: ny, ent, path: nextPath });
-                    // Blocking entities & stairs don't pass through accidentally
                     if (ent.type === 'door' || ent.type === 'enemy' || ent.type === 'npc' || ent.type === 'stairs_up' || ent.type === 'stairs_down') continue;
                 }
                 q.push({ x: nx, y: ny, path: nextPath });
@@ -92,137 +122,100 @@ test('Simulated tactical hero navigates all 21 floors, shops wisely, and defeats
         return lastRes;
     }
 
-    // Check accessible NPCs/shops on current floor or unlock flyer & travel
     let iterations = 0;
-    const interactedNpcs = new Set();
+    let keyBuys = 0;
 
-    while (!g.state.player.won && iterations < 1200) {
+    while (!g.state.player.won && iterations < 2200) {
         iterations++;
         const f = g.currentFloorData();
         const hits = reachableOnFloor(f, g.state.player.x, g.state.player.y);
 
-        // 1. Free items & keys immediately
         const freeLoot = hits.find(h => h.ent.type === 'item' || h.ent.type === 'key');
-        if (freeLoot) {
-            walkAndTrigger(freeLoot.path);
-            continue;
-        }
+        if (freeLoot) { walkAndTrigger(freeLoot.path); continue; }
 
-        // 2. Talk to Flyer NPC once
         const flyerHit = hits.find(h => h.ent.type === 'npc' && h.ent.sub === 'flyer');
-        if (flyerHit) {
-            g.unlockFlyer(flyerHit.key);
-            continue;
-        }
+        if (flyerHit) { g.unlockFlyer(flyerHit.key); continue; }
 
-        // 3. Use reachable Gold Altar / EXP Sage when affordable
         const altarHit = hits.find(h => h.ent.type === 'npc' && h.ent.sub === 'altar_gold');
         if (altarHit && g.state.player.gold >= g.goldAltarCost()) {
-            // Buy balanced ATK/DEF/HP
-            if (g.state.player.hp < 500) g.buyGoldAltar('hp');
-            else if (g.state.player.atk <= g.state.player.def + 6) g.buyGoldAltar('atk');
+            if (g.state.player.hp < 700) g.buyGoldAltar('hp');
+            else if (g.state.player.atk <= g.state.player.def + 8) g.buyGoldAltar('atk');
             else g.buyGoldAltar('def');
             continue;
         }
         const sageHit = hits.find(h => h.ent.type === 'npc' && h.ent.sub === 'altar_exp');
         if (sageHit && g.state.player.exp >= 30) {
-            if (g.state.player.exp >= 80 && g.state.player.hp < 900) g.buyExpSage('level');
+            if (g.state.player.exp >= 80 && g.state.player.hp < 1200) g.buyExpSage('level');
             else if (g.state.player.atk <= g.state.player.def + 4) g.buyExpSage('atk');
             else g.buyExpSage('def');
             continue;
         }
 
-        // 4. Fight zero-cost or very low-damage enemies (<= 15% current HP, saving HP before Bosses)
         const winnableEnemies = hits
             .filter(h => h.ent.type === 'enemy')
             .map(h => ({ h, calc: Engine.calculateBattle(g.state.player, h.ent) }))
             .filter(x => x.calc.canWin && (x.calc.damage === 0 || x.calc.damage < g.state.player.hp * 0.45))
             .sort((a, b) => a.calc.damage - b.calc.damage);
 
-        if (winnableEnemies.length && (winnableEnemies[0].calc.damage <= 25 || !hits.some(h => h.ent.type === 'door' && (g.state.player.keys[h.ent.keyType] || 0) > 0))) {
+        if (winnableEnemies.length && (winnableEnemies[0].calc.damage <= 40 || !hits.some(h => h.ent.type === 'door' && (g.state.player.keys[h.ent.keyType] || 0) > 0))) {
             walkAndTrigger(winnableEnemies[0].h.path);
             continue;
         }
 
-        // 5. Open reachable door if we have the key (prefer yellow -> blue -> red)
         const openableDoors = hits
             .filter(h => h.ent.type === 'door' && (g.state.player.keys[h.ent.keyType] || 0) > 0)
-            .sort((a, b) => {
-                const rank = { yellow: 1, blue: 2, red: 3 };
-                return rank[a.ent.keyType] - rank[b.ent.keyType];
-            });
-        if (openableDoors.length) {
-            walkAndTrigger(openableDoors[0].path);
-            continue;
-        }
+            .sort((a, b) => ({ yellow: 1, blue: 2, red: 3 }[a.ent.keyType]) - ({ yellow: 1, blue: 2, red: 3 }[b.ent.keyType]));
+        if (openableDoors.length) { walkAndTrigger(openableDoors[0].path); continue; }
 
-        // 6. Fight any remaining winnable enemy (including Boss!)
-        if (winnableEnemies.length) {
-            walkAndTrigger(winnableEnemies[0].h.path);
-            continue;
-        }
+        if (winnableEnemies.length) { walkAndTrigger(winnableEnemies[0].h.path); continue; }
+
         const anyWinnable = hits
             .filter(h => h.ent.type === 'enemy')
             .map(h => ({ h, calc: Engine.calculateBattle(g.state.player, h.ent) }))
             .filter(x => x.calc.canWin)
             .sort((a, b) => a.calc.damage - b.calc.damage);
-        if (anyWinnable.length) {
-            walkAndTrigger(anyWinnable[0].h.path);
-            continue;
-        }
+        if (anyWinnable.length) { walkAndTrigger(anyWinnable[0].h.path); continue; }
 
-        // 7. Climb stairs up if available and higher floor unvisited or needed
         const up = hits.find(h => h.ent.type === 'stairs_up');
-        if (up) {
-            walkAndTrigger(up.path);
-            continue;
-        }
+        if (up) { walkAndTrigger(up.path); continue; }
 
-        // 8. If stuck on current floor (e.g., locked red door or tough boss), scan previous visited floors for leftover items/altars/keys/monsters!
-        let didActionOnLower = false;
-        const origFloor = g.currentFloorData().floor;
-        for (let fn = 1; fn <= Math.max(...g.state.player.visitedFloors); fn++) {
-            const fo = g.state.floors[fn];
-            if (!fo) continue;
-            // Temporarily warp if flyer owned
-            if (g.state.player.hasFlyer && fn !== origFloor) {
+        let didLower = false;
+        const maxV = Math.max(...g.state.player.visitedFloors);
+        for (let fn = 1; fn <= maxV; fn++) {
+            if (g.state.player.hasFlyer && g.currentFloorData().floor !== fn) {
                 g.teleport(fn, fn === 1 ? 'stairs_up' : 'stairs_down');
             }
             const lh = reachableOnFloor(g.currentFloorData(), g.state.player.x, g.state.player.y);
             const loot = lh.find(h => h.ent.type === 'item' || h.ent.type === 'key');
-            if (loot) { walkAndTrigger(loot.path); didActionOnLower = true; break; }
-            const shopG = lh.find(h => h.ent.type === 'npc' && h.ent.sub === 'altar_gold');
-            if (shopG && g.state.player.gold >= g.goldAltarCost()) {
+            if (loot) { walkAndTrigger(loot.path); didLower = true; break; }
+            const sg = lh.find(h => h.ent.type === 'npc' && h.ent.sub === 'altar_gold');
+            if (sg && g.state.player.gold >= g.goldAltarCost()) {
                 g.buyGoldAltar(g.state.player.atk <= g.state.player.def + 6 ? 'atk' : 'def');
-                didActionOnLower = true; break;
+                didLower = true; break;
             }
-            const shopK = lh.find(h => h.ent.type === 'npc' && h.ent.sub === 'key_shop');
-            if (shopK && g.state.player.gold >= 35 && interactedNpcs.size < 200) {
-                interactedNpcs.add(iterations);
-                if (g.state.player.keys.red === 0 && g.state.player.gold >= 220) g.buyKey('red');
-                else if (g.state.player.keys.blue === 0 && g.state.player.gold >= 95) g.buyKey('blue');
+            const sk = lh.find(h => h.ent.type === 'npc' && h.ent.sub === 'key_shop');
+            if (sk && g.state.player.gold >= 35 && keyBuys < 40) {
+                keyBuys++;
+                if (g.state.player.keys.blue === 0 && g.state.player.gold >= 95) g.buyKey('blue');
                 else g.buyKey('yellow');
-                didActionOnLower = true; break;
+                didLower = true; break;
             }
-            const shopE = lh.find(h => h.ent.type === 'npc' && h.ent.sub === 'altar_exp');
-            if (shopE && g.state.player.exp >= 30) {
-                g.buyExpSage('atk'); didActionOnLower = true; break;
-            }
-            const lowEnemy = lh
+            const se = lh.find(h => h.ent.type === 'npc' && h.ent.sub === 'altar_exp');
+            if (se && g.state.player.exp >= 30) { g.buyExpSage('atk'); didLower = true; break; }
+            const lowEn = lh
                 .filter(h => h.ent.type === 'enemy')
                 .map(h => ({ h, calc: Engine.calculateBattle(g.state.player, h.ent) }))
-                .filter(x => x.calc.canWin && x.calc.damage <= g.state.player.hp * 0.4)
+                .filter(x => x.calc.canWin && x.calc.damage <= g.state.player.hp * 0.45)
                 .sort((a, b) => a.calc.damage - b.calc.damage)[0];
-            if (lowEnemy) { walkAndTrigger(lowEnemy.h.path); didActionOnLower = true; break; }
-            const lowDoor = lh.find(h => h.ent.type === 'door' && (g.state.player.keys[h.ent.keyType] || 0) > 0);
-            if (lowDoor) { walkAndTrigger(lowDoor.path); didActionOnLower = true; break; }
+            if (lowEn) { walkAndTrigger(lowEn.h.path); didLower = true; break; }
+            const lowDr = lh.find(h => h.ent.type === 'door' && (g.state.player.keys[h.ent.keyType] || 0) > 0);
+            if (lowDr) { walkAndTrigger(lowDr.path); didLower = true; break; }
         }
-        if (didActionOnLower) continue;
-
+        if (didLower) continue;
         break;
     }
 
-    console.log(`    [Sim] Floor=${g.state.currentFloor}/21, Won=${g.state.player.won}, HP=${g.state.player.hp}, ATK=${g.state.player.atk}, DEF=${g.state.player.def}, Gold=${g.state.player.gold}, Keys=${JSON.stringify(g.state.player.keys)}, Kills=${g.state.player.kills}`);
+    console.log(`    [Sim] Floor=${g.state.currentFloor}/30, Won=${g.state.player.won}, HP=${g.state.player.hp}, ATK=${g.state.player.atk}, DEF=${g.state.player.def}, Gold=${g.state.player.gold}, Keys=${JSON.stringify(g.state.player.keys)}, Kills=${g.state.player.kills}`);
     assert.strictEqual(g.state.player.won, true, `Bot stopped at Floor ${g.state.currentFloor} with HP=${g.state.player.hp} ATK=${g.state.player.atk} DEF=${g.state.player.def}`);
 });
 

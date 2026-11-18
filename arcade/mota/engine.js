@@ -7,49 +7,42 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     'use strict';
 
-    const SAVE_KEY = 'cloudeave_mota_v1';
-    const GRID = 11;
-    const TOTAL_FLOORS = 21;
+    const SAVE_KEY = 'cloudeave_mota_v2';
+    const GRID = 15;
+    const TOTAL_FLOORS = 30;
 
     const ZONES = [
-        { min: 1, max: 7, name: '遗迹石窟', floorBg: '#252a34', floorAlt: '#212630', wallTop: '#475569', wallSide: '#334155' },
-        { min: 8, max: 14, name: '暗黑地牢', floorBg: '#1e2230', floorAlt: '#191d29', wallTop: '#3f3f5f', wallSide: '#292942' },
-        { min: 15, max: 21, name: '魔王圣殿', floorBg: '#2b1b24', floorAlt: '#24151e', wallTop: '#6b2c3e', wallSide: '#4a1b28' }
+        { min: 1, max: 10, name: '遗迹石窟', floorBg: '#232833', floorAlt: '#1e232d', wallTop: '#4c5c70', wallSide: '#323e4e' },
+        { min: 11, max: 20, name: '暗黑地牢', floorBg: '#1c2030', floorAlt: '#171a28', wallTop: '#47476b', wallSide: '#2b2b46' },
+        { min: 21, max: 30, name: '魔王圣殿', floorBg: '#2b1923', floorAlt: '#23131c', wallTop: '#702d41', wallSide: '#4b1a29' }
     ];
 
     const MONSTERS = {
-        // Zone 1 (1-7F)
+        // Zone 1 (1-10F)
         m1: { id: 'm1', name: '绿史莱姆', hp: 45, atk: 16, def: 2, gold: 8, exp: 5, sprite: 'slime', color: '#22c55e' },
-        m2: { id: 'm2', name: '蓝史莱姆', hp: 75, atk: 24, def: 5, gold: 12, exp: 8, sprite: 'slime', color: '#38bdf8' },
-        m3: { id: 'm3', name: '小蝙蝠', hp: 95, atk: 34, def: 8, gold: 16, exp: 11, sprite: 'bat', color: '#f97316' },
-        m4: { id: 'm4', name: '白骷髅', hp: 140, atk: 44, def: 13, gold: 22, exp: 15, sprite: 'skeleton', color: '#e2e8f0' },
-        m5: { id: 'm5', name: '初级法师', hp: 130, atk: 54, def: 10, gold: 26, exp: 18, sprite: 'mage', color: '#a855f7' },
-        m6: { id: 'm6', name: '骷髅战士', hp: 220, atk: 68, def: 24, gold: 34, exp: 24, sprite: 'skeleton', color: '#cbd5e1' },
-        b1: { id: 'b1', name: '骷髅统领', hp: 460, atk: 96, def: 34, gold: 120, exp: 80, sprite: 'boss', color: '#ef4444', isBoss: true, rewardText: '击败遗迹领主！获得【骑士誓约】属性激励' },
+        m2: { id: 'm2', name: '蓝史莱姆', hp: 80, atk: 24, def: 6, gold: 13, exp: 8, sprite: 'slime', color: '#38bdf8' },
+        m3: { id: 'm3', name: '小蝙蝠', hp: 105, atk: 36, def: 9, gold: 17, exp: 12, sprite: 'bat', color: '#f97316' },
+        m4: { id: 'm4', name: '白骷髅', hp: 155, atk: 46, def: 15, gold: 23, exp: 16, sprite: 'skeleton', color: '#e2e8f0' },
+        m5: { id: 'm5', name: '初级法师', hp: 145, atk: 58, def: 12, gold: 28, exp: 19, sprite: 'mage', color: '#a855f7' },
+        m6: { id: 'm6', name: '骷髅战士', hp: 250, atk: 74, def: 28, gold: 38, exp: 26, sprite: 'skeleton', color: '#cbd5e1' },
+        b1: { id: 'b1', name: '骸骨领主', hp: 780, atk: 122, def: 46, gold: 180, exp: 100, sprite: 'boss', color: '#ef4444', isBoss: true, rewardText: '击败第10层遗迹领主！通往暗黑地牢的大门开启。' },
 
-        // Zone 2 (8-14F)
-        m7: { id: 'm7', name: '兽人战士', hp: 310, atk: 108, def: 42, gold: 48, exp: 32, sprite: 'orc', color: '#4ade80' },
-        m8: { id: 'm8', name: '红骷髅', hp: 410, atk: 128, def: 54, gold: 60, exp: 40, sprite: 'skeleton', color: '#f87171' },
-        m9: { id: 'm9', name: '冥界蝙蝠', hp: 480, atk: 156, def: 60, gold: 74, exp: 48, sprite: 'bat', color: '#818cf8' },
-        ma: { id: 'ma', name: '恶魔守卫', hp: 620, atk: 178, def: 78, gold: 90, exp: 58, sprite: 'knight', color: '#94a3b8' },
-        mb: { id: 'mb', name: '暗黑巫师', hp: 580, atk: 215, def: 70, gold: 105, exp: 68, sprite: 'mage', color: '#c084fc' },
-        b2: { id: 'b2', name: '深渊暗骑', hp: 2200, atk: 340, def: 165, gold: 320, exp: 180, sprite: 'boss', color: '#fb7185', isBoss: true, rewardText: '深渊镇守破除！魔王圣殿大门已开启' },
+        // Zone 2 (11-20F)
+        m7: { id: 'm7', name: '兽人战士', hp: 360, atk: 118, def: 46, gold: 52, exp: 34, sprite: 'orc', color: '#4ade80' },
+        m8: { id: 'm8', name: '红骷髅', hp: 480, atk: 142, def: 60, gold: 66, exp: 44, sprite: 'skeleton', color: '#f87171' },
+        m9: { id: 'm9', name: '冥界蝙蝠', hp: 560, atk: 176, def: 68, gold: 80, exp: 52, sprite: 'bat', color: '#818cf8' },
+        ma: { id: 'ma', name: '恶魔守卫', hp: 760, atk: 205, def: 92, gold: 102, exp: 65, sprite: 'knight', color: '#94a3b8' },
+        mb: { id: 'mb', name: '暗黑巫师', hp: 700, atk: 245, def: 82, gold: 118, exp: 76, sprite: 'mage', color: '#c084fc' },
+        b2: { id: 'b2', name: '深渊暗骑统帅', hp: 3600, atk: 390, def: 195, gold: 420, exp: 220, sprite: 'boss', color: '#fb7185', isBoss: true, rewardText: '击败第20层深渊统帅！勇者踏入魔王圣殿最终区域。' },
 
-        // Zone 3 (15-21F)
-        mc: { id: 'mc', name: '虚空之影', hp: 980, atk: 315, def: 138, gold: 145, exp: 85, sprite: 'shadow', color: '#38bdf8' },
-        md: { id: 'md', name: '堕落骑士', hp: 1380, atk: 375, def: 168, gold: 185, exp: 108, sprite: 'knight', color: '#fb923c' },
-        me: { id: 'me', name: '炼狱巫妖', hp: 1300, atk: 440, def: 152, gold: 215, exp: 125, sprite: 'mage', color: '#e879f9' },
-        mf: { id: 'mf', name: '混沌近卫', hp: 2050, atk: 495, def: 215, gold: 270, exp: 160, sprite: 'orc', color: '#f43f5e' },
-        b3: { id: 'b3', name: '终焉魔王', hp: 8800, atk: 790, def: 460, gold: 1000, exp: 500, sprite: 'boss', color: '#facc15', isBoss: true, isFinalBoss: true, rewardText: '你击败了终焉魔王，彻底封印了魔塔深渊！' }
+        // Zone 3 (21-30F)
+        mc: { id: 'mc', name: '虚空之影', hp: 1150, atk: 350, def: 155, gold: 155, exp: 92, sprite: 'shadow', color: '#38bdf8' },
+        md: { id: 'md', name: '堕落骑士', hp: 1600, atk: 420, def: 192, gold: 205, exp: 118, sprite: 'knight', color: '#fb923c' },
+        me: { id: 'me', name: '炼狱巫妖', hp: 1520, atk: 495, def: 175, gold: 240, exp: 138, sprite: 'mage', color: '#e879f9' },
+        mf: { id: 'mf', name: '混沌近卫', hp: 2450, atk: 560, def: 245, gold: 310, exp: 178, sprite: 'orc', color: '#f43f5e' },
+        b3: { id: 'b3', name: '终焉魔王', hp: 16500, atk: 960, def: 580, gold: 1500, exp: 800, sprite: 'boss', color: '#facc15', isBoss: true, isFinalBoss: true, rewardText: '你在第30层终焉王座击败了终焉魔王，彻底封印了魔塔深渊！' }
     };
 
-    // Legend:
-    // # wall | . floor | S down stairs | U up stairs
-    // Y/B/R doors (yellow/blue/red) | y/b/r keys
-    // A red gem | D blue gem | p potion | P super potion | C coin chest | X exp tome
-    // W weapon upgrade | H shield upgrade
-    // G gold altar | E exp sage | K key merchant | F flyer traveler | N lore elder
-    // Monster codes: 1..6 (m1..m6), 7..9,a,b (m7..mb), c..f (mc..mf), Z=b1, Q=b2, M=b3
     const CHAR_TO_MONSTER = {
         '1': 'm1', '2': 'm2', '3': 'm3', '4': 'm4', '5': 'm5', '6': 'm6',
         '7': 'm7', '8': 'm8', '9': 'm9', 'a': 'ma', 'b': 'mb',
@@ -57,382 +50,243 @@
         'Z': 'b1', 'Q': 'b2', 'M': 'b3'
     };
 
-    // Handcrafted deterministic 21 floors (11x11 grids)
-    // Rule: NPCs sit in alcoves or beside open loops (never blocking 1-wide corridors);
-    // Stairs S / U always have clean open access without blocking neighboring branches.
-    const FLOOR_TEMPLATES = [
-        // 1F: 序章入口 (Hero starts at 5,9; elder N sits in central alcove at 5,5)
-        {
-            floor: 1, name: '魔塔正门', zoneIdx: 0, gemBonus: 2, potBonus: 180, bigPotBonus: 450,
-            start: { x: 5, y: 9 },
-            map: [
-                '###########',
-                '#U..1.1..y#',
-                '#Y###.#####',
-                '#A.1.p.1.D#',
-                '###.#.#.###',
-                '#y.2.N.2.y#',
-                '###.#.#.###',
-                '#p.1...1.b#',
-                '#.#.###.#.#',
-                '#y.......A#',
-                '###########'
-            ]
-        },
-        // 2F: 次元行者 F in side pocket + 金币祭坛 G
-        {
-            floor: 2, name: '行者回廊', zoneIdx: 0, gemBonus: 2, potBonus: 200, bigPotBonus: 500,
-            map: [
-                '###########',
-                '#S.1.A.D.y#',
-                '###.#.#.###',
-                '#p.2...2.G#',
-                '#.#.###.#.#',
-                '#F..1.1..p#',
-                '###.#.#.###',
-                '#y.2.B.2.y#',
-                '#.#.###.#.#',
-                '#D..2.3..U#',
-                '###########'
-            ]
-        },
-        // 3F: 铁匠宝室 (精钢短剑)
-        {
-            floor: 3, name: '石窟铁匠房', zoneIdx: 0, gemBonus: 2, potBonus: 220, bigPotBonus: 520,
-            weapon: { name: '精钢短剑', atk: 12 },
-            map: [
-                '###########',
-                '#U.2.#.W.p#',
-                '###.#B#Y###',
-                '#y.1...2.A#',
-                '#.#.###.#.#',
-                '#G..2.3..D#',
-                '###Y###Y###',
-                '#p.1.y.1.b#',
-                '#.#.###.#.#',
-                '#S..1.X..y#',
-                '###########'
-            ]
-        },
-        // 4F: 钥匙黑市与蝙蝠窟 (S open right, K in side pocket)
-        {
-            floor: 4, name: '蝙蝠迷廊', zoneIdx: 0, gemBonus: 2, potBonus: 240, bigPotBonus: 560,
-            map: [
-                '###########',
-                '#S.2...2.y#',
-                '###Y###.###',
-                '#A.3.K.3.D#',
-                '###.#.#.###',
-                '#p.3.4.3.p#',
-                '###Y###Y###',
-                '#y.2.r.2.b#',
-                '#.#.###.#.#',
-                '#P.3.4.3.U#',
-                '###########'
-            ]
-        },
-        // 5F: 铁盾宝库
-        {
-            floor: 5, name: '盾卫内厅', zoneIdx: 0, gemBonus: 3, potBonus: 260, bigPotBonus: 620,
-            shield: { name: '遗迹铁盾', def: 12 },
-            map: [
-                '###########',
-                '#H.4.#.A.U#',
-                '#R###.#Y###',
-                '#p.3.4.3.p#',
-                '###Y###.###',
-                '#y.2...2.D#',
-                '#.#.###.#.#',
-                '#b.3.5.3.y#',
-                '###.#.#.###',
-                '#S..2.G..y#',
-                '###########'
-            ]
-        },
-        // 6F: 经验长老与精英练兵场
-        {
-            floor: 6, name: '贤者前殿', zoneIdx: 0, gemBonus: 3, potBonus: 280, bigPotBonus: 660,
-            map: [
-                '###########',
-                '#S.3...3.A#',
-                '#.#.#E#.#.#',
-                '#p.4.5.4.D#',
-                '###Y###B###',
-                '#y.4.P.5.y#',
-                '###.#.#.###',
-                '#b.5.6.5.r#',
-                '#.#.###.#.#',
-                '#X..4.6..U#',
-                '###########'
-            ]
-        },
-        // 7F: 第一章守关 Boss
-        {
-            floor: 7, name: '遗迹王座', zoneIdx: 0, gemBonus: 3, potBonus: 320, bigPotBonus: 720,
-            map: [
-                '###########',
-                '#A.P.U.P.D#',
-                '####.Z.####',
-                '#b.5.6.5.b#',
-                '#Y#######Y#',
-                '#p.4...4.p#',
-                '###.#.#.###',
-                '#y.5.G.5.y#',
-                '#.#.###.#.#',
-                '#S..3.4..r#',
-                '###########'
-            ]
-        },
-
-        // 8F: 暗黑地牢入口
-        {
-            floor: 8, name: '地牢北哨', zoneIdx: 1, gemBonus: 4, potBonus: 380, bigPotBonus: 900,
-            map: [
-                '###########',
-                '#S.6.7.6.y#',
-                '###.#####Y#',
-                '#A.7...7.D#',
-                '###.#.#.###',
-                '#p.6.G.6.p#',
-                '###B###Y###',
-                '#y.7.8.7.b#',
-                '#.#.###.#.#',
-                '#X..7.8..U#',
-                '###########'
-            ]
-        },
-        // 9F: 地牢补给所
-        {
-            floor: 9, name: '黑铁监牢', zoneIdx: 1, gemBonus: 4, potBonus: 420, bigPotBonus: 960,
-            map: [
-                '###########',
-                '#U.8.#.A.P#',
-                '###Y#B#Y###',
-                '#y.7.8.7.b#',
-                '#.#.###.#.#',
-                '#K..7.7..E#',
-                '###.#.#.###',
-                '#p.8.9.8.D#',
-                '#.#.###.#.#',
-                '#S..7.y..r#',
-                '###########'
-            ]
-        },
-        // 10F: 秘银军械库 (秘银骑士剑)
-        {
-            floor: 10, name: '秘银武器室', zoneIdx: 1, gemBonus: 4, potBonus: 450, bigPotBonus: 1050,
-            weapon: { name: '秘银骑士剑', atk: 24 },
-            map: [
-                '###########',
-                '#S.7...7.y#',
-                '###Y###B###',
-                '#p.8.W.8.D#',
-                '#.#.###.#.#',
-                '#A.8.9.8.p#',
-                '###.#.#.###',
-                '#y.9.a.9.b#',
-                '#.#.###.#.#',
-                '#P..8.X..U#',
-                '###########'
-            ]
-        },
-        // 11F: 双线锁钥迷宫
-        {
-            floor: 11, name: '双门暗渠', zoneIdx: 1, gemBonus: 5, potBonus: 480, bigPotBonus: 1120,
-            map: [
-                '###########',
-                '#U.9.a.9.y#',
-                '###.#####R#',
-                '#P.8.G.8.A#',
-                '###.#.#.###',
-                '#b.8.9.8.D#',
-                '#Y#######Y#',
-                '#p.7...7.p#',
-                '#.#.###.#.#',
-                '#S..7.b..y#',
-                '###########'
-            ]
-        },
-        // 12F: 钢盾宝室
-        {
-            floor: 12, name: '暗金护盾阁', zoneIdx: 1, gemBonus: 5, potBonus: 520, bigPotBonus: 1200,
-            shield: { name: '秘银圆盾', def: 24 },
-            map: [
-                '###########',
-                '#H.a.#.A.U#',
-                '#R###B#Y###',
-                '#p.9.8.9.D#',
-                '###.#.#.###',
-                '#y.8.a.8.p#',
-                '#.#.###.#.#',
-                '#b.9.b.9.y#',
-                '###.#.#.###',
-                '#S..8.E..r#',
-                '###########'
-            ]
-        },
-        // 13F: 巫师与高阶供奉
-        {
-            floor: 13, name: '诅咒祭坛', zoneIdx: 1, gemBonus: 5, potBonus: 560, bigPotBonus: 1300,
-            map: [
-                '###########',
-                '#S.8...8.y#',
-                '#.#.#G#.#.#',
-                '#A.9.a.9.D#',
-                '###Y###B###',
-                '#P.a.b.a.P#',
-                '###.#.#.###',
-                '#b.a.b.a.r#',
-                '#.#.###.#.#',
-                '#X..9.b..U#',
-                '###########'
-            ]
-        },
-        // 14F: 第二章守关 Boss 深渊暗骑
-        {
-            floor: 14, name: '暗骑校场', zoneIdx: 1, gemBonus: 6, potBonus: 620, bigPotBonus: 1450,
-            map: [
-                '###########',
-                '#A.P.U.P.D#',
-                '####.Q.####',
-                '#r.a.b.a.r#',
-                '#B#######B#',
-                '#p.9...9.p#',
-                '###.#.#.###',
-                '#y.9.K.9.y#',
-                '#.#.###.#.#',
-                '#S..8.a..b#',
-                '###########'
-            ]
-        },
-
-        // 15F: 虚空魔王圣殿起点
-        {
-            floor: 15, name: '血月前庭', zoneIdx: 2, gemBonus: 7, potBonus: 760, bigPotBonus: 1800,
-            map: [
-                '###########',
-                '#S.b.c.b.y#',
-                '###.#####Y#',
-                '#A.c...c.D#',
-                '###.#.#.###',
-                '#p.c.G.c.p#',
-                '###B###B###',
-                '#b.c.d.c.y#',
-                '#.#.###.#.#',
-                '#P..c.X..U#',
-                '###########'
-            ]
-        },
-        // 16F: 圣殿密库与高阶商人
-        {
-            floor: 16, name: '圣殿秘宝库', zoneIdx: 2, gemBonus: 7, potBonus: 820, bigPotBonus: 1950,
-            map: [
-                '###########',
-                '#U.d.#.A.P#',
-                '###Y#R#Y###',
-                '#b.c.d.c.D#',
-                '#.#.###.#.#',
-                '#E..c.d..K#',
-                '###.#.#.###',
-                '#p.d.e.d.r#',
-                '#.#.###.#.#',
-                '#S..c.y..b#',
-                '###########'
-            ]
-        },
-        // 17F: 圣剑殿堂
-        {
-            floor: 17, name: '圣剑裁决室', zoneIdx: 2, gemBonus: 8, potBonus: 880, bigPotBonus: 2100,
-            weapon: { name: '神圣裁决剑', atk: 52 },
-            map: [
-                '###########',
-                '#S.c...c.y#',
-                '###B###R###',
-                '#p.d.W.d.A#',
-                '#.#.###.#.#',
-                '#D.d.e.d.p#',
-                '###.#.#.###',
-                '#y.e.f.e.b#',
-                '#.#.###.#.#',
-                '#P..d.G..U#',
-                '###########'
-            ]
-        },
-        // 18F: 巫妖走廊
-        {
-            floor: 18, name: '炼狱长廊', zoneIdx: 2, gemBonus: 8, potBonus: 950, bigPotBonus: 2250,
-            map: [
-                '###########',
-                '#U.e.f.e.r#',
-                '###.#####B#',
-                '#P.d.X.d.A#',
-                '###.#.#.###',
-                '#b.d.e.d.D#',
-                '#Y#######Y#',
-                '#p.c...c.p#',
-                '#.#.###.#.#',
-                '#S..c.b..y#',
-                '###########'
-            ]
-        },
-        // 19F: 圣盾殿堂
-        {
-            floor: 19, name: '终焉壁垒阁', zoneIdx: 2, gemBonus: 9, potBonus: 1050, bigPotBonus: 2500,
-            shield: { name: '辉耀终焉盾', def: 52 },
-            map: [
-                '###########',
-                '#H.f.#.A.U#',
-                '#R###B#Y###',
-                '#p.e.d.e.D#',
-                '###.#.#.###',
-                '#y.d.e.d.p#',
-                '#.#.###.#.#',
-                '#b.e.f.e.y#',
-                '###.#.#.###',
-                '#S..d.E..r#',
-                '###########'
-            ]
-        },
-        // 20F: 最终补给祭坛
-        {
-            floor: 20, name: '魔神前哨', zoneIdx: 2, gemBonus: 10, potBonus: 1200, bigPotBonus: 2800,
-            map: [
-                '###########',
-                '#S.e...e.y#',
-                '#.#.#G#.#.#',
-                '#A.f.f.f.D#',
-                '###B###R###',
-                '#P.e.P.e.P#',
-                '###.#.#.###',
-                '#r.f.K.f.b#',
-                '#.#.###.#.#',
-                '#P..f.A..U#',
-                '###########'
-            ]
-        },
-        // 21F: 终焉魔王决战厅
-        {
-            floor: 21, name: '终焉王座', zoneIdx: 2, gemBonus: 10, potBonus: 1500, bigPotBonus: 3200,
-            map: [
-                '###########',
-                '#A.P...P.D#',
-                '###..M..###',
-                '#..f...f..#',
-                '#.#######.#',
-                '#P.e.G.e.P#',
-                '###.#.#.###',
-                '#b...e...b#',
-                '#.#.###.#.#',
-                '#S...E...A#',
-                '###########'
-            ]
-        }
+    const FLOOR_NAMES = [
+        '魔塔正门', '行者前廊', '石窟铁匠室', '蝙蝠迷窟', '双门回廊',
+        '遗迹盾阁', '贤者侧厅', '骷髅军营', '秘宝长廊', '骸骨王座 (Boss)',
+        '暗黑地牢门', '黑铁狱室', '双翼地牢', '诅咒偏殿', '秘银武器库',
+        '毒蝠竖井', '恶魔哨所', '暗金护盾阁', '巫师密坛', '深渊校场 (Boss)',
+        '血月前庭', '圣剑裁决堂', '虚空交叉廊', '炼狱宝库', '魔将回廊',
+        '终焉壁垒阁', '混沌军械室', '魔神禁区', '圣殿前哨', '终焉王座 (Boss)'
     ];
+
+    // 5 distinct 15x15 architectural templates (exact 15 chars per row!)
+    // Single-char placeholders:
+    //   1 = primary monster (mA), 2 = secondary monster (mB), 3 = elite/boss monster (mC), * = designated NPC (N/F/G/E/K)
+    const ARCHETYPES = [
+        // 0: Central Courtyard + Four Corner Treasure Vaults
+        [
+            '###############',
+            '#U..1.....1..y#',
+            '#Y#####.#####B#',
+            '#A.p..#.#..D.r#',
+            '#.###.#.#.###.#',
+            '#2..y.#.#.P..2#',
+            '###Y###.###B###',
+            '#*....1......3#',
+            '###.###.###.###',
+            '#p..1.#.#.2..p#',
+            '#.###.#.#.###.#',
+            '#P.b..#.#..y.A#',
+            '#Y#####.#####Y#',
+            '#y..1..S..1..D#',
+            '###############'
+        ],
+        // 1: Serpentine Wing Maze with Central Side Shrine
+        [
+            '###############',
+            '#S.1...y...2.A#',
+            '###.#####.###.#',
+            '#p..1.#...#.2.#',
+            '#.#.###.#.#.#.#',
+            '#y..2.#*#.#p.D#',
+            '#.###.#.#.###.#',
+            '#1...Y...Y...3#',
+            '#.###.#.#.###.#',
+            '#b.P.#X.#.p..2#',
+            '#.#.###.###.#.#',
+            '#2....#...#.1.#',
+            '###B###.###Y###',
+            '#P...3...2...U#',
+            '###############'
+        ],
+        // 2: Cross Bastion + Four Symmetric Rooms
+        [
+            '###############',
+            '#A..2.#U#.2..D#',
+            '#.#Y#.#.#.#B#.#',
+            '#y.p...1...p.P#',
+            '###.###.###.###',
+            '#2.....3.....2#',
+            '#.#.###.###.#.#',
+            '#*..1..y..1..P#',
+            '#.#.###.###.#.#',
+            '#1.....2.....1#',
+            '###.###.###.###',
+            '#p..b..1..p..P#',
+            '#.#.#.#.#.#Y#.#',
+            '#y..1.#S#.1..A#',
+            '###############'
+        ],
+        // 3: Twin Corridors + Secret Red/Blue Vault
+        [
+            '###############',
+            '#U.3.y..#.A.P.#',
+            '###B###.#R#####',
+            '#A..2...#..D.A#',
+            '#.#####.#.###.#',
+            '#p..1.#...#.2.#',
+            '###.###.#.#.#.#',
+            '#p..2.*....3.y#',
+            '#.#.###.###.###',
+            '#1..#.y..b.#.p#',
+            '#.#.#.###.#.#.#',
+            '#D..1.#P#.2..A#',
+            '###Y###Y###.###',
+            '#S...1...1...p#',
+            '###############'
+        ],
+        // 4: Arena Loop with Diagonal Gates
+        [
+            '###############',
+            '#S...1.y.2...D#',
+            '#.###.###.###.#',
+            '#p..2..#...1.y#',
+            '###Y###.###B###',
+            '#A...3...3...b#',
+            '#.#.###.###.#.#',
+            '#p..2.#*#..2.P#',
+            '#.#.###.###.#.#',
+            '#p..1..#...2.A#',
+            '###B###.###Y###',
+            '#P.2.X#y..3..p#',
+            '#.###.###.###.#',
+            '#A...2...3...U#',
+            '###############'
+        ]
+    ];
+
+    // Boss Arena 15x15 (used cleanly on Floors 10, 20, 30; '3' = Chapter Boss Z/Q/M)
+    const BOSS_TEMPLATE = [
+        '###############',
+        '#A.P...U...P.D#',
+        '#.#.###.###.#.#',
+        '#y..2..3..2..b#',
+        '###.###.###.###',
+        '#P...1.*...1.P#',
+        '#.###.###.###.#',
+        '#2....###....2#',
+        '#.###.###.###.#',
+        '#b..1..B..1..y#',
+        '###Y###.###Y###',
+        '#p..1.#.#.1..p#',
+        '#.#.#.#.#.#.#.#',
+        '#A..1..S..1..D#',
+        '###############'
+    ];
+
+    function createFloorTemplate(floor) {
+        const name = FLOOR_NAMES[floor - 1] || `第${floor}层`;
+        const zoneIdx = floor <= 10 ? 0 : floor <= 20 ? 1 : 2;
+        const gemBonus = zoneIdx === 0 ? 2 + Math.floor(floor / 5) : zoneIdx === 1 ? 4 + Math.floor((floor - 10) / 4) : 7 + Math.floor((floor - 20) / 3);
+        const potBonus = 180 + (floor - 1) * 42;
+        const bigPotBonus = 460 + (floor - 1) * 105;
+
+        const pools = [
+            ['1', '1', '2'], // 1F
+            ['1', '2', '2'], // 2F
+            ['1', '2', '3'], // 3F
+            ['2', '3', '4'], // 4F
+            ['2', '3', '4'], // 5F
+            ['3', '4', '5'], // 6F
+            ['3', '4', '5'], // 7F
+            ['4', '5', '6'], // 8F
+            ['4', '5', '6'], // 9F
+            ['5', '6', 'Z'], // 10F Boss
+            ['6', '7', '8'], // 11F
+            ['7', '8', '9'], // 12F
+            ['7', '8', '9'], // 13F
+            ['8', '9', 'a'], // 14F
+            ['8', '9', 'a'], // 15F
+            ['9', 'a', 'b'], // 16F
+            ['9', 'a', 'b'], // 17F
+            ['a', 'b', 'b'], // 18F
+            ['a', 'b', 'b'], // 19F
+            ['a', 'b', 'Q'], // 20F Boss
+            ['b', 'c', 'd'], // 21F
+            ['c', 'd', 'e'], // 22F
+            ['c', 'd', 'e'], // 23F
+            ['d', 'e', 'f'], // 24F
+            ['d', 'e', 'f'], // 25F
+            ['e', 'f', 'f'], // 26F
+            ['e', 'f', 'f'], // 27F
+            ['e', 'f', 'f'], // 28F
+            ['e', 'f', 'f'], // 29F
+            ['e', 'f', 'M']  // 30F Final Boss
+        ];
+        const [mA, mB, mC] = pools[floor - 1];
+
+        const npcByFloor = {
+            1: 'N', 2: 'F', 3: 'G', 4: 'K', 6: 'E',
+            8: 'G', 10: 'G', 11: 'K', 13: 'E', 16: 'G',
+            19: 'E', 20: 'K', 22: 'G', 25: 'E', 27: 'K', 29: 'G', 30: 'E'
+        };
+        const weapons = {
+            3: { name: '精钢短剑', atk: 14 },
+            9: { name: '骑士重剑', atk: 24 },
+            15: { name: '秘银圣剑', atk: 38 },
+            22: { name: '烈阳裁决剑', atk: 60 },
+            27: { name: '屠龙神剑', atk: 90 }
+        };
+        const shields = {
+            6: { name: '遗迹铁盾', def: 14 },
+            12: { name: '秘银圆盾', def: 26 },
+            18: { name: '龙鳞战盾', def: 42 },
+            25: { name: '圣光壁垒', def: 66 },
+            29: { name: '不朽神盾', def: 95 }
+        };
+
+        const isBossFloor = floor % 10 === 0;
+        const rawMap = isBossFloor
+            ? BOSS_TEMPLATE
+            : ARCHETYPES[(floor - 1) % ARCHETYPES.length];
+
+        const npcToken = npcByFloor[floor] || '.';
+        const rows = rawMap.map((row) =>
+            row.split('').map((ch) => {
+                if (ch === '1') return mA;
+                if (ch === '2') return mB;
+                if (ch === '3') return mC;
+                if (ch === '*') return npcToken;
+                return ch;
+            }).join('')
+        );
+
+        // Floor 1 uses '.' instead of non-functional stairs down at (7,13)
+        if (floor === 1) {
+            rows[13] = rows[13].replace('S', '.');
+        }
+        // Floor 30 is the summit: Boss M directly guards top shrine (replace 'U' with 'P')
+        if (floor === TOTAL_FLOORS) {
+            rows[1] = rows[1].replace('U', 'P');
+        }
+        // Place special Weapon/Shield on designated floors inside open vault cell
+        if (weapons[floor]) {
+            rows[3] = rows[3].slice(0, 1) + 'W' + rows[3].slice(2);
+        }
+        if (shields[floor]) {
+            rows[3] = rows[3].slice(0, 13) + 'H' + rows[3].slice(14);
+        }
+
+        return {
+            floor,
+            name,
+            zoneIdx,
+            gemBonus,
+            potBonus,
+            bigPotBonus,
+            weapon: weapons[floor] || null,
+            shield: shields[floor] || null,
+            start: floor === 1 ? { x: 7, y: 13 } : null,
+            map: rows
+        };
+    }
+
+    const FLOOR_TEMPLATES = Array.from({ length: TOTAL_FLOORS }, (_, i) => createFloorTemplate(i + 1));
 
     function buildFloorState(tpl) {
         const grid = Array.from({ length: GRID }, () => Array(GRID).fill(0));
         const entities = new Map();
-        let startPos = tpl.start ? { ...tpl.start } : { x: 5, y: 9 };
+        let startPos = tpl.start ? { ...tpl.start } : { x: 7, y: 13 };
 
         for (let y = 0; y < GRID; y++) {
             const row = tpl.map[y];
@@ -470,7 +324,7 @@
                 } else if (ch === 'P') {
                     entities.set(key, { type: 'item', sub: 'potion_lg', name: '圣水', hp: tpl.bigPotBonus, color: '#fb7185' });
                 } else if (ch === 'X') {
-                    const expAmt = 20 + tpl.floor * 8;
+                    const expAmt = 24 + tpl.floor * 9;
                     entities.set(key, { type: 'item', sub: 'tome', name: '古籍经验书', exp: expAmt, color: '#a855f7' });
                 } else if (ch === 'W' && tpl.weapon) {
                     entities.set(key, { type: 'item', sub: 'weapon', name: tpl.weapon.name, atk: tpl.weapon.atk, isEquip: 'weapon', color: '#f59e0b' });
@@ -500,8 +354,11 @@
         if (heroDmg <= 0) {
             return {
                 canWin: false,
+                reason: 'no_break',
                 damage: Infinity,
                 turns: Infinity,
+                heroDmg: 0,
+                enemyDmg: Math.max(0, enemy.atk - player.def),
                 atkNeeded: (enemy.def + 1) - player.atk,
                 nextAtkSave: 0,
                 nextAtkForLess: (enemy.def + 1) - player.atk
@@ -511,7 +368,6 @@
         const enemyDmg = Math.max(0, enemy.atk - player.def);
         const totalDamage = (turns - 1) * enemyDmg;
 
-        // Calculate next attack breakpoint to reduce turns by 1
         let nextAtkForLess = 0;
         let nextAtkSave = 0;
         if (turns > 1 && enemyDmg > 0) {
@@ -521,14 +377,44 @@
             nextAtkSave = enemyDmg;
         }
 
+        const canWin = totalDamage < player.hp;
         return {
-            canWin: totalDamage < player.hp,
+            canWin,
+            reason: canWin ? 'win' : 'low_hp',
             damage: totalDamage,
             turns,
+            heroDmg,
+            enemyDmg,
             atkNeeded: 0,
             nextAtkForLess,
             nextAtkSave
         };
+    }
+
+    /** Generates compact exchange frames for turn-by-turn battle animation overlay. */
+    function buildBattleTimeline(player, enemy) {
+        const calc = calculateBattle(player, enemy);
+        if (!calc.canWin) return [];
+        const rawFrames = [];
+        let pHp = player.hp;
+        let eHp = enemy.hp;
+
+        // Compress excessive visual rounds (>12 rounds) smoothly into multi-strike hits so animation stays fast
+        const groupSize = calc.turns > 12 ? Math.ceil(calc.turns / 10) : 1;
+        let stepCount = 0;
+
+        while (eHp > 0 && stepCount < 200) {
+            stepCount++;
+            const strikeH = Math.min(eHp, calc.heroDmg * groupSize);
+            eHp = Math.max(0, eHp - strikeH);
+            rawFrames.push({ actor: 'hero', dmg: strikeH, heroHp: pHp, enemyHp: eHp });
+            if (eHp <= 0) break;
+
+            const strikeE = calc.enemyDmg * groupSize;
+            pHp = Math.max(1, pHp - strikeE);
+            rawFrames.push({ actor: 'enemy', dmg: strikeE, heroHp: pHp, enemyHp: eHp });
+        }
+        return rawFrames;
     }
 
     function createSession() {
@@ -544,15 +430,15 @@
                 y: floors[1].startPos.y,
                 dirX: 0,
                 dirY: -1,
-                hp: 1000,
-                atk: 12,
+                hp: 1100,
+                atk: 14,
                 def: 10,
-                gold: 60,
+                gold: 80,
                 exp: 0,
                 level: 1,
                 weapon: '木剑',
                 shield: '布衣',
-                keys: { yellow: 1, blue: 0, red: 0 },
+                keys: { yellow: 2, blue: 0, red: 0 },
                 hasFlyer: false,
                 goldBuys: 0,
                 visitedFloors: [1],
@@ -572,7 +458,7 @@
                 };
             }
             return {
-                version: 1,
+                version: 2,
                 currentFloor: state.currentFloor,
                 player: JSON.parse(JSON.stringify(state.player)),
                 floors: floorsOut
@@ -580,7 +466,7 @@
         }
 
         function hydrate(saved) {
-            if (!saved || saved.version !== 1 || !saved.player || !saved.floors) return false;
+            if (!saved || saved.version !== 2 || !saved.player || !saved.floors) return false;
             try {
                 const fresh = createSession();
                 Object.assign(state.player, fresh.state.player, saved.player);
@@ -614,7 +500,6 @@
             if (!state.undoStack.length) return false;
             const raw = state.undoStack.pop();
             const parsed = JSON.parse(raw);
-            // Restore directly without wiping rest of undoStack
             const keepStack = state.undoStack;
             hydrate(parsed);
             state.undoStack = keepStack;
@@ -627,7 +512,7 @@
             while (state.player.exp >= state.player.level * 60) {
                 state.player.exp -= state.player.level * 60;
                 state.player.level += 1;
-                state.player.hp += 240;
+                state.player.hp += 260;
                 state.player.atk += 3;
                 state.player.def += 3;
                 leveled += 1;
@@ -724,6 +609,8 @@
                 if (!res.canWin) {
                     return { ok: false, kind: 'cant_win', enemy: ent, calc: res };
                 }
+                const preBattleHeroHp = state.player.hp;
+                const timeline = buildBattleTimeline(state.player, ent);
                 pushUndo();
                 state.player.hp -= res.damage;
                 state.player.gold += ent.gold;
@@ -742,6 +629,8 @@
                     kind: 'battle',
                     enemy: ent,
                     damage: res.damage,
+                    preBattleHeroHp,
+                    timeline,
                     leveled,
                     won: !!ent.isFinalBoss
                 };
@@ -849,10 +738,10 @@
             pushUndo();
             state.player.gold -= cost;
             state.player.goldBuys += 1;
-            const zoneBoost = Math.floor((state.currentFloor - 1) / 7);
+            const zoneBoost = Math.floor((state.currentFloor - 1) / 10);
             if (stat === 'atk') state.player.atk += 4 + zoneBoost * 3;
             else if (stat === 'def') state.player.def += 4 + zoneBoost * 3;
-            else if (stat === 'hp') state.player.hp += 750 + zoneBoost * 450;
+            else if (stat === 'hp') state.player.hp += 750 + zoneBoost * 500;
             return true;
         }
 
@@ -862,7 +751,7 @@
                 pushUndo();
                 state.player.exp -= 80;
                 state.player.level += 1;
-                state.player.hp += 800;
+                state.player.hp += 850;
                 state.player.atk += 6;
                 state.player.def += 6;
                 return true;
@@ -955,6 +844,7 @@
         MONSTERS,
         FLOOR_TEMPLATES,
         calculateBattle,
+        buildBattleTimeline,
         createSession
     };
 });

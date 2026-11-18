@@ -6,9 +6,9 @@
 
     const canvas = document.getElementById('motaCanvas');
     const ctx = canvas.getContext('2d');
-    const GRID = E.GRID; // 11
-    const TILE = 48;
-    const SIZE = GRID * TILE; // 528
+    const GRID = E.GRID; // 15
+    const TILE = 44;
+    const SIZE = GRID * TILE; // 660
 
     const el = {
         zoneBadge: document.getElementById('zoneBadge'),
@@ -16,6 +16,7 @@
         btnManual: document.getElementById('btnManual'),
         btnFlyer: document.getElementById('btnFlyer'),
         btnDmgOverlay: document.getElementById('btnDmgOverlay'),
+        btnBattleAnim: document.getElementById('btnBattleAnim'),
         btnUndo: document.getElementById('btnUndo'),
         btnRestart: document.getElementById('btnRestart'),
         btnMute: document.getElementById('btnMute'),
@@ -37,18 +38,39 @@
         modalEyebrow: document.getElementById('modalEyebrow'),
         modalTitle: document.getElementById('modalTitle'),
         modalBody: document.getElementById('modalBody'),
-        btnCloseModal: document.getElementById('btnCloseModal')
+        btnCloseModal: document.getElementById('btnCloseModal'),
+
+        battleOverlay: document.getElementById('battleOverlay'),
+        btnSkipBattleNow: document.getElementById('btnSkipBattleNow'),
+        fighterHero: document.getElementById('fighterHero'),
+        fighterEnemy: document.getElementById('fighterEnemy'),
+        battleHeroCanvas: document.getElementById('battleHeroCanvas'),
+        battleEnemyCanvas: document.getElementById('battleEnemyCanvas'),
+        heroHitPop: document.getElementById('heroHitPop'),
+        enemyHitPop: document.getElementById('enemyHitPop'),
+        heroHpBar: document.getElementById('heroHpBar'),
+        enemyHpBar: document.getElementById('enemyHpBar'),
+        heroHpText: document.getElementById('heroHpText'),
+        enemyHpText: document.getElementById('enemyHpText'),
+        heroBattleStats: document.getElementById('heroBattleStats'),
+        enemyBattleName: document.getElementById('enemyBattleName'),
+        enemyBattleStats: document.getElementById('enemyBattleStats'),
+        battleLog: document.getElementById('battleLog')
     };
 
     const audio = new AudioSys();
     let showDamageOverlay = true;
+    let skipBattleAnim = false;
     let muted = false;
     let game = null;
     let walkQueue = [];
     let walkTimer = 0;
     let hoveredTile = null;
+    let battlePlaying = false;
+    let battleFinishCb = null;
+    let battleTimer = null;
     const floats = [];
-    const anim = { px: 5, py: 9 };
+    const anim = { px: 7, py: 13 };
 
     function resizeCanvas() {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -63,6 +85,7 @@
             if (raw && typeof raw === 'object') {
                 muted = !!raw.muted;
                 if (typeof raw.showDamageOverlay === 'boolean') showDamageOverlay = raw.showDamageOverlay;
+                if (typeof raw.skipBattleAnim === 'boolean') skipBattleAnim = raw.skipBattleAnim;
                 return raw.session || null;
             }
         } catch {}
@@ -75,12 +98,14 @@
             localStorage.setItem(E.SAVE_KEY, JSON.stringify({
                 muted,
                 showDamageOverlay,
+                skipBattleAnim,
                 session: game.serialize()
             }));
         } catch {}
     }
 
     function initGame(forceReset = false) {
+        stopBattleAnimation(true);
         game = E.createSession();
         if (!forceReset) {
             const savedSession = loadSaved();
@@ -131,6 +156,8 @@
         el.btnFlyer.textContent = p.hasFlyer ? '传送 (F)' : '传送 (未解锁)';
         el.btnDmgOverlay.textContent = showDamageOverlay ? '显伤: 开' : '显伤: 关';
         el.btnDmgOverlay.classList.toggle('active', showDamageOverlay);
+        el.btnBattleAnim.textContent = skipBattleAnim ? '战斗动画: 跳过' : '战斗动画: 开';
+        el.btnBattleAnim.classList.toggle('active', !skipBattleAnim);
         el.btnUndo.disabled = game.state.undoStack.length === 0;
         el.btnMute.textContent = muted ? '🔇' : '🔊';
 
@@ -183,10 +210,87 @@
             <div class="fc-meta">
                 <span>生命 <b>${targetEnemy.hp}</b></span>
                 <span>攻 <b>${targetEnemy.atk}</b> / 防 <b>${targetEnemy.def}</b></span>
-                <span>奖 <b>${targetEnemy.gold}G ${targetEnemy.exp}E</b></span>
+                <span>奖 <b>${targetEnemy.gold}金 ${targetEnemy.exp}经</b></span>
             </div>
             ${tipHtml}
         `;
+    }
+
+    // Shared portrait painter used on Map, Monster Manual, and Battle Overlay
+    function drawHeroShape(c2d, cx, cy, scale, dirX = 0) {
+        c2d.save();
+        c2d.translate(cx, cy);
+        c2d.scale(scale, scale);
+
+        c2d.fillStyle = 'rgba(0,0,0,0.35)';
+        c2d.beginPath();
+        c2d.ellipse(0, 14, 12, 5, 0, 0, Math.PI * 2);
+        c2d.fill();
+
+        c2d.fillStyle = '#2563eb';
+        c2d.beginPath();
+        c2d.roundRect(-11, -2, 22, 16, 5);
+        c2d.fill();
+
+        c2d.fillStyle = '#e2e8f0';
+        c2d.beginPath();
+        c2d.arc(0, -7, 9, 0, Math.PI * 2);
+        c2d.fill();
+
+        c2d.fillStyle = '#facc15';
+        c2d.beginPath();
+        c2d.arc(0, -10, 8.5, Math.PI, 0);
+        c2d.fill();
+
+        c2d.fillStyle = '#0f172a';
+        const ex = dirX * 3;
+        c2d.fillRect(-4 + ex, -8, 2.5, 3);
+        c2d.fillRect(1.5 + ex, -8, 2.5, 3);
+        c2d.restore();
+    }
+
+    function drawEnemyShape(c2d, ent, cx, cy, scale) {
+        c2d.save();
+        c2d.translate(cx, cy);
+        c2d.scale(scale, scale);
+
+        if (ent.sprite === 'slime') {
+            c2d.fillStyle = ent.color;
+            c2d.beginPath();
+            c2d.arc(0, 3, 13, Math.PI, 0);
+            c2d.lineTo(13, 12);
+            c2d.quadraticCurveTo(0, 15, -13, 12);
+            c2d.closePath();
+            c2d.fill();
+        } else if (ent.sprite === 'bat') {
+            c2d.fillStyle = ent.color;
+            c2d.beginPath();
+            c2d.moveTo(-16, -2); c2d.lineTo(-5, 3); c2d.lineTo(0, -6);
+            c2d.lineTo(5, 3); c2d.lineTo(16, -2); c2d.lineTo(8, 10);
+            c2d.lineTo(0, 5); c2d.lineTo(-8, 10);
+            c2d.closePath();
+            c2d.fill();
+        } else if (ent.sprite === 'boss') {
+            c2d.fillStyle = ent.color;
+            c2d.beginPath();
+            c2d.moveTo(-14, 13); c2d.lineTo(-14, -7); c2d.lineTo(-7, -14);
+            c2d.lineTo(0, -8); c2d.lineTo(7, -14); c2d.lineTo(14, -7);
+            c2d.lineTo(14, 13);
+            c2d.closePath();
+            c2d.fill();
+        } else {
+            c2d.fillStyle = ent.color;
+            c2d.beginPath();
+            c2d.roundRect(-11, -12, 22, 25, 6);
+            c2d.fill();
+        }
+        c2d.fillStyle = '#0f172a';
+        c2d.fillRect(-6, -2, 4, 4);
+        c2d.fillRect(2, -2, 4, 4);
+        c2d.fillStyle = ent.isBoss ? '#fef08a' : '#fff';
+        c2d.fillRect(-5, -1, 2, 2);
+        c2d.fillRect(3, -1, 2, 2);
+        c2d.restore();
     }
 
     function openModal(eyebrow, title, htmlOrBuilder) {
@@ -210,7 +314,7 @@
         audio.playStep();
         const f = game.currentFloorData();
         const entries = game.getManualEntries();
-        openModal(`第 ${f.floor} 层 · 实时算伤`, '怪物图鉴', (body) => {
+        openModal(`第 ${f.floor} 层 · 怪物图鉴（含头像 / 掉血 / 收益）`, `${f.name} · 怪物图鉴`, (body) => {
             if (!entries.length) {
                 body.innerHTML = '<p>本层怪物已全部清空，放心搜刮或前往下一层吧！</p>';
                 return;
@@ -226,22 +330,30 @@
                             ? '#fb7185'
                             : '#facc15';
                 const dmgLabel = calc.canWin
-                    ? `预计损失 ${calc.damage} HP · ${calc.turns}回合`
-                    : (calc.atkNeeded > 0 ? `未破防（缺 ${calc.atkNeeded} 攻）` : '生命不足，极度危险');
+                    ? `掉血 ${calc.damage} HP (${calc.turns}回合)`
+                    : (calc.atkNeeded > 0 ? `打不过（差 ${calc.atkNeeded} 攻破防）` : '血量不足（打不过）');
                 const breakHint = calc.canWin && calc.nextAtkForLess > 0
                     ? `再+${calc.nextAtkForLess}攻少伤${calc.nextAtkSave}`
-                    : `掉落 ${enemy.gold}金 / ${enemy.exp}经`;
+                    : '已达当前最低战损';
+
                 row.innerHTML = `
                     <div class="manual-left">
-                        <strong>${enemy.name} ×${count}</strong>
-                        <small>HP ${enemy.hp} · ATK ${enemy.atk} · DEF ${enemy.def}</small>
+                        <canvas class="manual-avatar" width="40" height="40"></canvas>
+                        <div class="manual-info">
+                            <strong>${enemy.name} ×${count}</strong>
+                            <small>生命 ${enemy.hp} · 攻击 ${enemy.atk} · 防御 ${enemy.def}</small>
+                            <small>${breakHint}</small>
+                        </div>
                     </div>
                     <div class="manual-right">
                         <strong style="color:${statusColor}">${dmgLabel}</strong>
-                        <small>${breakHint}</small>
+                        <span class="manual-reward">+${enemy.gold} 金币 · +${enemy.exp} 经验</span>
                     </div>
                 `;
                 body.appendChild(row);
+                const avCanvas = row.querySelector('.manual-avatar');
+                const avCtx = avCanvas.getContext('2d');
+                drawEnemyShape(avCtx, enemy, 20, 20, 1.05);
             });
         });
     }
@@ -309,8 +421,8 @@
 
         if (sub === 'elder') {
             openModal('守塔智者', '来自前辈的嘱托', `
-                <p>“勇者，魔塔共有 <b>21 层</b>，切忌盲目硬闯无法破防的守卫。”</p>
-                <p>“第 2 层的【次元行者】可免费赠送你楼层传送器；多利用卡片左上角或地图上的 <b>显伤提示</b> 与 <b>回溯一步(Z)</b> 规划最优路线！”</p>
+                <p>“勇者，魔塔共有 <b>30 层</b>，第 10、20、30 层均有强力守关 Boss 镇守！”</p>
+                <p>“第 2 层的【次元行者】可赠送你楼层传送器；按 <b>M</b> 可看带头像的详细怪物图鉴，遇到打不过的怪物系统会自动拦截并提示差距。”</p>
                 <button class="primary-btn" type="button" id="npcOkBtn">谨记教诲</button>
             `);
             document.getElementById('npcOkBtn').onclick = closeModal;
@@ -337,19 +449,19 @@
         if (sub === 'altar_gold') {
             const renderGoldShop = () => {
                 const cost = game.goldAltarCost();
-                const z = Math.floor((game.state.currentFloor - 1) / 7);
+                const z = Math.floor((game.state.currentFloor - 1) / 10);
                 const atkGain = 4 + z * 3;
                 const defGain = 4 + z * 3;
-                const hpGain = 750 + z * 450;
+                const hpGain = 750 + z * 500;
                 const can = game.state.player.gold >= cost;
-                openModal('神秘供奉', `金币祭坛（当前持有 ${game.state.player.gold} 金币）`, (body) => {
-                    body.innerHTML = `<p>献上金币即可强化身躯（已供奉 ${game.state.player.goldBuys} 次）：</p>`;
+                openModal('神秘供奉', `金币祭坛（持有 ${game.state.player.gold} 金币）`, (body) => {
+                    body.innerHTML = `<p>献上金币强化身躯（已供奉 ${game.state.player.goldBuys} 次）：</p>`;
                     const list = document.createElement('div');
                     list.className = 'shop-btn-list';
                     [
-                        { key: 'atk', label: `强化攻击 (+${atkGain} ATK)` },
-                        { key: 'def', label: `强化防御 (+${defGain} DEF)` },
-                        { key: 'hp', label: `圣光疗愈 (+${hpGain} HP)` }
+                        { key: 'atk', label: `强化攻击 (+${atkGain} 攻击)` },
+                        { key: 'def', label: `强化防御 (+${defGain} 防御)` },
+                        { key: 'hp', label: `圣光疗愈 (+${hpGain} 生命)` }
                     ].forEach((opt) => {
                         const btn = document.createElement('button');
                         btn.type = 'button';
@@ -376,14 +488,14 @@
         if (sub === 'altar_exp') {
             const renderExpShop = () => {
                 const exp = game.state.player.exp;
-                openModal('试炼传承', `经验长老（当前持有 ${exp} 经验）`, (body) => {
+                openModal('试炼传承', `经验长老（持有 ${exp} 经验）`, (body) => {
                     body.innerHTML = '<p>“用你的战斗经验换取即刻突破！”</p>';
                     const list = document.createElement('div');
                     list.className = 'shop-btn-list';
                     [
                         { key: 'atk', label: '剑术研习 (+4 攻击)', cost: 30 },
                         { key: 'def', label: '铁壁修心 (+4 防御)', cost: 30 },
-                        { key: 'level', label: '潜能飞跃 (+1级：+800生命 +6攻 +6防)', cost: 80 }
+                        { key: 'level', label: '潜能飞跃 (+1级：+850生命 +6攻 +6防)', cost: 80 }
                     ].forEach((opt) => {
                         const btn = document.createElement('button');
                         btn.type = 'button';
@@ -443,8 +555,139 @@
         }
     }
 
+    // ---------------- Turn-by-Turn Battle Animation ----------------
+    function stopBattleAnimation(silent = false) {
+        if (battleTimer) {
+            clearTimeout(battleTimer);
+            battleTimer = null;
+        }
+        battlePlaying = false;
+        el.battleOverlay.classList.add('hidden');
+        el.fighterHero.className = 'fighter left';
+        el.fighterEnemy.className = 'fighter right';
+        el.heroHitPop.className = 'hit-pop';
+        el.enemyHitPop.className = 'hit-pop';
+        if (!silent && battleFinishCb) {
+            const cb = battleFinishCb;
+            battleFinishCb = null;
+            cb();
+        } else {
+            battleFinishCb = null;
+        }
+    }
+
+    function playBattleAnimation(res, onComplete) {
+        const enemy = res.enemy;
+        const p = game.state.player;
+        const startHeroHp = res.preBattleHeroHp;
+        const startEnemyHp = enemy.hp;
+
+        // Draw portraits onto battle canvases
+        const hCtx = el.battleHeroCanvas.getContext('2d');
+        hCtx.clearRect(0, 0, 64, 64);
+        drawHeroShape(hCtx, 32, 34, 1.65, 1);
+
+        const eCtx = el.battleEnemyCanvas.getContext('2d');
+        eCtx.clearRect(0, 0, 64, 64);
+        drawEnemyShape(eCtx, enemy, 32, 34, 1.6);
+
+        el.enemyBattleName.textContent = enemy.name;
+        el.heroBattleStats.textContent = `攻 ${p.atk} · 防 ${p.def}`;
+        el.enemyBattleStats.textContent = `攻 ${enemy.atk} · 防 ${enemy.def}`;
+        el.heroHpBar.style.width = '100%';
+        el.enemyHpBar.style.width = '100%';
+        el.heroHpText.textContent = `HP ${startHeroHp}`;
+        el.enemyHpText.textContent = `HP ${startEnemyHp}`;
+        el.battleLog.textContent = `遭遇【${enemy.name}】！`;
+
+        el.battleOverlay.classList.remove('hidden');
+        battlePlaying = true;
+        battleFinishCb = onComplete;
+
+        const frames = res.timeline || [];
+        let idx = 0;
+
+        function nextTurn() {
+            if (!battlePlaying) return;
+            if (idx >= frames.length) {
+                el.battleLog.textContent = `大获全胜！共损失 ${res.damage} HP，获得 ${enemy.gold} 金币 / ${enemy.exp} 经验`;
+                battleTimer = setTimeout(() => stopBattleAnimation(false), 260);
+                return;
+            }
+
+            const f = frames[idx++];
+            audio.playHit(!!enemy.isBoss && f.actor === 'hero');
+
+            if (f.actor === 'hero') {
+                el.fighterHero.className = 'fighter left lunge-right';
+                el.fighterEnemy.className = 'fighter right hurt';
+                el.enemyHitPop.textContent = `-${f.dmg}`;
+                el.enemyHitPop.className = 'hit-pop active';
+                el.heroHitPop.className = 'hit-pop';
+                el.enemyHpBar.style.width = `${Math.max(0, (f.enemyHp / startEnemyHp) * 100)}%`;
+                el.enemyHpText.textContent = `HP ${f.enemyHp}`;
+                el.battleLog.textContent = `勇者挥剑猛击，对 ${enemy.name} 造成 ${f.dmg} 点伤害！`;
+            } else {
+                el.fighterEnemy.className = 'fighter right lunge-left';
+                el.fighterHero.className = 'fighter left hurt';
+                el.heroHitPop.textContent = f.dmg > 0 ? `-${f.dmg}` : '格挡 0';
+                el.heroHitPop.className = 'hit-pop active';
+                el.enemyHitPop.className = 'hit-pop';
+                el.heroHpBar.style.width = `${Math.max(0, (f.heroHp / startHeroHp) * 100)}%`;
+                el.heroHpText.textContent = `HP ${f.heroHp}`;
+                el.battleLog.textContent = `${enemy.name} 反击，勇者受到 ${f.dmg} 点伤害。`;
+            }
+
+            battleTimer = setTimeout(() => {
+                el.fighterHero.className = 'fighter left';
+                el.fighterEnemy.className = 'fighter right';
+                nextTurn();
+            }, 115);
+        }
+
+        battleTimer = setTimeout(nextTurn, 70);
+    }
+
+    function finishBattleEffects(res) {
+        if (res.enemy.isBoss) {
+            el.boardFrame.classList.remove('shake');
+            void el.boardFrame.offsetWidth;
+            el.boardFrame.classList.add('shake');
+        }
+        spawnFloat(game.state.player.x, game.state.player.y, `-${res.damage} HP`, '#fb7185');
+        if (res.leveled > 0) {
+            audio.playLevelUp();
+            spawnFloat(game.state.player.x, game.state.player.y - 0.6, `🌟 升级 Lv.${game.state.player.level}!`, '#facc15');
+        }
+        toast(`击败 ${res.enemy.name}，损失 ${res.damage} HP，获得 ${res.enemy.gold} 金币`);
+        syncUI();
+        persist();
+
+        if (res.won) {
+            audio.playVictory();
+            walkQueue = [];
+            const p = game.state.player;
+            openModal('通关荣耀', '🏆 征服 30 层魔塔深渊！', `
+                <p>${res.enemy.rewardText}</p>
+                <p>最终战绩：<b>Lv.${p.level}</b> · 剩余生命 <b>${p.hp}</b> · 攻击 <b>${p.atk}</b> · 防御 <b>${p.def}</b> · 击杀 <b>${p.kills}</b> 怪 · 耗时 <b>${p.steps}</b> 步。</p>
+                <button class="primary-btn" type="button" id="btnWinReplay">再次挑战魔塔</button>
+            `);
+            document.getElementById('btnWinReplay').onclick = () => {
+                closeModal();
+                initGame(true);
+            };
+        } else if (res.enemy.isBoss && res.enemy.rewardText) {
+            audio.playVictory();
+            openModal('守关首领击败', `击败 ${res.enemy.name}`, `
+                <p>${res.enemy.rewardText}</p>
+                <button class="primary-btn" type="button" id="btnBossNext">继续攀登</button>
+            `);
+            document.getElementById('btnBossNext').onclick = closeModal;
+        }
+    }
+
     function performStep(dx, dy) {
-        if (!game || !el.modalBackdrop.classList.contains('hidden')) return false;
+        if (!game || battlePlaying || !el.modalBackdrop.classList.contains('hidden')) return false;
         const res = game.step(dx, dy);
 
         if (!res.ok) {
@@ -454,10 +697,19 @@
             } else if (res.kind === 'locked') {
                 toast(`需要【${res.door.name.replace('门', '钥匙')}】才能开启这扇门！`);
             } else if (res.kind === 'cant_win') {
-                const need = res.calc.atkNeeded;
-                toast(need > 0
-                    ? `无法破防【${res.enemy.name}】！还需提升 +${need} 攻击力。`
-                    : `生命不足，无法击败【${res.enemy.name}】！`);
+                audio.playHit(false);
+                const enemy = res.enemy;
+                const c = res.calc;
+                const detailMsg = c.reason === 'no_break'
+                    ? `你的攻击力（<b>${game.state.player.atk}</b>）尚未高于 <b>${enemy.name}</b> 的防御力（<b>${enemy.def}</b>），无法造成任何伤害！<br><br>需要至少再提升 <b>+${c.atkNeeded} 点攻击力</b> 才能破防，目前已阻止你从此方向强行通过。`
+                    : `挑战 <b>${enemy.name}</b> 预计将承受 <b>${c.damage}</b> 点伤害，已超过你当前剩余的 <b>${game.state.player.hp}</b> 生命值！<br><br>硬闯必败，系统已阻止你继续前进，请先收集血瓶或升级防具后再来挑战。`;
+
+                openModal('战力不足 · 禁止通行', `打不过【${enemy.name}】！`, `
+                    <p>${detailMsg}</p>
+                    <button class="primary-btn" type="button" id="btnCantWinOk">撤回整备</button>
+                `);
+                document.getElementById('btnCantWinOk').onclick = closeModal;
+                toast(`警告：打不过 ${enemy.name}，无法从此方向通过！`);
             }
             return false;
         }
@@ -482,33 +734,15 @@
             spawnFloat(game.state.player.x, game.state.player.y, parts.join(' '), res.item.color);
             toast(`获得【${res.item.name}】：${parts.join('，')}`);
         } else if (res.kind === 'battle') {
-            audio.playHit(!!res.enemy.isBoss);
-            if (res.enemy.isBoss) {
-                el.boardFrame.classList.remove('shake');
-                void el.boardFrame.offsetWidth;
-                el.boardFrame.classList.add('shake');
+            walkQueue = [];
+            if (skipBattleAnim) {
+                audio.playHit(!!res.enemy.isBoss);
+                finishBattleEffects(res);
+                return true;
             }
-            spawnFloat(game.state.player.x, game.state.player.y, `-${res.damage} HP`, '#fb7185');
-            if (res.leveled > 0) {
-                audio.playLevelUp();
-                spawnFloat(game.state.player.x, game.state.player.y - 0.6, `🌟 升级 Lv.${game.state.player.level}!`, '#facc15');
-            }
-            toast(`击败 ${res.enemy.name}，损失 ${res.damage} HP，获得 ${res.enemy.gold} 金币`);
-
-            if (res.won) {
-                audio.playVictory();
-                walkQueue = [];
-                const p = game.state.player;
-                openModal('通关荣耀', '🏆 征服 21 层魔塔深渊！', `
-                    <p>${res.enemy.rewardText}</p>
-                    <p>最终战绩：<b>Lv.${p.level}</b> · 剩余生命 <b>${p.hp}</b> · 攻击 <b>${p.atk}</b> · 防御 <b>${p.def}</b> · 击杀 <b>${p.kills}</b> 怪 · 耗时 <b>${p.steps}</b> 步。</p>
-                    <button class="primary-btn" type="button" id="btnWinReplay">再次挑战魔塔</button>
-                `);
-                document.getElementById('btnWinReplay').onclick = () => {
-                    closeModal();
-                    initGame(true);
-                };
-            }
+            syncUI();
+            playBattleAnimation(res, () => finishBattleEffects(res));
+            return true;
         } else if (res.kind === 'stairs') {
             audio.playTeleport();
             anim.px = game.state.player.x;
@@ -522,14 +756,13 @@
         return true;
     }
 
-    // ---------------- Canvas Sprite Rendering ----------------
+    // ---------------- Canvas Sprite Rendering (15x15 x 44px) ----------------
     function drawTileSprites(now) {
         const f = game.currentFloorData();
         const zone = E.ZONES[f.zoneIdx] || E.ZONES[0];
         const p = game.state.player;
         const pulse = Math.sin(now * 0.005);
 
-        // 1. Floor & Brick Walls
         for (let y = 0; y < GRID; y++) {
             for (let x = 0; x < GRID; x++) {
                 const px = x * TILE;
@@ -538,13 +771,13 @@
                     ctx.fillStyle = zone.wallSide;
                     ctx.fillRect(px, py, TILE, TILE);
                     ctx.fillStyle = zone.wallTop;
-                    ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 8);
-                    ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+                    ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 7);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
                     ctx.lineWidth = 1;
                     ctx.beginPath();
                     ctx.moveTo(px + 2, py + TILE * 0.45); ctx.lineTo(px + TILE - 2, py + TILE * 0.45);
                     ctx.moveTo(px + TILE * 0.5, py + 2); ctx.lineTo(px + TILE * 0.5, py + TILE * 0.45);
-                    ctx.moveTo(px + TILE * 0.25, py + TILE * 0.45); ctx.lineTo(px + TILE * 0.25, py + TILE - 6);
+                    ctx.moveTo(px + TILE * 0.25, py + TILE * 0.45); ctx.lineTo(px + TILE * 0.25, py + TILE - 5);
                     ctx.stroke();
                 } else {
                     ctx.fillStyle = (x + y) % 2 === 0 ? zone.floorBg : zone.floorAlt;
@@ -553,14 +786,12 @@
             }
         }
 
-        // Hover cell highlight
         if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < GRID && hoveredTile.y >= 0 && hoveredTile.y < GRID) {
             ctx.strokeStyle = 'rgba(250, 204, 21, 0.55)';
             ctx.lineWidth = 2;
             ctx.strokeRect(hoveredTile.x * TILE + 2, hoveredTile.y * TILE + 2, TILE - 4, TILE - 4);
         }
 
-        // 2. Entities
         for (const [k, ent] of f.entities.entries()) {
             const [gx, gy] = k.split(',').map(Number);
             const px = gx * TILE;
@@ -571,168 +802,121 @@
             if (ent.type === 'stairs_up' || ent.type === 'stairs_down') {
                 const isUp = ent.type === 'stairs_up';
                 ctx.fillStyle = '#0f172a';
-                ctx.fillRect(px + 6, py + 6, TILE - 12, TILE - 12);
+                ctx.fillRect(px + 5, py + 5, TILE - 10, TILE - 10);
                 ctx.fillStyle = isUp ? '#38bdf8' : '#f59e0b';
                 for (let s = 0; s < 4; s++) {
-                    const inset = s * 4;
-                    ctx.fillRect(px + 9 + (isUp ? inset : 0), py + 10 + s * 7, TILE - 18 - inset, 5);
+                    const inset = s * 3.5;
+                    ctx.fillRect(px + 8 + (isUp ? inset : 0), py + 9 + s * 6, TILE - 16 - inset, 4.5);
                 }
                 ctx.fillStyle = '#fff';
-                ctx.font = 'bold 11px sans-serif';
+                ctx.font = 'bold 10.5px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(isUp ? '▲上' : '▼下', cx, py + TILE - 7);
+                ctx.fillText(isUp ? '▲上' : '▼下', cx, py + TILE - 6);
                 ctx.textAlign = 'left';
             } else if (ent.type === 'door') {
                 ctx.fillStyle = '#1e293b';
                 ctx.fillRect(px + 4, py + 4, TILE - 8, TILE - 8);
                 ctx.fillStyle = ent.color;
-                ctx.fillRect(px + 8, py + 7, TILE - 16, TILE - 14);
+                ctx.fillRect(px + 7, py + 6, TILE - 14, TILE - 12);
                 ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
-                ctx.fillRect(px + 12, py + 12, TILE - 24, 10);
+                ctx.fillRect(px + 11, py + 11, TILE - 22, 9);
                 ctx.fillStyle = '#0f172a';
                 ctx.beginPath();
-                ctx.arc(cx, cy + 7, 3.2, 0, Math.PI * 2);
+                ctx.arc(cx, cy + 6, 3, 0, Math.PI * 2);
                 ctx.fill();
             } else if (ent.type === 'key') {
-                const bob = pulse * 1.6;
+                const bob = pulse * 1.4;
                 ctx.strokeStyle = ent.color;
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 2.8;
                 ctx.beginPath();
-                ctx.arc(cx - 5, cy + bob, 6, 0, Math.PI * 2);
+                ctx.arc(cx - 5, cy + bob, 5.5, 0, Math.PI * 2);
                 ctx.stroke();
                 ctx.fillStyle = ent.color;
-                ctx.fillRect(cx + 1, cy - 1.5 + bob, 13, 3);
-                ctx.fillRect(cx + 9, cy + 1.5 + bob, 3, 5);
-                ctx.fillRect(cx + 12, cy + 1.5 + bob, 3, 4);
+                ctx.fillRect(cx + 1, cy - 1.5 + bob, 12, 3);
+                ctx.fillRect(cx + 8, cy + 1.5 + bob, 3, 4.5);
+                ctx.fillRect(cx + 11, cy + 1.5 + bob, 2.5, 3.5);
             } else if (ent.type === 'item') {
-                const bob = pulse * 1.5;
+                const bob = pulse * 1.4;
                 if (ent.sub === 'gem_red' || ent.sub === 'gem_blue') {
                     ctx.fillStyle = ent.color;
                     ctx.beginPath();
-                    ctx.moveTo(cx, cy - 12 + bob);
-                    ctx.lineTo(cx + 11, cy + bob);
-                    ctx.lineTo(cx, cy + 12 + bob);
-                    ctx.lineTo(cx - 11, cy + bob);
+                    ctx.moveTo(cx, cy - 11 + bob);
+                    ctx.lineTo(cx + 10, cy + bob);
+                    ctx.lineTo(cx, cy + 11 + bob);
+                    ctx.lineTo(cx - 10, cy + bob);
                     ctx.closePath();
                     ctx.fill();
                     ctx.fillStyle = 'rgba(255,255,255,0.45)';
                     ctx.beginPath();
-                    ctx.moveTo(cx, cy - 9 + bob);
-                    ctx.lineTo(cx + 5, cy - 2 + bob);
+                    ctx.moveTo(cx, cy - 8 + bob);
+                    ctx.lineTo(cx + 4.5, cy - 2 + bob);
                     ctx.lineTo(cx, cy + bob);
                     ctx.closePath();
                     ctx.fill();
                 } else if (ent.sub === 'potion_sm' || ent.sub === 'potion_lg') {
-                    const r = ent.sub === 'potion_lg' ? 11 : 8.5;
+                    const r = ent.sub === 'potion_lg' ? 10 : 8;
                     ctx.fillStyle = '#e2e8f0';
-                    ctx.fillRect(cx - 3, cy - r - 5 + bob, 6, 6);
+                    ctx.fillRect(cx - 3, cy - r - 4 + bob, 6, 5);
                     ctx.fillStyle = ent.color;
                     ctx.beginPath();
                     ctx.arc(cx, cy + 2 + bob, r, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-                    ctx.beginPath();
-                    ctx.arc(cx - 3, cy - 1 + bob, r * 0.3, 0, Math.PI * 2);
-                    ctx.fill();
                 } else if (ent.sub === 'weapon') {
                     ctx.strokeStyle = '#fbbf24';
-                    ctx.lineWidth = 4;
+                    ctx.lineWidth = 3.5;
                     ctx.beginPath();
-                    ctx.moveTo(cx - 10, cy + 10 + bob);
-                    ctx.lineTo(cx + 11, cy - 11 + bob);
+                    ctx.moveTo(cx - 9, cy + 9 + bob);
+                    ctx.lineTo(cx + 10, cy - 10 + bob);
                     ctx.stroke();
                     ctx.strokeStyle = '#92400e';
                     ctx.lineWidth = 3;
                     ctx.beginPath();
-                    ctx.moveTo(cx - 11, cy + 3 + bob);
-                    ctx.lineTo(cx - 3, cy + 11 + bob);
+                    ctx.moveTo(cx - 10, cy + 2 + bob);
+                    ctx.lineTo(cx - 2, cy + 10 + bob);
                     ctx.stroke();
                 } else if (ent.sub === 'shield') {
                     ctx.fillStyle = '#38bdf8';
                     ctx.beginPath();
-                    ctx.moveTo(cx - 10, cy - 10 + bob);
-                    ctx.lineTo(cx + 10, cy - 10 + bob);
-                    ctx.lineTo(cx + 9, cy + 4 + bob);
-                    ctx.lineTo(cx, cy + 13 + bob);
-                    ctx.lineTo(cx - 9, cy + 4 + bob);
+                    ctx.moveTo(cx - 9, cy - 9 + bob);
+                    ctx.lineTo(cx + 9, cy - 9 + bob);
+                    ctx.lineTo(cx + 8, cy + 3 + bob);
+                    ctx.lineTo(cx, cy + 12 + bob);
+                    ctx.lineTo(cx - 8, cy + 3 + bob);
                     ctx.closePath();
                     ctx.fill();
                     ctx.strokeStyle = '#e0f2fe';
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 1.8;
                     ctx.stroke();
                 } else {
                     ctx.fillStyle = '#a855f7';
-                    ctx.fillRect(cx - 10, cy - 11 + bob, 20, 22);
+                    ctx.fillRect(cx - 9, cy - 10 + bob, 18, 20);
                     ctx.fillStyle = '#facc15';
-                    ctx.fillRect(cx - 7, cy - 4 + bob, 14, 3);
+                    ctx.fillRect(cx - 6, cy - 3 + bob, 12, 3);
                 }
             } else if (ent.type === 'npc') {
                 ctx.fillStyle = ent.color;
                 ctx.beginPath();
-                ctx.arc(cx, cy - 5 + pulse, 8, 0, Math.PI * 2);
+                ctx.arc(cx, cy - 5 + pulse, 7.5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = '#e2e8f0';
                 ctx.beginPath();
-                ctx.moveTo(cx - 11, cy + 15);
-                ctx.lineTo(cx + 11, cy + 15);
-                ctx.lineTo(cx + 7, cy + 2);
-                ctx.lineTo(cx - 7, cy + 2);
+                ctx.moveTo(cx - 10, cy + 14);
+                ctx.lineTo(cx + 10, cy + 14);
+                ctx.lineTo(cx + 6.5, cy + 1.5);
+                ctx.lineTo(cx - 6.5, cy + 1.5);
                 ctx.closePath();
                 ctx.fill();
                 ctx.fillStyle = '#0f172a';
                 ctx.font = 'bold 10px sans-serif';
                 ctx.textAlign = 'center';
                 const tag = ent.sub === 'flyer' ? '传' : ent.sub === 'altar_gold' ? '金' : ent.sub === 'altar_exp' ? '经' : ent.sub === 'key_shop' ? '钥' : '智';
-                ctx.fillText(tag, cx, cy + 13);
+                ctx.fillText(tag, cx, cy + 12);
                 ctx.textAlign = 'left';
             } else if (ent.type === 'enemy') {
-                const bob = pulse * 1.4;
-                const sc = ent.isBoss ? 1.2 : 1;
-                ctx.save();
-                ctx.translate(cx, cy + bob);
-                ctx.scale(sc, sc);
+                const bob = pulse * 1.3;
+                const sc = ent.isBoss ? 1.15 : 0.94;
+                drawEnemyShape(ctx, ent, cx, cy + bob, sc);
 
-                // Silhouette per monster archetype
-                if (ent.sprite === 'slime') {
-                    ctx.fillStyle = ent.color;
-                    ctx.beginPath();
-                    ctx.arc(0, 3, 13, Math.PI, 0);
-                    ctx.lineTo(13, 12);
-                    ctx.quadraticCurveTo(0, 15, -13, 12);
-                    ctx.closePath();
-                    ctx.fill();
-                } else if (ent.sprite === 'bat') {
-                    ctx.fillStyle = ent.color;
-                    ctx.beginPath();
-                    ctx.moveTo(-16, -2); ctx.lineTo(-5, 3); ctx.lineTo(0, -6);
-                    ctx.lineTo(5, 3); ctx.lineTo(16, -2); ctx.lineTo(8, 10);
-                    ctx.lineTo(0, 5); ctx.lineTo(-8, 10);
-                    ctx.closePath();
-                    ctx.fill();
-                } else if (ent.sprite === 'boss') {
-                    ctx.fillStyle = ent.color;
-                    ctx.beginPath();
-                    ctx.moveTo(-14, 13); ctx.lineTo(-14, -7); ctx.lineTo(-7, -14);
-                    ctx.lineTo(0, -8); ctx.lineTo(7, -14); ctx.lineTo(14, -7);
-                    ctx.lineTo(14, 13);
-                    ctx.closePath();
-                    ctx.fill();
-                } else {
-                    ctx.fillStyle = ent.color;
-                    ctx.beginPath();
-                    ctx.roundRect(-11, -12, 22, 25, 6);
-                    ctx.fill();
-                }
-                // Glowing eyes
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(-6, -2, 4, 4);
-                ctx.fillRect(2, -2, 4, 4);
-                ctx.fillStyle = ent.isBoss ? '#fef08a' : '#fff';
-                ctx.fillRect(-5, -1, 2, 2);
-                ctx.fillRect(3, -1, 2, 2);
-                ctx.restore();
-
-                // Live damage pill overlay
                 if (showDamageOverlay) {
                     const calc = E.calculateBattle(p, ent);
                     const text = !calc.canWin ? '💀' : String(calc.damage);
@@ -743,48 +927,23 @@
                             : calc.damage >= p.hp * 0.4
                                 ? 'rgba(185, 28, 28, 0.88)'
                                 : 'rgba(161, 98, 7, 0.9)';
-                    ctx.font = 'bold 10.5px sans-serif';
-                    const tw = Math.max(18, ctx.measureText(text).width + 8);
+                    ctx.font = 'bold 10px sans-serif';
+                    const tw = Math.max(17, ctx.measureText(text).width + 7);
                     ctx.fillStyle = bg;
                     ctx.beginPath();
-                    ctx.roundRect(px + TILE - tw - 2, py + TILE - 16, tw, 14, 4);
+                    ctx.roundRect(px + TILE - tw - 2, py + TILE - 15, tw, 13, 4);
                     ctx.fill();
                     ctx.fillStyle = '#fff';
                     ctx.textAlign = 'center';
-                    ctx.fillText(text, px + TILE - tw / 2 - 2, py + TILE - 5.5);
+                    ctx.fillText(text, px + TILE - tw / 2 - 2, py + TILE - 5);
                     ctx.textAlign = 'left';
                 }
             }
         }
 
-        // 3. Smoothed Hero Knight
         anim.px += (p.x - anim.px) * 0.35;
         anim.py += (p.y - anim.py) * 0.35;
-        const hcx = (anim.px + 0.5) * TILE;
-        const hcy = (anim.py + 0.5) * TILE;
-
-        ctx.fillStyle = 'rgba(0,0,0,0.35)';
-        ctx.beginPath();
-        ctx.ellipse(hcx, hcy + 14, 12, 5, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Cloak + Armor + Helm
-        ctx.fillStyle = '#2563eb';
-        ctx.beginPath();
-        ctx.roundRect(hcx - 11, hcy - 2, 22, 16, 5);
-        ctx.fill();
-        ctx.fillStyle = '#e2e8f0';
-        ctx.beginPath();
-        ctx.arc(hcx, hcy - 7, 9, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#facc15';
-        ctx.beginPath();
-        ctx.arc(hcx, hcy - 10, 8.5, Math.PI, 0);
-        ctx.fill();
-        ctx.fillStyle = '#0f172a';
-        const ex = p.dirX * 3;
-        ctx.fillRect(hcx - 4 + ex, hcy - 8, 2.5, 3);
-        ctx.fillRect(hcx + 1.5 + ex, hcy - 8, 2.5, 3);
+        drawHeroShape(ctx, (anim.px + 0.5) * TILE, (anim.py + 0.5) * TILE, 0.96, p.dirX);
     }
 
     function drawFloats(dt) {
@@ -812,6 +971,13 @@
     // ---------------- Input Handlers ----------------
     window.addEventListener('keydown', (e) => {
         if (!game) return;
+        if (battlePlaying) {
+            if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') {
+                e.preventDefault();
+                stopBattleAnimation(false);
+            }
+            return;
+        }
         const modalOpen = !el.modalBackdrop.classList.contains('hidden');
         if (modalOpen) {
             if (e.key === 'Escape') closeModal();
@@ -836,6 +1002,11 @@
         } else if (e.key === 'h' || e.key === 'H') {
             e.preventDefault();
             showDamageOverlay = !showDamageOverlay;
+            syncUI();
+            persist();
+        } else if (e.key === 'b' || e.key === 'B') {
+            e.preventDefault();
+            skipBattleAnim = !skipBattleAnim;
             syncUI();
             persist();
         } else if (e.key === 'z' || e.key === 'Z') {
@@ -868,7 +1039,7 @@
     });
 
     canvas.addEventListener('click', (e) => {
-        if (!game || !el.modalBackdrop.classList.contains('hidden')) return;
+        if (!game || battlePlaying || !el.modalBackdrop.classList.contains('hidden')) return;
         const rect = canvas.getBoundingClientRect();
         const gx = Math.floor(((e.clientX - rect.left) / rect.width) * GRID);
         const gy = Math.floor(((e.clientY - rect.top) / rect.height) * GRID);
@@ -893,7 +1064,14 @@
         syncUI();
         persist();
     };
+    el.btnBattleAnim.onclick = () => {
+        skipBattleAnim = !skipBattleAnim;
+        syncUI();
+        persist();
+    };
+    el.btnSkipBattleNow.onclick = () => stopBattleAnimation(false);
     el.btnUndo.onclick = () => {
+        if (battlePlaying) return;
         walkQueue = [];
         if (game.undo()) {
             audio.playUndo();
@@ -905,7 +1083,7 @@
         }
     };
     el.btnRestart.onclick = () => {
-        if (confirm('确定要重新开始魔塔挑战吗？当前进度将被重置。')) {
+        if (confirm('确定要重新开始 30 层魔塔挑战吗？当前进度将被重置。')) {
             localStorage.removeItem(E.SAVE_KEY);
             initGame(true);
             toast('已重置第 1 层起点，祝冒险顺利！');
@@ -927,9 +1105,9 @@
         const dt = Math.min(0.05, Math.max(0.001, (ts - lastTs) / 1000));
         lastTs = ts;
 
-        if (walkQueue.length > 0 && game && !game.state.player.won && el.modalBackdrop.classList.contains('hidden')) {
+        if (walkQueue.length > 0 && game && !battlePlaying && !game.state.player.won && el.modalBackdrop.classList.contains('hidden')) {
             walkTimer += dt;
-            if (walkTimer >= 0.085) {
+            if (walkTimer >= 0.08) {
                 walkTimer = 0;
                 const [dx, dy] = walkQueue.shift();
                 if (!performStep(dx, dy)) walkQueue = [];

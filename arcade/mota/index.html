@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>魔塔 · 21层深渊试炼 | 云檐趣阁小游戏厅</title>
-    <link rel="stylesheet" href="style.css?v=20261118_1200">
+    <title>魔塔 · 30层深渊试炼 | 云檐趣阁小游戏厅</title>
+    <link rel="stylesheet" href="style.css?v=20261118_1430">
 </head>
 <body>
     <div class="mt-shell">
@@ -13,13 +13,14 @@
                 <a href="../index.html" class="nav-pill">← 大厅</a>
                 <div class="floor-head">
                     <span class="zone-pill" id="zoneBadge">遗迹石窟</span>
-                    <h1 id="floorTitle">第 1 / 21 层 · 魔塔正门</h1>
+                    <h1 id="floorTitle">第 1 / 30 层 · 魔塔正门</h1>
                 </div>
             </div>
             <div class="top-right">
                 <button class="nav-pill" id="btnManual" type="button" title="当前楼层怪物图鉴 [M]">图鉴 (M)</button>
                 <button class="nav-pill" id="btnFlyer" type="button" title="已探索楼层快速传送 [F]">传送 (F)</button>
                 <button class="nav-pill active" id="btnDmgOverlay" type="button" title="切换怪物显伤开关 [H]">显伤: 开</button>
+                <button class="nav-pill active" id="btnBattleAnim" type="button" title="设置是否开启或跳过战斗动画 [B]">战斗动画: 开</button>
                 <button class="nav-pill" id="btnUndo" type="button" title="回溯上一步 [Z]">撤销 (Z)</button>
                 <button class="nav-pill" id="btnRestart" type="button" title="重新开始魔塔">重开</button>
                 <button class="nav-pill icon-only" id="btnMute" type="button" title="音效开关">🔊</button>
@@ -27,7 +28,7 @@
         </header>
 
         <main class="mt-workspace">
-            <!-- Left Hero & Resource Panel -->
+            <!-- Left Hero & Resource Panel (minimum 14px typography throughout) -->
             <aside class="hero-panel">
                 <div class="panel-card">
                     <div class="hero-row-head">
@@ -35,10 +36,10 @@
                         <span class="exp-hint" id="expNeedVal">经验 0 / 60</span>
                     </div>
                     <div class="stats-grid">
-                        <div class="stat-cell hp"><span>生命</span><b id="hpVal">1000</b></div>
-                        <div class="stat-cell atk"><span>攻击</span><b id="atkVal">12</b></div>
+                        <div class="stat-cell hp"><span>生命</span><b id="hpVal">1100</b></div>
+                        <div class="stat-cell atk"><span>攻击</span><b id="atkVal">14</b></div>
                         <div class="stat-cell def"><span>防御</span><b id="defVal">10</b></div>
-                        <div class="stat-cell gold"><span>金币</span><b id="goldVal">60</b></div>
+                        <div class="stat-cell gold"><span>金币</span><b id="goldVal">80</b></div>
                     </div>
                     <div class="equip-row">
                         <div class="equip-chip"><span>武器</span><b id="weaponVal">木剑</b></div>
@@ -49,17 +50,16 @@
                 <div class="panel-card">
                     <div class="card-subhead">钥匙背包</div>
                     <div class="keys-row">
-                        <div class="key-pill yellow"><i class="k-dot"></i><span>黄钥匙</span><b id="keyY">1</b></div>
-                        <div class="key-pill blue"><i class="k-dot"></i><span>蓝钥匙</span><b id="keyB">0</b></div>
-                        <div class="key-pill red"><i class="k-dot"></i><span>红钥匙</span><b id="keyR">0</b></div>
+                        <div class="key-pill yellow"><i class="k-dot"></i><span>黄</span><b id="keyY">2</b></div>
+                        <div class="key-pill blue"><i class="k-dot"></i><span>蓝</span><b id="keyB">0</b></div>
+                        <div class="key-pill red"><i class="k-dot"></i><span>红</span><b id="keyR">0</b></div>
                     </div>
                 </div>
 
-                <!-- Live Forecast & Tip Box -->
                 <div class="panel-card forecast-card" id="forecastCard">
                     <div class="card-subhead">战况预测 · 悬停或贴近怪物</div>
                     <div id="forecastBody" class="forecast-empty">
-                        方向键 / WASD 或点击地图自动寻路移动；按 M 查图鉴、Z 撤销失误操作。
+                        方向键 / WASD 或点击地图自动寻路；按 M 查图鉴、Z 回溯一步。
                     </div>
                 </div>
 
@@ -72,21 +72,57 @@
                             <button type="button" class="d-btn" data-dir="1,0" aria-label="右">▶</button>
                         </div>
                     </div>
-                    <span class="save-note" id="saveNote">自动存档已开启</span>
+                    <span class="save-note" id="saveNote">每10层守关 Boss<br>自动存档已开启</span>
                 </div>
             </aside>
 
-            <!-- Center Game Map Canvas -->
+            <!-- Center 15x15 Map Canvas -->
             <section class="board-stage">
                 <div class="board-frame" id="boardFrame">
-                    <canvas id="motaCanvas" width="528" height="528"></canvas>
+                    <canvas id="motaCanvas" width="660" height="660"></canvas>
+
+                    <!-- Turn-by-Turn Battle Animation Overlay -->
+                    <div class="battle-overlay hidden" id="battleOverlay">
+                        <div class="battle-box">
+                            <div class="battle-head">
+                                <span class="battle-tag">⚔️ 交锋对决</span>
+                                <button type="button" class="nav-pill" id="btnSkipBattleNow">跳过动画</button>
+                            </div>
+                            <div class="battle-fighters">
+                                <div class="fighter left" id="fighterHero">
+                                    <div class="fighter-portrait-wrap">
+                                        <canvas id="battleHeroCanvas" width="64" height="64"></canvas>
+                                        <span class="hit-pop" id="heroHitPop"></span>
+                                    </div>
+                                    <strong class="fighter-name">勇者骑士</strong>
+                                    <div class="hp-bar-track"><div class="hp-bar-fill hero" id="heroHpBar"></div></div>
+                                    <span class="hp-bar-text" id="heroHpText">HP 1100</span>
+                                    <span class="fighter-stats" id="heroBattleStats">攻 14 · 防 10</span>
+                                </div>
+
+                                <div class="battle-vs">VS</div>
+
+                                <div class="fighter right" id="fighterEnemy">
+                                    <div class="fighter-portrait-wrap">
+                                        <canvas id="battleEnemyCanvas" width="64" height="64"></canvas>
+                                        <span class="hit-pop" id="enemyHitPop"></span>
+                                    </div>
+                                    <strong class="fighter-name" id="enemyBattleName">史莱姆</strong>
+                                    <div class="hp-bar-track"><div class="hp-bar-fill enemy" id="enemyHpBar"></div></div>
+                                    <span class="hp-bar-text" id="enemyHpText">HP 45</span>
+                                    <span class="fighter-stats" id="enemyBattleStats">攻 16 · 防 2</span>
+                                </div>
+                            </div>
+                            <div class="battle-log" id="battleLog">准备交锋...</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="toast-strip" id="toastStrip">欢迎来到魔塔试炼！收集红蓝宝石、合理开门并挑战 21 层魔王。</div>
+                <div class="toast-strip" id="toastStrip">欢迎来到 30 层魔塔试炼！每 10 层设有守关 Boss，量力而行、步步为营。</div>
             </section>
         </main>
     </div>
 
-    <!-- Modal: Monster Manual / Flyer / Shop / Dialog / Win -->
+    <!-- Modal: Monster Manual / Flyer / Shop / Dialog / Unbeatable Alert / Win -->
     <div class="modal-backdrop hidden" id="modalBackdrop" role="dialog" aria-modal="true">
         <div class="modal-card" id="modalCard">
             <div class="modal-head">
@@ -100,8 +136,8 @@
         </div>
     </div>
 
-    <script src="engine.js?v=20261118_1200"></script>
-    <script src="audio.js?v=20261118_1200"></script>
-    <script src="game.js?v=20261118_1200"></script>
+    <script src="engine.js?v=20261118_1430"></script>
+    <script src="audio.js?v=20261118_1430"></script>
+    <script src="game.js?v=20261118_1430"></script>
 </body>
 </html>
