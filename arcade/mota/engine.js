@@ -59,127 +59,290 @@
         '终焉壁垒阁', '混沌军械室', '魔神禁区', '圣殿前哨', '终焉王座 (Boss)'
     ];
 
-    // 5 distinct 15x15 architectural templates (exact 15 chars per row!)
-    // Single-char placeholders:
-    //   1 = primary monster (mA), 2 = secondary monster (mB), 3 = elite/boss monster (mC), * = designated NPC (N/F/G/E/K)
+    // 12 distinct 15x15 architectural templates (exact 15 chars per row!)
+    // Logical dungeon design:
+    //   1 = scout/vanguard monster (mA), 2 = room guard (mB), 3 = vault/stairway elite (mC)
+    //   * = floor NPC (N/F/G/E/K), w = weapon vault (W or A), h = shield vault (H or D)
     const ARCHETYPES = [
-        // 0: Central Courtyard + Four Corner Treasure Vaults
+        // 0: Cathedral Entry Hall — side armories behind Yellow doors, inner crypt guard before stairs
         [
             '###############',
-            '#U..1.....1..y#',
-            '#Y#####.#####B#',
-            '#A.p..#.#..D.r#',
+            '#w.A#..U..#D.h#',
+            '#.#3#.2.2.#3#.#',
+            '#y.B...#...B.p#',
+            '#####.#.#.#####',
+            '#P.p..1.1..p.P#',
             '#.###.#.#.###.#',
-            '#2..y.#.#.P..2#',
-            '###Y###.###B###',
-            '#*....1......3#',
-            '###.###.###.###',
-            '#p..1.#.#.2..p#',
+            '#A..1..*..1..D#',
+            '#.###.###.###.#',
+            '#y..#b...y#..b#',
+            '#Y###.#.#.###Y#',
+            '#p..1.#.#.1..p#',
             '#.###.#.#.###.#',
-            '#P.b..#.#..y.A#',
-            '#Y#####.#####Y#',
-            '#y..1..S..1..D#',
+            '#y....1S1....y#',
             '###############'
         ],
-        // 1: Serpentine Wing Maze with Central Side Shrine
+        // 1: West Armory & East Sage Sanctum — Twin locked quarters with central gauntlet
         [
             '###############',
-            '#S.1...y...2.A#',
-            '###.#####.###.#',
-            '#p..1.#...#.2.#',
-            '#.#.###.#.#.#.#',
-            '#y..2.#*#.#p.D#',
-            '#.###.#.#.###.#',
-            '#1...Y...Y...3#',
-            '#.###.#.#.###.#',
-            '#b.P.#X.#.p..2#',
-            '#.#.###.###.#.#',
-            '#2....#...#.1.#',
-            '###B###.###Y###',
-            '#P...3...2...U#',
-            '###############'
-        ],
-        // 2: Cross Bastion + Four Symmetric Rooms
-        [
-            '###############',
-            '#A..2.#U#.2..D#',
-            '#.#Y#.#.#.#B#.#',
-            '#y.p...1...p.P#',
+            '#U..3.#*#.3..h#',
             '###.###.###.###',
-            '#2.....3.....2#',
+            '#w.A..Y.B..D.P#',
+            '#.###.#.#.###.#',
+            '#p.2..#.#..2.b#',
             '#.#.###.###.#.#',
-            '#*..1..y..1..P#',
-            '#.#.###.###.#.#',
-            '#1.....2.....1#',
-            '###.###.###.###',
-            '#p..b..1..p..P#',
-            '#.#.#.#.#.#Y#.#',
-            '#y..1.#S#.1..A#',
-            '###############'
-        ],
-        // 3: Twin Corridors + Secret Red/Blue Vault
-        [
-            '###############',
-            '#U.3.y..#.A.P.#',
-            '###B###.#R#####',
-            '#A..2...#..D.A#',
-            '#.#####.#.###.#',
-            '#p..1.#...#.2.#',
-            '###.###.#.#.#.#',
-            '#p..2.*....3.y#',
-            '#.#.###.###.###',
-            '#1..#.y..b.#.p#',
+            '#1....1.1....1#',
+            '#.###.#.#.###.#',
+            '#y..#.P.p.#..y#',
+            '#Y#.#.###.#.#Y#',
+            '#A#1#..1..#1#D#',
             '#.#.#.###.#.#.#',
-            '#D..1.#P#.2..A#',
-            '###Y###Y###.###',
-            '#S...1...1...p#',
+            '#p..1..S..1..y#',
             '###############'
         ],
-        // 4: Arena Loop with Diagonal Gates
+        // 2: Prison Cellblocks — guarded prison cells flanking central watchtower
         [
             '###############',
-            '#S...1.y.2...D#',
+            '#w.P#..U..#P.h#',
+            '#Y###.3.3.###Y#',
+            '#2.y..#.#..y.2#',
+            '#.###.#.#.###.#',
+            '#A..1..*..1..D#',
+            '###.###.###.###',
+            '#b.2..#.#..2.b#',
+            '#.###.#.#.###.#',
+            '#p.1..Y.Y..1.p#',
+            '#.#.###.###.#.#',
+            '#y#..1...1..#X#',
+            '#.#.###.###.#.#',
+            '#1....1S1....1#',
+            '###############'
+        ],
+        // 3: Serpent Archive — winding snake path with Red & Blue secret shortcut vaults
+        [
+            '###############',
+            '#w..3.A.#..U.h#',
+            '#####Y#.#.###.#',
+            '#P..p.#.#.3..p#',
+            '#.###.#.#.###.#',
+            '#1..y.#*#.2..D#',
+            '#.#####.#####.#',
+            '#1....2.2....1#',
+            '###B#######Y###',
+            '#b.p..#y#..P.A#',
+            '#.###.#.#.###.#',
+            '#D..1.....1..y#',
             '#.###.###.###.#',
-            '#p..2..#...1.y#',
-            '###Y###.###B###',
-            '#A...3...3...b#',
+            '#p....1S1....1#',
+            '###############'
+        ],
+        // 4: Citadel Quad — Four corner keeps; inner shrine guarded by elites
+        [
+            '###############',
+            '#w.A#..U..#D.h#',
+            '#3###.2.2.###3#',
+            '#B..p.#*#.p..B#',
+            '#.###.###.###.#',
+            '#p.1..#.#..1.p#',
             '#.#.###.###.#.#',
-            '#p..2.#*#..2.P#',
+            '#1..Y..P..Y..1#',
             '#.#.###.###.#.#',
-            '#p..1..#...2.A#',
+            '#y.1..#.#..1.y#',
+            '#.###.###.###.#',
+            '#A..#b...y#..D#',
+            '###.#.###.#.###',
+            '#p..1..S..1..y#',
+            '###############'
+        ],
+        // 5: Crucible Ring — Concentric fortress moat around inner treasure core
+        [
+            '###############',
+            '#S..1..y..1..p#',
+            '#.###.###.###.#',
+            '#1..#A.P.D#..1#',
+            '#.#.#Y###B#.#.#',
+            '#y#2#.*3*.#2#b#',
+            '#.#.#.###.#.#.#',
+            '#p.2..w.h..2.p#',
+            '#.#.#######.#.#',
+            '#X#1...1...1#P#',
+            '#.###.2.2.###.#',
+            '#A..Y.....Y..D#',
+            '#.###.###.###.#',
+            '#y..2..U..2..b#',
+            '###############'
+        ],
+        // 6: Split Monastery — Left Altar Wing vs Right Vault Wing
+        [
+            '###############',
+            '#A.p#..U..#P.h#',
+            '#3###.2.3.###Y#',
+            '#B..2.#.#.2..D#',
+            '#.###.#.#.###.#',
+            '#*.p..1.1..b.w#',
+            '#####.#.#.#####',
+            '#y..1..P..1..y#',
+            '#.###.###.###.#',
+            '#p.1..#.#..1.p#',
+            '#Y###.#.#.###B#',
+            '#D.y#.....#A.X#',
+            '#.#.#.###.#.#.#',
+            '#p..1..S..1..y#',
+            '###############'
+        ],
+        // 7: Iron Gatehouse — Two-stage fortress gatehouse requiring keys to pierce north
+        [
+            '###############',
+            '#U..3..#..3..h#',
             '###B###.###Y###',
-            '#P.2.X#y..3..p#',
+            '#w.A..2.*..2.P#',
             '#.###.###.###.#',
-            '#A...2...3...U#',
+            '#p..1.#.#.1..D#',
+            '#.#.###.###.#.#',
+            '#2....Y.Y....2#',
+            '#.###.#.#.###.#',
+            '#b..#.P.p.#..y#',
+            '###.#.###.#.###',
+            '#A.1..#.#..1.D#',
+            '#.###.#.#.###.#',
+            '#y..1..S..1..p#',
+            '###############'
+        ],
+        // 8: Twin Stairwell Keep — East/West galleries converging onto central vault
+        [
+            '###############',
+            '#w.P#..U..#P.h#',
+            '#Y###.3.3.###Y#',
+            '#2..y.#*#.y..2#',
+            '#.###.#.#.###.#',
+            '#A.1..#.#..1.D#',
+            '#.#.#######.#.#',
+            '#1..2..b..2..1#',
+            '#.###.#.#.###.#',
+            '#p..#B...B#..p#',
+            '#.###.#.#.###.#',
+            '#y..1.#.#.1..X#',
+            '###.#.###.#.###',
+            '#p..1..S..1..y#',
+            '###############'
+        ],
+        // 9: Labyrinthine Crypt — Asymmetric winding crypt with hidden Red Vault
+        [
+            '###############',
+            '#S..1.#w.A#..U#',
+            '#.###.#Y###.#.#',
+            '#p..2.#...#.3.#',
+            '###.#.#.#.#.#.#',
+            '#y.1#P..2..p#h#',
+            '#.#.###.###.#B#',
+            '#A..#*...*..#D#',
+            '#.#.#.###.###.#',
+            '#1.p..2.#P.3.b#',
+            '#.#####.#.###.#',
+            '#D..y.#1..1..y#',
+            '###Y###.###.###',
+            '#p..1....1...X#',
+            '###############'
+        ],
+        // 10: High Rampart — East-to-West fortified terrace with elite bridge guards
+        [
+            '###############',
+            '#U.3..#h.P#..w#',
+            '###.###B###.###',
+            '#p.2..A.*.D..2#',
+            '#.###.###.###.#',
+            '#1..y.#.#.y..1#',
+            '#.###.#.#.###.#',
+            '#b..2..P..2..y#',
+            '###Y###.###Y###',
+            '#A..1.#.#.1..D#',
+            '#.###.#.#.###.#',
+            '#p..1.#b#.1..p#',
+            '#.###.###.###.#',
+            '#y....1S1....X#',
+            '###############'
+        ],
+        // 11: Final Citadel Annex — Heavy outer bastions shielding twin vaults before climb
+        [
+            '###############',
+            '#w.A.#.U.#.D.h#',
+            '#3###.3.3.###3#',
+            '#R..p.#*#.p..B#',
+            '#.###.###.###.#',
+            '#2.p..#.#..p.2#',
+            '#.#.###.###.#.#',
+            '#1..Y..P..Y..1#',
+            '#.#.###.###.#.#',
+            '#b.1..#r#..1.b#',
+            '#.###.###.###.#',
+            '#A..1.....1..D#',
+            '###.#.###.#.###',
+            '#y..1..S..1..p#',
             '###############'
         ]
     ];
 
-    // Boss Arena 15x15 (used cleanly on Floors 10, 20, 30; '3' = Chapter Boss Z/Q/M)
-    const BOSS_TEMPLATE = [
-        '###############',
-        '#A.P...U...P.D#',
-        '#.#.###.###.#.#',
-        '#y..2..3..2..b#',
-        '###.###.###.###',
-        '#P...1.*...1.P#',
-        '#.###.###.###.#',
-        '#2....###....2#',
-        '#.###.###.###.#',
-        '#b..1..B..1..y#',
-        '###Y###.###Y###',
-        '#p..1.#.#.1..p#',
-        '#.#.#.#.#.#.#.#',
-        '#A..1..S..1..D#',
-        '###############'
-    ];
+    // Three distinct Chapter Boss Sanctums (10F, 20F, 30F)
+    const BOSS_TEMPLATES = {
+        10: [
+            '###############',
+            '#A.P...U...P.D#',
+            '#.#.###.###.#.#',
+            '#y..2..3..2..b#',
+            '###.###B###.###',
+            '#P.1..#*#..1.P#',
+            '#.###.#.#.###.#',
+            '#2...Y...Y...2#',
+            '#.###.###.###.#',
+            '#b.1..#P#..1.y#',
+            '###Y###.###Y###',
+            '#p..1.#.#.1..p#',
+            '#.###.#.#.###.#',
+            '#A..1..S..1..D#',
+            '###############'
+        ],
+        20: [
+            '###############',
+            '#w.P...U...P.h#',
+            '###.###3###.###',
+            '#2..A..#..D..2#',
+            '#.###.###.###.#',
+            '#P.1.#*..*#.1P#',
+            '###B###.###B###',
+            '#b..2..P..2..b#',
+            '#.###.###.###.#',
+            '#1..Y.....Y..1#',
+            '#.###.###.###.#',
+            '#p..1.#.#.1..p#',
+            '#.###.#.#.###.#',
+            '#A..1..S..1..D#',
+            '###############'
+        ],
+        30: [
+            '###############',
+            '#A.P...P...P.D#',
+            '#.#.###3###.#.#',
+            '#P..b..#..r..P#',
+            '###B###.###B###',
+            '#P.2..#*#..2.P#',
+            '#.###.#.#.###.#',
+            '#2...R.P.R...2#',
+            '#.###.###.###.#',
+            '#b.1..#P#..1.b#',
+            '###Y###.###Y###',
+            '#p..1.#.#.1..p#',
+            '#.###.#.#.###.#',
+            '#A..1..S..1..D#',
+            '###############'
+        ]
+    };
 
     function createFloorTemplate(floor) {
         const name = FLOOR_NAMES[floor - 1] || `第${floor}层`;
         const zoneIdx = floor <= 10 ? 0 : floor <= 20 ? 1 : 2;
-        const gemBonus = zoneIdx === 0 ? 2 + Math.floor(floor / 5) : zoneIdx === 1 ? 4 + Math.floor((floor - 10) / 4) : 7 + Math.floor((floor - 20) / 3);
-        const potBonus = 180 + (floor - 1) * 42;
-        const bigPotBonus = 460 + (floor - 1) * 105;
+        const gemBonus = zoneIdx === 0 ? 1 + Math.floor(floor / 6) : zoneIdx === 1 ? 2 + Math.floor((floor - 10) / 4) : 4 + Math.floor((floor - 20) / 3);
+        const potBonus = 130 + (floor - 1) * 24;
+        const bigPotBonus = 300 + (floor - 1) * 52;
 
         const pools = [
             ['1', '1', '2'], // 1F
@@ -235,36 +398,29 @@
             29: { name: '不朽神盾', def: 95 }
         };
 
-        const isBossFloor = floor % 10 === 0;
-        const rawMap = isBossFloor
-            ? BOSS_TEMPLATE
-            : ARCHETYPES[(floor - 1) % ARCHETYPES.length];
-
+        const rawMap = BOSS_TEMPLATES[floor] || ARCHETYPES[(floor - 1) % ARCHETYPES.length];
+        let startCoords = null;
         const npcToken = npcByFloor[floor] || '.';
-        const rows = rawMap.map((row) =>
-            row.split('').map((ch) => {
+        const hasW = !!weapons[floor];
+        const hasH = !!shields[floor];
+
+        const rows = rawMap.map((row, ry) =>
+            row.split('').map((ch, rx) => {
+                if (ch === 'S') startCoords = { x: rx, y: ry };
                 if (ch === '1') return mA;
                 if (ch === '2') return mB;
                 if (ch === '3') return mC;
                 if (ch === '*') return npcToken;
+                if (ch === 'w') return hasW ? 'W' : 'A';
+                if (ch === 'h') return hasH ? 'H' : 'D';
                 return ch;
             }).join('')
         );
 
-        // Floor 1 uses '.' instead of non-functional stairs down at (7,13)
-        if (floor === 1) {
-            rows[13] = rows[13].replace('S', '.');
-        }
-        // Floor 30 is the summit: Boss M directly guards top shrine (replace 'U' with 'P')
-        if (floor === TOTAL_FLOORS) {
-            rows[1] = rows[1].replace('U', 'P');
-        }
-        // Place special Weapon/Shield on designated floors inside open vault cell
-        if (weapons[floor]) {
-            rows[3] = rows[3].slice(0, 1) + 'W' + rows[3].slice(2);
-        }
-        if (shields[floor]) {
-            rows[3] = rows[3].slice(0, 13) + 'H' + rows[3].slice(14);
+        // Floor 1 clears the entrance stairs token 'S' after recording spawn coords
+        if (floor === 1 && startCoords) {
+            const sr = rows[startCoords.y];
+            rows[startCoords.y] = sr.slice(0, startCoords.x) + '.' + sr.slice(startCoords.x + 1);
         }
 
         return {
@@ -276,7 +432,7 @@
             bigPotBonus,
             weapon: weapons[floor] || null,
             shield: shields[floor] || null,
-            start: floor === 1 ? { x: 7, y: 13 } : null,
+            start: floor === 1 ? (startCoords || { x: 7, y: 13 }) : null,
             map: rows
         };
     }

@@ -22,12 +22,15 @@
     const CHAPTERS = [
         { id: 1, name: '纸盒初遇', subtitle: '剪断麻绳、钟摆荡漾与气泡浮升', accent: '#4ade80' },
         { id: 2, name: '奇幻风箱', subtitle: '配合充气风囊、魔术帽与自动抓钩通关', accent: '#38bdf8' },
-        { id: 3, name: '发条机盒', subtitle: '滑轨悬索、弹鼓穿梭与终极连环机关', accent: '#f59e0b' }
+        { id: 3, name: '发条机盒', subtitle: '滑轨悬索、弹鼓穿梭与终极连环机关', accent: '#f59e0b' },
+        { id: 4, name: '霓虹魔帽', subtitle: '双色传送帽接力与限时金星速决挑战', accent: '#c084fc' },
+        { id: 5, name: '深海气泡', subtitle: '移动锯齿障碍、双泡接力与精准气垫', accent: '#2dd4bf' },
+        { id: 6, name: '星曜终章', subtitle: '全机关合奏：弹鼓、滑轨与双帽大师试炼', accent: '#fb7185' }
     ];
 
     /**
-     * 12 handcrafted Cut-the-Rope levels.
-     * Each level is verified deterministically via timed scripted actions in tests/cut_rope_test.js.
+     * 36 handcrafted Cut-the-Rope levels across 6 themed boxes.
+     * Every level is verified deterministically for 3/3 stars via tests/cut_rope_test.js.
      */
     const LEVELS = [
         {
@@ -278,6 +281,305 @@
             spikes: [{ x: 95, y: 505, w: 155, h: 16 }],
             pads: [], autoRopes: [],
             script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 2.05, act: 'blow', id: 'c1' }, { t: 3.15, act: 'pop', id: 'b1' }]
+        },
+        // Chapter 4: Neon Dual Portals & Timed Stars (4-1 .. 4-6)
+        {
+            id: 19, chapter: 4, label: '4-1', name: '双帽接力',
+            hint: '先落入紫帽瞬移到中路，再坠入青帽跃上高空，横扫三星落入怪口！',
+            candy: { x: 115, y: 160 },
+            omnom: { x: 350, y: 530, r: 28 },
+            ropes: [{ id: 'r1', ax: 115, ay: 68, len: 92 }],
+            stars: [{ x: 115, y: 270 }, { x: 230, y: 260 }, { x: 350, y: 390 }],
+            bubbles: [], cushions: [],
+            portals: [
+                { pair: 0, x: 115, y: 380, r: 26 },
+                { pair: 0, x: 230, y: 140, r: 26 },
+                { pair: 1, x: 230, y: 400, r: 26 },
+                { pair: 1, x: 350, y: 155, r: 26 }
+            ],
+            spikes: [{ x: 170, y: 495, w: 120, h: 16 }], pads: [], autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }]
+        },
+        {
+            id: 20, chapter: 4, label: '4-2', name: '限时金星',
+            hint: '注意倒计时金星！开局先断左绳借右绳荡过斜线，在倒计时结束前剪断右绳！',
+            candy: { x: 145, y: 205 },
+            omnom: { x: 325, y: 525, r: 28 },
+            ropes: [
+                { id: 'r1', ax: 115, ay: 82, len: 126 },
+                { id: 'r2', ax: 285, ay: 82, len: 185 }
+            ],
+            stars: [
+                { x: 205, y: 245, timer: 4.5 },
+                { x: 268, y: 318, timer: 4.5 },
+                { x: 320, y: 435, timer: 5.0 }
+            ],
+            bubbles: [], cushions: [], portals: [], spikes: [], pads: [], autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 0.56, act: 'cut', id: 'r2' }]
+        },
+        {
+            id: 21, chapter: 4, label: '4-3', name: '浮空传帽',
+            hint: '先乘气泡浮收上星，按气囊将泡泡吹进高空魔帽，穿越后立刻戳破气泡精准投喂！',
+            candy: { x: 120, y: 350 },
+            omnom: { x: 345, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 120, ay: 225, len: 124 }],
+            stars: [{ x: 120, y: 245 }, { x: 240, y: 195 }, { x: 345, y: 380 }],
+            bubbles: [{ id: 'b1', x: 120, y: 395, r: 30 }],
+            cushions: [{ id: 'c1', x: 65, y: 195, dx: 1, dy: 0, power: 540, range: 270 }],
+            portals: [
+                { pair: 0, x: 285, y: 185, r: 30 },
+                { pair: 0, x: 345, y: 140, r: 26 }
+            ],
+            spikes: [{ x: 150, y: 500, w: 120, h: 16 }], pads: [], autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 2.02, act: 'blow', id: 'c1' }, { t: 3.1, act: 'pop', id: 'b1' }]
+        },
+        {
+            id: 22, chapter: 4, label: '4-4', name: '双绳飞渡',
+            hint: '先剪左绳甩入中央自动抓钩区，摆向右下穿入魔帽，从顶帽垂直下落喂饱怪兽！',
+            candy: { x: 115, y: 210 },
+            omnom: { x: 382, y: 528, r: 28 },
+            ropes: [{ id: 'r1', ax: 195, ay: 72, len: 160 }],
+            stars: [{ x: 185, y: 235 }, { x: 235, y: 295 }, { x: 382, y: 390 }],
+            bubbles: [], cushions: [],
+            portals: [
+                { pair: 0, x: 262, y: 365, r: 28 },
+                { pair: 0, x: 382, y: 140, r: 26 }
+            ],
+            spikes: [{ x: 105, y: 475, w: 95, h: 16 }],
+            pads: [],
+            autoRopes: [{ id: 'a1', ax: 245, ay: 95, triggerR: 120, len: 165 }],
+            script: [{ t: 0.65, act: 'cut', id: 'r1' }, { t: 1.15, act: 'cut', id: 'a1' }]
+        },
+        {
+            id: 23, chapter: 4, label: '4-5', name: '双风蛇行',
+            hint: '进泡升空后点按左气囊右推，再在右侧点破气泡反弹斜角弹跳鼓飞跃尖刺喂怪！',
+            candy: { x: 130, y: 350 },
+            omnom: { x: 422, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 130, ay: 225, len: 124 }],
+            stars: [{ x: 130, y: 250 }, { x: 220, y: 215 }, { x: 382, y: 245 }],
+            bubbles: [{ id: 'b1', x: 130, y: 395, r: 30 }],
+            cushions: [{ id: 'c1', x: 75, y: 210, dx: 1, dy: 0, power: 540, range: 270 }],
+            portals: [],
+            spikes: [{ x: 145, y: 490, w: 120, h: 16 }],
+            pads: [{ x: 270, y: 410, w: 86, h: 16, angle: 0.22, power: 675 }],
+            autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 1.95, act: 'blow', id: 'c1' }, { t: 2.75, act: 'pop', id: 'b1' }]
+        },
+        {
+            id: 24, chapter: 4, label: '4-6', name: '魔术师谢幕',
+            hint: '先断绳砸向斜角弹鼓跃入顶帽，穿越到右侧后按右风囊轻推回中央入嘴！',
+            candy: { x: 115, y: 170 },
+            omnom: { x: 258, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 115, ay: 68, len: 102 }],
+            stars: [{ x: 115, y: 280 }, { x: 235, y: 225 }, { x: 315, y: 275 }],
+            bubbles: [],
+            cushions: [{ id: 'c1', x: 405, y: 270, dx: -1, dy: 0, power: 330, range: 280 }],
+            portals: [
+                { pair: 0, x: 262, y: 213, r: 28 },
+                { pair: 0, x: 345, y: 140, r: 26 }
+            ],
+            spikes: [{ x: 75, y: 495, w: 100, h: 16 }],
+            pads: [{ x: 115, y: 410, w: 88, h: 16, angle: 0.35, power: 685 }],
+            autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 1.65, act: 'blow', id: 'c1' }]
+        },
+        // Chapter 5: Deep Sea Bubbles & Patrolling Hazards (5-1 .. 5-6)
+        {
+            id: 25, chapter: 5, label: '5-1', name: '巡逻锯齿',
+            hint: '中央锯齿在导轨上来回巡逻！等锯齿滑向左侧让出中路通道时再果断剪断！',
+            candy: { x: 230, y: 175 },
+            omnom: { x: 230, y: 530, r: 28 },
+            ropes: [{ id: 'r1', ax: 230, ay: 68, len: 108 }],
+            stars: [{ x: 230, y: 265 }, { x: 230, y: 355 }, { x: 230, y: 440 }],
+            bubbles: [], cushions: [], portals: [],
+            spikes: [{ x: 170, y: 315, w: 120, h: 16, moveX: 115, speed: 2.3 }],
+            pads: [], autoRopes: [],
+            script: [{ t: 1.38, act: 'cut', id: 'r1' }]
+        },
+        {
+            id: 26, chapter: 5, label: '5-2', name: '气垫双连弹',
+            hint: '左侧断绳依次反弹两座斜角弹跳鼓，画出 M 形完美弧线穿越全图入嘴！',
+            candy: { x: 105, y: 170 },
+            omnom: { x: 406, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 105, ay: 68, len: 102 }],
+            stars: [{ x: 105, y: 280 }, { x: 205, y: 245 }, { x: 365, y: 245 }],
+            bubbles: [], cushions: [], portals: [],
+            spikes: [{ x: 175, y: 495, w: 120, h: 16 }],
+            pads: [
+                { x: 105, y: 410, w: 86, h: 16, angle: 0.3, power: 650 },
+                { x: 250, y: 415, w: 86, h: 16, angle: 0.25, power: 640 }
+            ],
+            autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }]
+        },
+        {
+            id: 27, chapter: 5, label: '5-3', name: '水泡电梯',
+            hint: '先进左下泡泡上浮，按风囊推向中路刺破掉进第二只气泡，二次攀升戳破收星入嘴！',
+            candy: { x: 130, y: 365 },
+            omnom: { x: 272, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 130, ay: 255, len: 110 }],
+            stars: [{ x: 130, y: 275 }, { x: 215, y: 220 }, { x: 268, y: 295 }],
+            bubbles: [
+                { id: 'b1', x: 130, y: 415, r: 28 },
+                { id: 'b2', x: 260, y: 370, r: 32 }
+            ],
+            cushions: [{ id: 'c1', x: 65, y: 220, dx: 1, dy: 0, power: 530, range: 280 }],
+            portals: [],
+            spikes: [{ x: 115, y: 490, w: 95, h: 16 }], pads: [], autoRopes: [],
+            script: [
+                { t: 0.05, act: 'cut', id: 'r1' },
+                { t: 1.85, act: 'blow', id: 'c1' },
+                { t: 2.55, act: 'pop', id: 'b1' },
+                { t: 3.75, act: 'pop', id: 'b2' }
+            ]
+        },
+        {
+            id: 28, chapter: 5, label: '5-4', name: '滑轨吹风',
+            hint: '滑轨配合限时金星与风箱！向右荡过时剪断，再用右侧吹风微调精准喂怪！',
+            candy: { x: 230, y: 205 },
+            omnom: { x: 235, y: 528, r: 28 },
+            ropes: [{ id: 'r1', ax: 230, ay: 78, len: 125, slideRange: 70, slideSpeed: 2.2 }],
+            stars: [
+                { x: 305, y: 248, timer: 4.5 },
+                { x: 278, y: 345, timer: 4.5 },
+                { x: 242, y: 435 }
+            ],
+            bubbles: [],
+            cushions: [{ id: 'c1', x: 400, y: 350, dx: -1, dy: 0, power: 480, range: 260 }],
+            portals: [],
+            spikes: [{ x: 95, y: 495, w: 85, h: 16 }], pads: [], autoRopes: [],
+            script: [{ t: 0.72, act: 'cut', id: 'r1' }, { t: 1.08, act: 'blow', id: 'c1' }]
+        },
+        {
+            id: 29, chapter: 5, label: '5-5', name: '深渊回旋',
+            hint: '断绳穿蓝帽进泡泡，上升收星后按左风囊推入青帽，离开帽口后戳破泡泡坠入怪口！',
+            candy: { x: 115, y: 175 },
+            omnom: { x: 422, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 115, ay: 68, len: 106 }],
+            stars: [{ x: 115, y: 280 }, { x: 225, y: 285 }, { x: 420, y: 285 }],
+            bubbles: [{ id: 'b1', x: 225, y: 410, r: 30 }],
+            cushions: [{ id: 'c1', x: 150, y: 245, dx: 1, dy: 0, power: 540, range: 270 }],
+            portals: [
+                { pair: 0, x: 115, y: 395, r: 26 },
+                { pair: 0, x: 225, y: 425, r: 26 },
+                { pair: 1, x: 315, y: 210, r: 30 },
+                { pair: 1, x: 355, y: 135, r: 26 }
+            ],
+            spikes: [], pads: [], autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 2.35, act: 'blow', id: 'c1' }, { t: 3.1, act: 'pop', id: 'b1' }]
+        },
+        {
+            id: 30, chapter: 5, label: '5-6', name: '潮汐交响',
+            hint: '利用右摆触发自动抓钩，摆过巡逻锯齿上方安全空档后立即剪断垂直落嘴！',
+            candy: { x: 135, y: 195 },
+            omnom: { x: 325, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 135, ay: 75, len: 120 }],
+            stars: [{ x: 175, y: 255 }, { x: 232, y: 230 }, { x: 318, y: 430 }],
+            bubbles: [], cushions: [], portals: [],
+            spikes: [{ x: 145, y: 415, w: 90, h: 16, moveX: 70, speed: 2.4 }],
+            pads: [],
+            autoRopes: [{ id: 'a1', ax: 220, ay: 105, triggerR: 135, len: 185 }],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 1.05, act: 'cut', id: 'a1' }]
+        },
+        // Chapter 6: Starlight Finale (6-1 .. 6-6)
+        {
+            id: 31, chapter: 6, label: '6-1', name: '双绳甩荡',
+            hint: '先断左绳借右绳向右高高荡起，横扫三颗金星后算准最高点二次断绳落嘴！',
+            candy: { x: 230, y: 245 },
+            omnom: { x: 335, y: 528, r: 28 },
+            ropes: [
+                { id: 'r1', ax: 145, ay: 82, len: 185 },
+                { id: 'r2', ax: 315, ay: 82, len: 185 }
+            ],
+            stars: [{ x: 267, y: 266 }, { x: 294, y: 317 }, { x: 319, y: 417 }],
+            bubbles: [], cushions: [], portals: [], spikes: [], pads: [], autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 0.45, act: 'cut', id: 'r2' }]
+        },
+        {
+            id: 32, chapter: 6, label: '6-2', name: '弹簧三重门',
+            hint: '断绳砸响斜角弹鼓飞入一号帽，再从右侧二号帽弹回中央喂饱怪兽！',
+            candy: { x: 110, y: 170 },
+            omnom: { x: 350, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 110, ay: 68, len: 102 }],
+            stars: [{ x: 110, y: 285 }, { x: 245, y: 225 }, { x: 350, y: 375 }],
+            bubbles: [], cushions: [],
+            portals: [
+                { pair: 0, x: 295, y: 245, r: 28 },
+                { pair: 0, x: 350, y: 145, r: 26 }
+            ],
+            spikes: [{ x: 175, y: 485, w: 110, h: 16 }],
+            pads: [{ x: 110, y: 410, w: 86, h: 16, angle: 0.34, power: 680 }],
+            autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }]
+        },
+        {
+            id: 33, chapter: 6, label: '6-3', name: '极限计时',
+            hint: '三颗限时金星将在 5 秒内消散！迅速断绳并借助弹鼓一气呵成飞跃峡谷！',
+            candy: { x: 340, y: 170 },
+            omnom: { x: 115, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 340, ay: 68, len: 102 }],
+            stars: [
+                { x: 340, y: 280, timer: 4.2 },
+                { x: 228, y: 225, timer: 4.5 },
+                { x: 115, y: 385, timer: 4.8 }
+            ],
+            bubbles: [], cushions: [], portals: [],
+            spikes: [{ x: 180, y: 465, w: 105, h: 16 }],
+            pads: [{ x: 340, y: 410, w: 88, h: 16, angle: -0.33, power: 675 }],
+            autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }]
+        },
+        {
+            id: 34, chapter: 6, label: '6-4', name: '浮力穿梭机',
+            hint: '进泡升起绕开巡逻锯齿，按左气囊推动穿过高空星核后点破落口！',
+            candy: { x: 130, y: 355 },
+            omnom: { x: 278, y: 530, r: 28 },
+            ropes: [{ id: 'r1', ax: 130, ay: 230, len: 124 }],
+            stars: [{ x: 130, y: 255 }, { x: 230, y: 175 }, { x: 274, y: 390 }],
+            bubbles: [{ id: 'b1', x: 130, y: 400, r: 30 }],
+            cushions: [{ id: 'c1', x: 70, y: 185, dx: 1, dy: 0, power: 540, range: 270 }],
+            portals: [],
+            spikes: [{ x: 115, y: 485, w: 85, h: 16, moveX: 40, speed: 2.0 }],
+            pads: [], autoRopes: [],
+            script: [{ t: 0.05, act: 'cut', id: 'r1' }, { t: 2.15, act: 'blow', id: 'c1' }, { t: 2.95, act: 'pop', id: 'b1' }]
+        },
+        {
+            id: 35, chapter: 6, label: '6-5', name: '时钟双钩',
+            hint: '先利用滑轨甩向中央抓钩，二次剪断跃进顶帽，垂直降落完成三星收割！',
+            candy: { x: 145, y: 195 },
+            omnom: { x: 345, y: 528, r: 28 },
+            ropes: [{ id: 'r1', ax: 145, ay: 75, len: 120, slideRange: 65, slideSpeed: 2.4 }],
+            stars: [{ x: 190, y: 235 }, { x: 255, y: 295 }, { x: 345, y: 380 }],
+            bubbles: [], cushions: [],
+            portals: [
+                { pair: 0, x: 305, y: 395, r: 28 },
+                { pair: 0, x: 345, y: 140, r: 26 }
+            ],
+            spikes: [{ x: 100, y: 475, w: 120, h: 16 }],
+            pads: [],
+            autoRopes: [{ id: 'a1', ax: 225, ay: 110, triggerR: 135, len: 185 }],
+            script: [{ t: 0.45, act: 'cut', id: 'r1' }, { t: 1.35, act: 'cut', id: 'a1' }]
+        },
+        {
+            id: 36, chapter: 6, label: '6-6', name: '糖果大师终章',
+            hint: '终极试炼！滑轨落入泡泡，风囊推入高帽，算准时机破泡穿透最后一颗限时金星喂怪！',
+            candy: { x: 220, y: 345 },
+            omnom: { x: 135, y: 525, r: 28 },
+            ropes: [{ id: 'r1', ax: 220, ay: 220, len: 125, slideRange: 75, slideSpeed: 2.0 }],
+            stars: [
+                { x: 280, y: 255 },
+                { x: 280, y: 180 },
+                { x: 135, y: 390, timer: 6.5 }
+            ],
+            bubbles: [{ id: 'b1', x: 280, y: 385, r: 30 }],
+            cushions: [],
+            portals: [
+                { pair: 0, x: 280, y: 120, r: 28 },
+                { pair: 0, x: 135, y: 225, r: 26 }
+            ],
+            spikes: [{ x: 215, y: 495, w: 120, h: 16 }],
+            pads: [], autoRopes: [],
+            script: [{ t: 0.78, act: 'cut', id: 'r1' }, { t: 3.45, act: 'pop', id: 'b1' }]
         }
     ];
 
@@ -325,13 +627,16 @@
         };
 
         const ropes = lvl.ropes.map((r) => makeRope(r.id, r.ax, r.ay, r.len, candy, r.slideRange || 0, r.slideSpeed || 0));
-        const stars = lvl.stars.map((s, i) => ({ id: i, x: s.x, y: s.y, r: 17, collected: false }));
+        const stars = lvl.stars.map((s, i) => ({
+            id: i, x: s.x, y: s.y, r: 17, collected: false,
+            timer: s.timer || 0, timeLeft: s.timer || 0, expired: false
+        }));
         const bubbles = lvl.bubbles.map((b) => ({ ...b, vx: 0, captured: false, popped: false }));
         const cushions = lvl.cushions.map((c) => ({ ...c, r: 28, puffTimer: 0 }));
         const portals = lvl.portals.map((p) => ({ ...p }));
         const autoRopes = lvl.autoRopes.map((a) => ({ ...a, triggered: false }));
         const pads = lvl.pads.map((p) => ({ ...p, bounceTimer: 0 }));
-        const spikes = lvl.spikes.map((s) => ({ ...s }));
+        const spikes = lvl.spikes.map((s) => ({ ...s, baseX: s.x, baseY: s.y }));
 
         const session = {
             levelIndex: idx,
@@ -389,7 +694,10 @@
                 : session.bubbles.find((b) => !b.popped && Math.hypot(b.x - idOrPoint.x, b.y - idOrPoint.y) <= b.r + 14);
             if (!target) return [];
             target.popped = true;
-            if (session.activeBubble === target) session.activeBubble = null;
+            if (session.activeBubble === target) {
+                candy.oldX = candy.x - (target.vx || 0) * ARENA.fixedDt * 0.55;
+                session.activeBubble = null;
+            }
             return [{ type: 'pop', id: target.id, x: target.x, y: target.y }];
         }
 
@@ -424,6 +732,16 @@
             }
             for (const p of session.pads) {
                 if (p.bounceTimer > 0) p.bounceTimer = Math.max(0, p.bounceTimer - dt);
+            }
+            for (const sp of session.spikes) {
+                if (sp.moveX) sp.x = sp.baseX + Math.sin(session.time * (sp.speed || 2)) * sp.moveX;
+                if (sp.moveY) sp.y = sp.baseY + Math.sin(session.time * (sp.speed || 2)) * sp.moveY;
+            }
+            for (const st of session.stars) {
+                if (!st.collected && !st.expired && st.timer > 0) {
+                    st.timeLeft = Math.max(0, st.timeLeft - dt);
+                    if (st.timeLeft <= 0) st.expired = true;
+                }
             }
 
             // 1. Bubble capture or buoyancy
@@ -587,7 +905,7 @@
 
             // 7. Collect Stars
             for (const st of session.stars) {
-                if (st.collected) continue;
+                if (st.collected || st.expired) continue;
                 if (Math.hypot(candy.x - st.x, candy.y - st.y) <= st.r + candy.r) {
                     st.collected = true;
                     session.starsCollected += 1;

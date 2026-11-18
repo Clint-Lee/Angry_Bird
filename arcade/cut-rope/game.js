@@ -38,6 +38,7 @@
     let lastPtr = null;
 
     const sliceTrail = [];
+    const candyTrail = [];
     const particles = [];
     const windPuffs = [];
 
@@ -70,6 +71,7 @@
         persistSave();
         session = E.createSession(cleanIdx);
         sliceTrail.length = 0;
+        candyTrail.length = 0;
         particles.length = 0;
         windPuffs.length = 0;
         el.levelsModal.classList.add('hidden');
@@ -260,6 +262,9 @@
         isSlicing = true;
         lastPtr = pt;
         sliceTrail.push({ x: pt.x, y: pt.y, life: 0.16 });
+        // Support crisp single-tap slicing across thin ropes as well as full swipes
+        const tapCut = session.sliceLine(pt.x - 6, pt.y - 6, pt.x + 6, pt.y + 6);
+        if (tapCut.length > 0) handleEvents(tapCut);
         try { canvas.setPointerCapture(e.pointerId); } catch {}
     });
 
@@ -323,6 +328,18 @@
             g.addColorStop(0, '#3e2c23');
             g.addColorStop(0.6, '#2e2019');
             g.addColorStop(1, '#201510');
+        } else if (chId === 4) {
+            g.addColorStop(0, '#2e1065');
+            g.addColorStop(0.6, '#1e1b4b');
+            g.addColorStop(1, '#110f29');
+        } else if (chId === 5) {
+            g.addColorStop(0, '#115e59');
+            g.addColorStop(0.6, '#0f4745');
+            g.addColorStop(1, '#082f30');
+        } else if (chId === 6) {
+            g.addColorStop(0, '#4c0519');
+            g.addColorStop(0.6, '#3b0717');
+            g.addColorStop(1, '#24050e');
         } else {
             g.addColorStop(0, '#f3dec0');
             g.addColorStop(0.55, '#e2c496');
@@ -332,7 +349,6 @@
         ctx.fillRect(0, 0, ARENA.width, ARENA.height);
 
         if (chId === 2) {
-            // Subtle engineering blueprint grid
             ctx.strokeStyle = 'rgba(125, 211, 252, 0.08)';
             ctx.lineWidth = 1;
             for (let gx = 30; gx < ARENA.width; gx += 36) {
@@ -342,7 +358,6 @@
                 ctx.beginPath(); ctx.moveTo(16, gy); ctx.lineTo(ARENA.width - 16, gy); ctx.stroke();
             }
         } else if (chId === 3) {
-            // Subtle clockwork brass cogs in background
             for (const [gx, gy, gr, spd] of [[95, 180, 44, 0.25], [375, 290, 56, -0.18], [150, 450, 38, 0.3]]) {
                 ctx.save();
                 ctx.translate(gx, gy);
@@ -356,8 +371,29 @@
                 ctx.beginPath(); ctx.arc(0, 0, gr * 0.65, 0, Math.PI * 2); ctx.stroke();
                 ctx.restore();
             }
+        } else if (chId === 4) {
+            ctx.fillStyle = 'rgba(233, 213, 255, 0.14)';
+            for (let i = 0; i < 18; i++) {
+                const sx = 35 + ((i * 89) % (ARENA.width - 70));
+                const sy = 35 + ((i * 137) % (ARENA.height - 70));
+                const pulseR = 1.6 + Math.sin(clock * 2.4 + i) * 0.8;
+                ctx.beginPath(); ctx.arc(sx, sy, pulseR, 0, Math.PI * 2); ctx.fill();
+            }
+        } else if (chId === 5) {
+            ctx.strokeStyle = 'rgba(94, 234, 212, 0.12)';
+            ctx.lineWidth = 1.6;
+            for (let i = 0; i < 8; i++) {
+                const bx = 42 + i * 54;
+                const by = ARENA.height - ((clock * 22 + i * 75) % (ARENA.height - 30));
+                ctx.beginPath(); ctx.arc(bx, by, 7 + (i % 3) * 4, 0, Math.PI * 2); ctx.stroke();
+            }
+        } else if (chId === 6) {
+            ctx.strokeStyle = 'rgba(251, 113, 133, 0.14)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([7, 7]);
+            ctx.strokeRect(14, 14, ARENA.width - 28, ARENA.height - 28);
+            ctx.setLineDash([]);
         } else {
-            // Stitched kraft cardboard seams
             ctx.strokeStyle = 'rgba(120, 82, 46, 0.14)';
             ctx.lineWidth = 2;
             ctx.strokeRect(18, 18, ARENA.width - 36, ARENA.height - 36);
@@ -373,75 +409,127 @@
         ctx.save();
         ctx.translate(o.x, o.y);
 
-        // Sitting shadow
-        ctx.fillStyle = 'rgba(60, 35, 16, 0.25)';
-        ctx.beginPath();
-        ctx.ellipse(0, o.r + 6, o.r * 1.15, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // Wooden crate / felt mat under Om Nom
+        ctx.fillStyle = 'rgba(60, 35, 16, 0.3)';
+        ctx.beginPath(); ctx.ellipse(0, o.r + 9, o.r * 1.35, 9, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#92400e';
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.roundRect(-o.r * 1.15, o.r * 0.55, o.r * 2.3, 12, 5); ctx.fill(); ctx.stroke();
 
-        // Cute green monster body
-        const bg = ctx.createRadialGradient(-6, -8, 4, 0, 0, o.r + 6);
-        bg.addColorStop(0, '#86efac');
-        bg.addColorStop(0.6, '#22c55e');
+        // Cute chubby legs
+        ctx.fillStyle = '#15803d';
+        ctx.beginPath(); ctx.ellipse(-13, o.r * 0.72, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(13, o.r * 0.72, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+
+        // Soft bouncy monster silhouette
+        const bob = Math.sin(clock * 3.2) * 1.2;
+        ctx.translate(0, bob);
+        const bg = ctx.createRadialGradient(-7, -9, 4, 0, 0, o.r + 8);
+        bg.addColorStop(0, '#bbf7d0');
+        bg.addColorStop(0.55, '#22c55e');
         bg.addColorStop(1, '#15803d');
         ctx.fillStyle = bg;
         ctx.strokeStyle = '#14532d';
         ctx.lineWidth = 2.4;
         ctx.beginPath();
-        ctx.roundRect(-o.r, -o.r * 0.9, o.r * 2, o.r * 1.85, 16);
+        ctx.roundRect(-o.r, -o.r * 0.9, o.r * 2, o.r * 1.8, 17);
         ctx.fill();
         ctx.stroke();
 
-        // Antenna tuft
+        // Lighter tummy patch & rosy cheeks
+        ctx.fillStyle = 'rgba(187, 247, 208, 0.45)';
+        ctx.beginPath(); ctx.ellipse(0, 12, 16, 10, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(251, 113, 133, 0.35)';
+        ctx.beginPath(); ctx.ellipse(-18, 2, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(18, 2, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+        // Bouncy top antenna tuft
+        const tuftSway = Math.sin(clock * 4) * 3;
         ctx.strokeStyle = '#15803d';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.2;
         ctx.beginPath();
         ctx.moveTo(0, -o.r * 0.9);
-        ctx.quadraticCurveTo(6, -o.r - 12, 11, -o.r - 7);
+        ctx.quadraticCurveTo(5 + tuftSway, -o.r - 13, 11 + tuftSway, -o.r - 8);
         ctx.stroke();
+        ctx.fillStyle = '#4ade80';
+        ctx.beginPath(); ctx.arc(11 + tuftSway, -o.r - 8, 3.6, 0, Math.PI * 2); ctx.fill();
 
-        // Big expressive eyes
+        // Blinking / happy / sad eyes tracking candy
+        const isWon = session.state === 'won';
+        const isLost = session.state === 'lost';
+        const blinking = Math.sin(clock * 1.45) > 0.985;
         [-10, 10].forEach((ex) => {
+            if (isWon) {
+                ctx.strokeStyle = '#14532d';
+                ctx.lineWidth = 2.8;
+                ctx.beginPath(); ctx.arc(ex, -11, 6, Math.PI + 0.3, -0.3); ctx.stroke();
+                return;
+            }
+            if (blinking) {
+                ctx.strokeStyle = '#14532d';
+                ctx.lineWidth = 2.4;
+                ctx.beginPath(); ctx.moveTo(ex - 6, -12); ctx.lineTo(ex + 6, -12); ctx.stroke();
+                return;
+            }
             ctx.fillStyle = '#fff';
             ctx.strokeStyle = '#14532d';
             ctx.lineWidth = 1.6;
-            ctx.beginPath();
-            ctx.arc(ex, -12, 7.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+            ctx.beginPath(); ctx.arc(ex, -12, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
             const ang = Math.atan2(session.candy.y - o.y, session.candy.x - (o.x + ex));
             ctx.fillStyle = '#0f172a';
             ctx.beginPath();
-            ctx.arc(ex + Math.cos(ang) * 2.4, -12 + Math.sin(ang) * 2.4, 3.3, 0, Math.PI * 2);
+            ctx.arc(ex + Math.cos(ang) * 2.7, -12 + Math.sin(ang) * 2.7, 3.5, 0, Math.PI * 2);
             ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(ex + Math.cos(ang) * 2.7 - 1.2, -13.2 + Math.sin(ang) * 2.7, 1.2, 0, Math.PI * 2); ctx.fill();
         });
 
-        // Wide mouth reacts excitedly when candy approaches!
-        const openH = 4 + o.mouthOpen * 16;
-        ctx.fillStyle = '#450a0a';
-        ctx.beginPath();
-        ctx.ellipse(0, 8, 17, openH, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Cute little white teeth
-        ctx.fillStyle = '#fff';
-        for (let tx = -10; tx <= 10; tx += 7) {
-            ctx.beginPath();
-            ctx.moveTo(tx - 2.5, 8 - openH + 1);
-            ctx.lineTo(tx + 2.5, 8 - openH + 1);
-            ctx.lineTo(tx, 8 - openH + 6);
-            ctx.closePath();
-            ctx.fill();
+        // Expressive Mouth (excitedly open when candy approaches, happy chew on win, sad droop on loss)
+        if (isLost) {
+            ctx.strokeStyle = '#14532d';
+            ctx.lineWidth = 2.8;
+            ctx.beginPath(); ctx.arc(0, 16, 10, Math.PI + 0.4, -0.4); ctx.stroke();
+        } else {
+            const chew = isWon ? (0.45 + Math.abs(Math.sin(clock * 14)) * 0.45) : o.mouthOpen;
+            const openH = 4.5 + chew * 16;
+            ctx.fillStyle = '#450a0a';
+            ctx.beginPath(); ctx.ellipse(0, 8, 17.5, openH, 0, 0, Math.PI * 2); ctx.fill();
+            // Cute pink tongue inside mouth
+            if (openH > 7) {
+                ctx.fillStyle = '#fb7185';
+                ctx.beginPath(); ctx.ellipse(0, 8 + openH * 0.48, 10, openH * 0.36, 0, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.fillStyle = '#fff';
+            for (let tx = -10; tx <= 10; tx += 7) {
+                ctx.beginPath();
+                ctx.moveTo(tx - 2.6, 8 - openH + 1);
+                ctx.lineTo(tx + 2.6, 8 - openH + 1);
+                ctx.lineTo(tx, 8 - openH + 6);
+                ctx.closePath();
+                ctx.fill();
+            }
         }
         ctx.restore();
     }
 
     function drawGadgets() {
-        // Spikes
+        // Spikes (including optional steel guide rails for patrolling spikes)
         for (const sp of session.spikes) {
+            if (sp.moveX) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(sp.baseX - sp.moveX, sp.y + sp.h * 0.65);
+                ctx.lineTo(sp.baseX + sp.w + sp.moveX, sp.y + sp.h * 0.65);
+                ctx.stroke();
+                ctx.restore();
+            }
             ctx.save();
             ctx.fillStyle = '#475569';
             ctx.fillRect(sp.x, sp.y + 8, sp.w, sp.h - 8);
-            ctx.fillStyle = '#94a3b8';
+            ctx.fillStyle = sp.moveX ? '#e2e8f0' : '#94a3b8';
             for (let sx = sp.x; sx < sp.x + sp.w - 8; sx += 12) {
                 ctx.beginPath();
                 ctx.moveTo(sx, sp.y + 10);
@@ -477,27 +565,25 @@
             ctx.restore();
         }
 
-        // Magic Top Hat Portals (Velvet Silhouette + Brim + Portal Vortex)
+        // Magic Top Hat Portals (Pair 0 Indigo/Gold, Pair 1 Teal/Cyan)
         for (const p of session.portals) {
+            const isAlt = p.pair === 1;
             ctx.save();
             ctx.translate(p.x, p.y);
-            // Hat crown
-            ctx.fillStyle = '#312e81';
-            ctx.strokeStyle = '#c4b5fd';
+            ctx.fillStyle = isAlt ? '#0f766e' : '#312e81';
+            ctx.strokeStyle = isAlt ? '#5eead4' : '#c4b5fd';
             ctx.lineWidth = 1.8;
             ctx.beginPath();
             ctx.roundRect(-p.r * 0.78, -p.r * 0.9, p.r * 1.56, p.r * 1.15, 6);
             ctx.fill();
             ctx.stroke();
-            // Gold hat ribbon
-            ctx.fillStyle = '#f59e0b';
+            ctx.fillStyle = isAlt ? '#2dd4bf' : '#f59e0b';
             ctx.fillRect(-p.r * 0.76, -p.r * 0.1, p.r * 1.52, 5);
-            // Brim + Swirling portal opening
-            ctx.fillStyle = '#1e1b4b';
+            ctx.fillStyle = isAlt ? '#134e4a' : '#1e1b4b';
             ctx.beginPath();
             ctx.ellipse(0, p.r * 0.28, p.r * 1.08, p.r * 0.36, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#fde047';
+            ctx.strokeStyle = isAlt ? '#99f6e4' : '#fde047';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 4]);
             ctx.beginPath();
@@ -549,16 +635,25 @@
 
     function drawStarsAndRopes() {
         for (const st of session.stars) {
-            if (st.collected) continue;
+            if (st.collected || st.expired) continue;
             ctx.save();
             ctx.translate(st.x, st.y + Math.sin(clock * 3.5 + st.id) * 2.5);
             const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 24);
-            g.addColorStop(0, 'rgba(253, 224, 71, 0.72)');
+            g.addColorStop(0, st.timer > 0 && st.timeLeft < 1.6 ? 'rgba(251, 113, 133, 0.75)' : 'rgba(253, 224, 71, 0.72)');
             g.addColorStop(1, 'rgba(253, 224, 71, 0)');
             ctx.fillStyle = g;
             ctx.beginPath();
             ctx.arc(0, 0, 24, 0, Math.PI * 2);
             ctx.fill();
+
+            if (st.timer > 0) {
+                const frac = Math.max(0, st.timeLeft / st.timer);
+                ctx.strokeStyle = frac < 0.35 ? '#fb7185' : '#fde047';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, 0, st.r + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac);
+                ctx.stroke();
+            }
 
             drawStarPoly(0, 0, st.r, st.r * 0.44, 5, -Math.PI / 2 + clock * 0.8);
             ctx.fillStyle = '#fde047';
@@ -621,6 +716,21 @@
 
     function drawCandyAndBubbles() {
         const c = session.candy;
+        if (session.state === 'playing') {
+            candyTrail.push({ x: c.x, y: c.y });
+            if (candyTrail.length > 9) candyTrail.shift();
+        }
+        if (candyTrail.length > 2) {
+            ctx.save();
+            for (let i = 1; i < candyTrail.length; i++) {
+                ctx.globalAlpha = (i / candyTrail.length) * 0.24;
+                ctx.fillStyle = '#fda4af';
+                ctx.beginPath();
+                ctx.arc(candyTrail[i].x, candyTrail[i].y, c.r * (i / candyTrail.length) * 0.65, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
         ctx.save();
         ctx.translate(c.x, c.y);
         ctx.rotate(c.rot || 0);

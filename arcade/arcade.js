@@ -88,8 +88,8 @@
     function updateCutRope() {
         const cr = readJson('cloudeave_cut_rope_v1');
         const stars = Object.values(cr.levelStars || {}).reduce((s, v) => s + Math.min(3, Math.max(0, Number(v) || 0)), 0);
-        const curLvl = Math.max(1, Math.min(18, (Number(cr.currentLevelIndex) || 0) + 1));
-        setText('crSummary', `第 ${curLvl} 关 · ${stars} / 54 ⭐`);
+        const curLvl = Math.max(1, Math.min(36, (Number(cr.currentLevelIndex) || 0) + 1));
+        setText('crSummary', `第 ${curLvl} 关 · ${stars} / 108 ⭐`);
 
         const url = resolveUrl('cut-rope');
         const link = document.getElementById('linkCoverCr');

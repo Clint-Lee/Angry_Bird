@@ -20,8 +20,10 @@
         btnUndo: document.getElementById('btnUndo'),
         btnRestart: document.getElementById('btnRestart'),
         btnMute: document.getElementById('btnMute'),
+        heroAvatarCanvas: document.getElementById('heroAvatarCanvas'),
         lvVal: document.getElementById('lvVal'),
         expNeedVal: document.getElementById('expNeedVal'),
+        expBarFill: document.getElementById('expBarFill'),
         hpVal: document.getElementById('hpVal'),
         atkVal: document.getElementById('atkVal'),
         defVal: document.getElementById('defVal'),
@@ -31,6 +33,7 @@
         keyY: document.getElementById('keyY'),
         keyB: document.getElementById('keyB'),
         keyR: document.getElementById('keyR'),
+        forecastHintTag: document.getElementById('forecastHintTag'),
         forecastBody: document.getElementById('forecastBody'),
         boardFrame: document.getElementById('boardFrame'),
         toastStrip: document.getElementById('toastStrip'),
@@ -41,21 +44,17 @@
         btnCloseModal: document.getElementById('btnCloseModal'),
 
         battleOverlay: document.getElementById('battleOverlay'),
+        battleEnemyBadge: document.getElementById('battleEnemyBadge'),
+        battleRoundTag: document.getElementById('battleRoundTag'),
         btnSkipBattleNow: document.getElementById('btnSkipBattleNow'),
-        fighterHero: document.getElementById('fighterHero'),
-        fighterEnemy: document.getElementById('fighterEnemy'),
-        battleHeroCanvas: document.getElementById('battleHeroCanvas'),
-        battleEnemyCanvas: document.getElementById('battleEnemyCanvas'),
-        heroHitPop: document.getElementById('heroHitPop'),
-        enemyHitPop: document.getElementById('enemyHitPop'),
+        battleStageCanvas: document.getElementById('battleStageCanvas'),
         heroHpBar: document.getElementById('heroHpBar'),
         enemyHpBar: document.getElementById('enemyHpBar'),
         heroHpText: document.getElementById('heroHpText'),
         enemyHpText: document.getElementById('enemyHpText'),
         heroBattleStats: document.getElementById('heroBattleStats'),
         enemyBattleName: document.getElementById('enemyBattleName'),
-        enemyBattleStats: document.getElementById('enemyBattleStats'),
-        battleLog: document.getElementById('battleLog')
+        enemyBattleStats: document.getElementById('enemyBattleStats')
     };
 
     const audio = new AudioSys();
@@ -69,6 +68,7 @@
     let battlePlaying = false;
     let battleFinishCb = null;
     let battleTimer = null;
+    let battleRaf = null;
     const floats = [];
     const anim = { px: 7, py: 13 };
 
@@ -140,8 +140,17 @@
 
         el.zoneBadge.textContent = zone.name;
         el.floorTitle.textContent = `第 ${f.floor} / ${E.TOTAL_FLOORS} 层 · ${f.name}`;
+        const expReq = p.level * 60;
         el.lvVal.textContent = `Lv.${p.level}`;
-        el.expNeedVal.textContent = `经验 ${p.exp} / ${p.level * 60}`;
+        el.expNeedVal.textContent = `${p.exp} / ${expReq} EXP`;
+        if (el.expBarFill) {
+            el.expBarFill.style.width = `${Math.min(100, Math.round((p.exp / expReq) * 100))}%`;
+        }
+        if (el.heroAvatarCanvas) {
+            const hCtx = el.heroAvatarCanvas.getContext('2d');
+            hCtx.clearRect(0, 0, 42, 42);
+            drawHeroShape(hCtx, 21, 22, 1.18, 1);
+        }
         el.hpVal.textContent = String(Math.max(0, p.hp));
         el.atkVal.textContent = String(p.atk);
         el.defVal.textContent = String(p.def);
@@ -179,11 +188,20 @@
         }
 
         if (!targetEnemy) {
+            if (el.forecastHintTag) el.forecastHintTag.textContent = '悬停或贴近';
             el.forecastBody.className = 'forecast-empty';
-            el.forecastBody.innerHTML = '方向键 / WASD 或点击地图自动寻路；按 <b>M</b> 查图鉴、<b>Z</b> 回溯一步。';
+            el.forecastBody.innerHTML = `
+                <div class="key-hints-grid">
+                    <span><b>WASD</b> / 点击寻路</span>
+                    <span><b>M</b> 本层怪物图鉴</span>
+                    <span><b>Z</b> 撤销上一步</span>
+                    <span><b>F</b> 楼层快速传送</span>
+                </div>
+            `;
             return;
         }
 
+        if (el.forecastHintTag) el.forecastHintTag.textContent = targetEnemy.isBoss ? '守关首领' : '交锋预估';
         const c = E.calculateBattle(p, targetEnemy);
         const dmgClass = !c.canWin
             ? 'fc-dmg-danger'
@@ -191,105 +209,192 @@
                 ? 'fc-dmg-safe'
                 : 'fc-dmg-warn';
 
-        const dmgText = c.canWin ? `-${c.damage} HP (${c.turns}回合)` : '无法战胜';
+        const dmgText = c.canWin ? (c.damage === 0 ? '无伤击杀' : `-${c.damage} HP · ${c.turns}合`) : '无法战胜';
         let tipHtml = '';
         if (!c.canWin && c.atkNeeded > 0) {
-            tipHtml = `<div class="fc-tip">提示：还需提升 <b>+${c.atkNeeded} 攻击力</b> 才可破防</div>`;
+            tipHtml = `<div class="fc-tip">还需 <b>+${c.atkNeeded} 攻击力</b> 方可破防</div>`;
         } else if (!c.canWin) {
-            tipHtml = `<div class="fc-tip">提示：当前生命不足，先去收集血瓶或强化防御</div>`;
+            tipHtml = `<div class="fc-tip">生命不足（差 ${c.damage - p.hp + 1}），请先补血强化</div>`;
         } else if (c.nextAtkForLess > 0) {
-            tipHtml = `<div class="fc-tip">临界：再加 <b>+${c.nextAtkForLess} 攻</b> 可减少 <b>${c.nextAtkSave}</b> 伤</div>`;
+            tipHtml = `<div class="fc-tip">临界：再加 <b>+${c.nextAtkForLess} 攻</b> 减伤 <b>${c.nextAtkSave}</b></div>`;
         }
 
         el.forecastBody.className = '';
         el.forecastBody.innerHTML = `
-            <div class="fc-head">
-                <span>${targetEnemy.name}</span>
-                <span class="${dmgClass}">${dmgText}</span>
-            </div>
-            <div class="fc-meta">
-                <span>生命 <b>${targetEnemy.hp}</b></span>
-                <span>攻 <b>${targetEnemy.atk}</b> / 防 <b>${targetEnemy.def}</b></span>
-                <span>奖 <b>${targetEnemy.gold}金 ${targetEnemy.exp}经</b></span>
+            <div class="fc-top">
+                <canvas class="fc-avatar" id="forecastEnemyCanvas" width="44" height="44"></canvas>
+                <div class="fc-head-col">
+                    <div class="fc-head">
+                        <span>${targetEnemy.name}</span>
+                        <span class="${dmgClass}">${dmgText}</span>
+                    </div>
+                    <div class="fc-meta">
+                        <span>血 <b>${targetEnemy.hp}</b></span>
+                        <span>攻 <b>${targetEnemy.atk}</b> / 防 <b>${targetEnemy.def}</b></span>
+                        <span>+${targetEnemy.gold}金 +${targetEnemy.exp}经</span>
+                    </div>
+                </div>
             </div>
             ${tipHtml}
         `;
+        const fcCv = document.getElementById('forecastEnemyCanvas');
+        if (fcCv) {
+            const fcCtx = fcCv.getContext('2d');
+            fcCtx.clearRect(0, 0, 44, 44);
+            drawEnemyShape(fcCtx, targetEnemy, 22, 23, 1.15);
+        }
     }
 
-    // Shared portrait painter used on Map, Monster Manual, and Battle Overlay
-    function drawHeroShape(c2d, cx, cy, scale, dirX = 0) {
+    // Shared crisp RPG sprite painter used on Map, HUD, Monster Manual, and Duel Stage
+    function drawHeroShape(c2d, cx, cy, scale, dirX = 0, swingPhase = 0) {
         c2d.save();
         c2d.translate(cx, cy);
         c2d.scale(scale, scale);
 
-        c2d.fillStyle = 'rgba(0,0,0,0.35)';
+        // Ground shadow
+        c2d.fillStyle = 'rgba(0,0,0,0.4)';
         c2d.beginPath();
-        c2d.ellipse(0, 14, 12, 5, 0, 0, Math.PI * 2);
+        c2d.ellipse(0, 14, 12, 4.5, 0, 0, Math.PI * 2);
         c2d.fill();
 
+        // Crimson hero cloak
+        c2d.fillStyle = '#dc2626';
+        c2d.beginPath();
+        c2d.moveTo(-11, -1); c2d.lineTo(-13, 12); c2d.lineTo(13, 12); c2d.lineTo(11, -1);
+        c2d.closePath();
+        c2d.fill();
+
+        // Royal blue breastplate armor
         c2d.fillStyle = '#2563eb';
         c2d.beginPath();
-        c2d.roundRect(-11, -2, 22, 16, 5);
+        c2d.roundRect(-9.5, -2, 19, 14, 4);
         c2d.fill();
+        c2d.fillStyle = '#93c5fd';
+        c2d.fillRect(-5, 0, 10, 3);
 
-        c2d.fillStyle = '#e2e8f0';
+        // Knight shield on left side
+        c2d.fillStyle = '#38bdf8';
+        c2d.strokeStyle = '#e0f2fe';
+        c2d.lineWidth = 1.4;
         c2d.beginPath();
-        c2d.arc(0, -7, 9, 0, Math.PI * 2);
+        c2d.roundRect(-13.5, 0, 7, 10, 3);
         c2d.fill();
+        c2d.stroke();
 
+        // Steel broadsword on right hand (rotates during duel lunge)
+        c2d.save();
+        c2d.translate(9, 4);
+        c2d.rotate(-0.45 + swingPhase * 1.45);
+        c2d.fillStyle = '#cbd5e1';
+        c2d.fillRect(-1.5, -14, 3, 14);
         c2d.fillStyle = '#facc15';
+        c2d.fillRect(-4, -2, 8, 2.5);
+        c2d.restore();
+
+        // Face & silver helmet with golden crest
+        c2d.fillStyle = '#fde68a';
         c2d.beginPath();
-        c2d.arc(0, -10, 8.5, Math.PI, 0);
+        c2d.arc(0, -7, 8, 0, Math.PI * 2);
         c2d.fill();
 
+        c2d.fillStyle = '#94a3b8';
+        c2d.beginPath();
+        c2d.arc(0, -9, 8.8, Math.PI * 0.92, Math.PI * 0.08);
+        c2d.fill();
+        c2d.fillStyle = '#facc15';
+        c2d.fillRect(-2, -18, 4, 4.5);
+
+        // Determined eyes
         c2d.fillStyle = '#0f172a';
-        const ex = dirX * 3;
-        c2d.fillRect(-4 + ex, -8, 2.5, 3);
-        c2d.fillRect(1.5 + ex, -8, 2.5, 3);
+        const ex = dirX * 2.4;
+        c2d.fillRect(-3.8 + ex, -7.5, 2.3, 2.8);
+        c2d.fillRect(1.6 + ex, -7.5, 2.3, 2.8);
         c2d.restore();
     }
 
-    function drawEnemyShape(c2d, ent, cx, cy, scale) {
+    function drawEnemyShape(c2d, ent, cx, cy, scale, flash = false) {
         c2d.save();
         c2d.translate(cx, cy);
         c2d.scale(scale, scale);
 
+        const bodyCol = flash ? '#ffffff' : ent.color;
         if (ent.sprite === 'slime') {
-            c2d.fillStyle = ent.color;
+            c2d.fillStyle = 'rgba(0,0,0,0.32)';
+            c2d.beginPath(); c2d.ellipse(0, 12, 12, 4, 0, 0, Math.PI * 2); c2d.fill();
+            c2d.fillStyle = bodyCol;
             c2d.beginPath();
-            c2d.arc(0, 3, 13, Math.PI, 0);
-            c2d.lineTo(13, 12);
-            c2d.quadraticCurveTo(0, 15, -13, 12);
+            c2d.arc(0, 3, 12.5, Math.PI, 0);
+            c2d.lineTo(13, 11);
+            c2d.quadraticCurveTo(0, 14, -13, 11);
             c2d.closePath();
             c2d.fill();
+            c2d.fillStyle = 'rgba(255,255,255,0.45)';
+            c2d.beginPath(); c2d.ellipse(-5, -3, 3.5, 2, -0.4, 0, Math.PI * 2); c2d.fill();
         } else if (ent.sprite === 'bat') {
-            c2d.fillStyle = ent.color;
+            c2d.fillStyle = bodyCol;
             c2d.beginPath();
-            c2d.moveTo(-16, -2); c2d.lineTo(-5, 3); c2d.lineTo(0, -6);
-            c2d.lineTo(5, 3); c2d.lineTo(16, -2); c2d.lineTo(8, 10);
-            c2d.lineTo(0, 5); c2d.lineTo(-8, 10);
+            c2d.moveTo(-16, -4); c2d.lineTo(-6, 1); c2d.lineTo(-3, -7);
+            c2d.lineTo(0, -3); c2d.lineTo(3, -7); c2d.lineTo(6, 1);
+            c2d.lineTo(16, -4); c2d.lineTo(10, 9); c2d.lineTo(0, 5); c2d.lineTo(-10, 9);
             c2d.closePath();
             c2d.fill();
-        } else if (ent.sprite === 'boss') {
-            c2d.fillStyle = ent.color;
+        } else if (ent.sprite === 'skeleton') {
+            c2d.fillStyle = bodyCol;
+            c2d.beginPath(); c2d.arc(0, -6, 8.5, 0, Math.PI * 2); c2d.fill();
+            c2d.fillRect(-6, 2, 12, 10);
+            c2d.fillStyle = '#1e293b';
+            c2d.fillRect(-4, 5, 8, 1.8);
+            c2d.fillRect(-4, 8.5, 8, 1.8);
+            c2d.strokeStyle = '#94a3b8'; c2d.lineWidth = 2.2;
+            c2d.beginPath(); c2d.moveTo(9, 10); c2d.lineTo(13, -7); c2d.stroke();
+        } else if (ent.sprite === 'mage') {
+            c2d.fillStyle = bodyCol;
             c2d.beginPath();
-            c2d.moveTo(-14, 13); c2d.lineTo(-14, -7); c2d.lineTo(-7, -14);
-            c2d.lineTo(0, -8); c2d.lineTo(7, -14); c2d.lineTo(14, -7);
+            c2d.moveTo(0, -14); c2d.lineTo(11, -3); c2d.lineTo(12, 13); c2d.lineTo(-12, 13); c2d.lineTo(-11, -3);
+            c2d.closePath();
+            c2d.fill();
+            c2d.fillStyle = '#0f172a';
+            c2d.beginPath(); c2d.arc(0, -4, 6.5, 0, Math.PI * 2); c2d.fill();
+            c2d.fillStyle = '#fde047';
+            c2d.fillRect(-13, -10, 2.5, 22);
+            c2d.beginPath(); c2d.arc(-11.8, -11, 3.2, 0, Math.PI * 2); c2d.fill();
+        } else if (ent.sprite === 'knight' || ent.sprite === 'orc') {
+            c2d.fillStyle = bodyCol;
+            c2d.beginPath(); c2d.roundRect(-11, -10, 22, 23, 5); c2d.fill();
+            c2d.fillStyle = '#cbd5e1';
+            c2d.beginPath();
+            c2d.moveTo(-10, -10); c2d.lineTo(-13, -16); c2d.lineTo(-6, -12);
+            c2d.moveTo(10, -10); c2d.lineTo(13, -16); c2d.lineTo(6, -12);
+            c2d.fill();
+            c2d.fillStyle = '#dc2626';
+            c2d.fillRect(-9, 1, 18, 3);
+        } else if (ent.sprite === 'boss') {
+            c2d.fillStyle = 'rgba(239, 68, 68, 0.28)';
+            c2d.beginPath(); c2d.arc(0, 0, 17, 0, Math.PI * 2); c2d.fill();
+            c2d.fillStyle = bodyCol;
+            c2d.beginPath();
+            c2d.moveTo(-14, 13); c2d.lineTo(-14, -7); c2d.lineTo(-8, -15);
+            c2d.lineTo(0, -9); c2d.lineTo(8, -15); c2d.lineTo(14, -7);
             c2d.lineTo(14, 13);
             c2d.closePath();
             c2d.fill();
+            c2d.fillStyle = '#facc15';
+            c2d.fillRect(-8, 6, 16, 3);
         } else {
-            c2d.fillStyle = ent.color;
+            c2d.fillStyle = bodyCol;
             c2d.beginPath();
-            c2d.roundRect(-11, -12, 22, 25, 6);
+            c2d.roundRect(-11, -12, 22, 24, 7);
             c2d.fill();
         }
-        c2d.fillStyle = '#0f172a';
-        c2d.fillRect(-6, -2, 4, 4);
-        c2d.fillRect(2, -2, 4, 4);
-        c2d.fillStyle = ent.isBoss ? '#fef08a' : '#fff';
-        c2d.fillRect(-5, -1, 2, 2);
-        c2d.fillRect(3, -1, 2, 2);
+
+        if (!flash) {
+            c2d.fillStyle = ent.sprite === 'mage' ? '#e879f9' : '#0f172a';
+            c2d.fillRect(-5.5, -4, 3.6, 3.6);
+            c2d.fillRect(2, -4, 3.6, 3.6);
+            c2d.fillStyle = ent.isBoss ? '#fef08a' : '#fff';
+            c2d.fillRect(-4.5, -3, 1.6, 1.6);
+            c2d.fillRect(3, -3, 1.6, 1.6);
+        }
         c2d.restore();
     }
 
@@ -555,18 +660,18 @@
         }
     }
 
-    // ---------------- Turn-by-Turn Battle Animation ----------------
+    // ---------------- Snappy Animated Canvas RPG Duel ----------------
     function stopBattleAnimation(silent = false) {
         if (battleTimer) {
             clearTimeout(battleTimer);
             battleTimer = null;
         }
+        if (battleRaf) {
+            cancelAnimationFrame(battleRaf);
+            battleRaf = null;
+        }
         battlePlaying = false;
         el.battleOverlay.classList.add('hidden');
-        el.fighterHero.className = 'fighter left';
-        el.fighterEnemy.className = 'fighter right';
-        el.heroHitPop.className = 'hit-pop';
-        el.enemyHitPop.className = 'hit-pop';
         if (!silent && battleFinishCb) {
             const cb = battleFinishCb;
             battleFinishCb = null;
@@ -582,15 +687,8 @@
         const startHeroHp = res.preBattleHeroHp;
         const startEnemyHp = enemy.hp;
 
-        // Draw portraits onto battle canvases
-        const hCtx = el.battleHeroCanvas.getContext('2d');
-        hCtx.clearRect(0, 0, 64, 64);
-        drawHeroShape(hCtx, 32, 34, 1.65, 1);
-
-        const eCtx = el.battleEnemyCanvas.getContext('2d');
-        eCtx.clearRect(0, 0, 64, 64);
-        drawEnemyShape(eCtx, enemy, 32, 34, 1.6);
-
+        if (el.battleEnemyBadge) el.battleEnemyBadge.textContent = enemy.isBoss ? 'BOSS 决战' : '交锋对决';
+        if (el.battleRoundTag) el.battleRoundTag.textContent = '准备交锋';
         el.enemyBattleName.textContent = enemy.name;
         el.heroBattleStats.textContent = `攻 ${p.atk} · 防 ${p.def}`;
         el.enemyBattleStats.textContent = `攻 ${enemy.atk} · 防 ${enemy.def}`;
@@ -598,20 +696,153 @@
         el.enemyHpBar.style.width = '100%';
         el.heroHpText.textContent = `HP ${startHeroHp}`;
         el.enemyHpText.textContent = `HP ${startEnemyHp}`;
-        el.battleLog.textContent = `遭遇【${enemy.name}】！`;
 
         el.battleOverlay.classList.remove('hidden');
         battlePlaying = true;
         battleFinishCb = onComplete;
 
+        const cv = el.battleStageCanvas;
+        const sCtx = cv.getContext('2d');
+        const W = cv.width;
+        const H = cv.height;
+
+        const stage = {
+            heroX: 112, enemyX: 348,
+            heroPush: 0, enemyPush: 0,
+            heroHurt: 0, enemyHurt: 0,
+            swing: 0, shake: 0,
+            slashArc: null,
+            sparks: [],
+            pops: []
+        };
+
         const frames = res.timeline || [];
         let idx = 0;
+        let round = 0;
+
+        function spawnSparks(x, y, col, dir) {
+            for (let i = 0; i < 11; i++) {
+                const a = (Math.random() - 0.5) * 1.9 + (dir > 0 ? 0 : Math.PI);
+                const spd = 95 + Math.random() * 195;
+                stage.sparks.push({ x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd - 35, life: 0.24 + Math.random() * 0.14, col });
+            }
+        }
+
+        function renderDuel(now) {
+            if (!battlePlaying) return;
+            const sx = stage.shake > 0 ? (Math.random() - 0.5) * stage.shake * 7 : 0;
+            const sy = stage.shake > 0 ? (Math.random() - 0.5) * stage.shake * 5 : 0;
+            stage.shake = Math.max(0, stage.shake - 0.12);
+            stage.heroPush *= 0.78;
+            stage.enemyPush *= 0.78;
+            stage.heroHurt = Math.max(0, stage.heroHurt - 0.11);
+            stage.enemyHurt = Math.max(0, stage.enemyHurt - 0.11);
+            stage.swing *= 0.78;
+
+            sCtx.save();
+            sCtx.setTransform(1, 0, 0, 1, sx, sy);
+
+            // Moody dungeon duel floor & torchlight vignette
+            const bg = sCtx.createLinearGradient(0, 0, 0, H);
+            bg.addColorStop(0, '#0f172a');
+            bg.addColorStop(0.66, '#172033');
+            bg.addColorStop(1, '#1e293b');
+            sCtx.fillStyle = bg;
+            sCtx.fillRect(-10, -10, W + 20, H + 20);
+
+            const torch = sCtx.createRadialGradient(W / 2, H * 0.45, 20, W / 2, H * 0.45, 220);
+            torch.addColorStop(0, enemy.isBoss ? 'rgba(239,68,68,0.16)' : 'rgba(250,204,21,0.1)');
+            torch.addColorStop(1, 'rgba(0,0,0,0)');
+            sCtx.fillStyle = torch;
+            sCtx.fillRect(0, 0, W, H);
+
+            // Perspective stone slabs on floor
+            sCtx.strokeStyle = 'rgba(148,163,184,0.12)';
+            sCtx.lineWidth = 1.5;
+            sCtx.beginPath();
+            sCtx.moveTo(0, 128); sCtx.lineTo(W, 128);
+            for (let gx = 40; gx < W; gx += 75) {
+                sCtx.moveTo(gx, 128); sCtx.lineTo(gx + (gx - W / 2) * 0.35, H);
+            }
+            sCtx.stroke();
+
+            // Draw combatants
+            const hx = stage.heroX + stage.heroPush;
+            const ex = stage.enemyX - stage.enemyPush;
+            if (stage.heroPush > 8) {
+                sCtx.globalAlpha = 0.25;
+                drawHeroShape(sCtx, hx - 22, 114, 2.3, 1, stage.swing * 0.5);
+                sCtx.globalAlpha = 1;
+            }
+            drawHeroShape(sCtx, hx, 114, 2.35, 1, stage.swing);
+            if (stage.heroHurt > 0.35) {
+                sCtx.fillStyle = `rgba(239,68,68,${stage.heroHurt * 0.42})`;
+                sCtx.beginPath(); sCtx.arc(hx, 108, 30, 0, Math.PI * 2); sCtx.fill();
+            }
+
+            drawEnemyShape(sCtx, enemy, ex, 110, enemy.isBoss ? 2.6 : 2.35, stage.enemyHurt > 0.55);
+
+            // Crisp blade / claw slash arc
+            if (stage.slashArc && stage.slashArc.life > 0) {
+                const sl = stage.slashArc;
+                sl.life -= 0.085;
+                sCtx.save();
+                sCtx.globalAlpha = Math.max(0, sl.life * 1.4);
+                sCtx.strokeStyle = sl.color;
+                sCtx.lineCap = 'round';
+                sCtx.lineWidth = 5 * Math.max(0.2, sl.life);
+                sCtx.beginPath();
+                if (sl.type === 'hero') {
+                    sCtx.arc(sl.x - 10, sl.y, 38, -0.95, 0.85);
+                } else {
+                    sCtx.moveTo(sl.x + 22, sl.y - 26); sCtx.lineTo(sl.x - 22, sl.y + 22);
+                    sCtx.moveTo(sl.x + 12, sl.y - 28); sCtx.lineTo(sl.x - 26, sl.y + 12);
+                }
+                sCtx.stroke();
+                sCtx.restore();
+            }
+
+            // Sparks
+            for (let i = stage.sparks.length - 1; i >= 0; i--) {
+                const sp = stage.sparks[i];
+                sp.life -= 0.018;
+                if (sp.life <= 0) { stage.sparks.splice(i, 1); continue; }
+                sp.x += sp.vx * 0.016;
+                sp.y += sp.vy * 0.016;
+                sp.vy += 320 * 0.016;
+                sCtx.globalAlpha = Math.min(1, sp.life * 3);
+                sCtx.fillStyle = sp.col;
+                sCtx.fillRect(sp.x - 2, sp.y - 2, 4, 4);
+            }
+            sCtx.globalAlpha = 1;
+
+            // Floating crisp combat damage numbers
+            for (let i = stage.pops.length - 1; i >= 0; i--) {
+                const pp = stage.pops[i];
+                pp.life -= 0.025;
+                if (pp.life <= 0) { stage.pops.splice(i, 1); continue; }
+                pp.y -= 0.85;
+                sCtx.globalAlpha = Math.min(1, pp.life * 2);
+                sCtx.font = 'bold 20px sans-serif';
+                sCtx.textAlign = 'center';
+                sCtx.lineWidth = 4;
+                sCtx.strokeStyle = '#090d16';
+                sCtx.strokeText(pp.text, pp.x, pp.y);
+                sCtx.fillStyle = pp.color;
+                sCtx.fillText(pp.text, pp.x, pp.y);
+            }
+            sCtx.textAlign = 'left';
+            sCtx.globalAlpha = 1;
+            sCtx.restore();
+
+            battleRaf = requestAnimationFrame(renderDuel);
+        }
 
         function nextTurn() {
             if (!battlePlaying) return;
             if (idx >= frames.length) {
-                el.battleLog.textContent = `大获全胜！共损失 ${res.damage} HP，获得 ${enemy.gold} 金币 / ${enemy.exp} 经验`;
-                battleTimer = setTimeout(() => stopBattleAnimation(false), 260);
+                if (el.battleRoundTag) el.battleRoundTag.textContent = `胜 · -${res.damage} HP`;
+                battleTimer = setTimeout(() => stopBattleAnimation(false), 210);
                 return;
             }
 
@@ -619,33 +850,40 @@
             audio.playHit(!!enemy.isBoss && f.actor === 'hero');
 
             if (f.actor === 'hero') {
-                el.fighterHero.className = 'fighter left lunge-right';
-                el.fighterEnemy.className = 'fighter right hurt';
-                el.enemyHitPop.textContent = `-${f.dmg}`;
-                el.enemyHitPop.className = 'hit-pop active';
-                el.heroHitPop.className = 'hit-pop';
+                round++;
+                if (el.battleRoundTag) el.battleRoundTag.textContent = `第 ${round} 合`;
+                stage.heroPush = 68;
+                stage.enemyPush = -16;
+                stage.enemyHurt = 1;
+                stage.swing = 1;
+                stage.shake = enemy.isBoss ? 1.0 : 0.45;
+                stage.slashArc = { type: 'hero', x: stage.enemyX, y: 106, color: '#fef08a', life: 0.9 };
+                spawnSparks(stage.enemyX - 10, 102, '#fde047', 1);
+                stage.pops.push({ x: stage.enemyX, y: 60, text: `-${f.dmg}`, color: '#fde047', life: 0.9 });
                 el.enemyHpBar.style.width = `${Math.max(0, (f.enemyHp / startEnemyHp) * 100)}%`;
                 el.enemyHpText.textContent = `HP ${f.enemyHp}`;
-                el.battleLog.textContent = `勇者挥剑猛击，对 ${enemy.name} 造成 ${f.dmg} 点伤害！`;
             } else {
-                el.fighterEnemy.className = 'fighter right lunge-left';
-                el.fighterHero.className = 'fighter left hurt';
-                el.heroHitPop.textContent = f.dmg > 0 ? `-${f.dmg}` : '格挡 0';
-                el.heroHitPop.className = 'hit-pop active';
-                el.enemyHitPop.className = 'hit-pop';
+                stage.enemyPush = 62;
+                stage.heroPush = -14;
+                stage.heroHurt = 1;
+                stage.shake = f.dmg > 0 ? 0.55 : 0.15;
+                stage.slashArc = { type: 'enemy', x: stage.heroX, y: 108, color: f.dmg > 0 ? '#fb7185' : '#38bdf8', life: 0.9 };
+                spawnSparks(stage.heroX + 12, 105, f.dmg > 0 ? '#fb7185' : '#7dd3fc', -1);
+                stage.pops.push({
+                    x: stage.heroX, y: 60,
+                    text: f.dmg > 0 ? `-${f.dmg}` : '挡 0',
+                    color: f.dmg > 0 ? '#fb7185' : '#7dd3fc',
+                    life: 0.9
+                });
                 el.heroHpBar.style.width = `${Math.max(0, (f.heroHp / startHeroHp) * 100)}%`;
                 el.heroHpText.textContent = `HP ${f.heroHp}`;
-                el.battleLog.textContent = `${enemy.name} 反击，勇者受到 ${f.dmg} 点伤害。`;
             }
 
-            battleTimer = setTimeout(() => {
-                el.fighterHero.className = 'fighter left';
-                el.fighterEnemy.className = 'fighter right';
-                nextTurn();
-            }, 115);
+            battleTimer = setTimeout(nextTurn, 92);
         }
 
-        battleTimer = setTimeout(nextTurn, 70);
+        battleRaf = requestAnimationFrame(renderDuel);
+        battleTimer = setTimeout(nextTurn, 50);
     }
 
     function finishBattleEffects(res) {
