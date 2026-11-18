@@ -510,14 +510,29 @@
         ctx.fillText(sim.expedition.active ? '探险中 (点击加速)' : '点击传送门出发', 104, 292);
 
         // 3. Center Zone: Brick Alchemy Cauldron & Display Shelves with Drawn Gear
-        // Hearth brick backdrop
+        // Hearth brick backdrop + warm flickering ember glow
         ctx.fillStyle = '#473024';
         ctx.beginPath(); ctx.roundRect(236, 134, 148, 86, 10); ctx.fill();
+        const ember = ctx.createRadialGradient(310, 198, 2, 310, 194, 42);
+        ember.addColorStop(0, `rgba(251, 146, 60, ${(0.34 + 0.14 * Math.sin(clock * 8)).toFixed(2)})`);
+        ember.addColorStop(1, 'rgba(251, 146, 60, 0)');
+        ctx.fillStyle = ember;
+        ctx.fillRect(256, 150, 108, 68);
         // Brass simmering cauldron
         ctx.fillStyle = '#1e293b';
         ctx.beginPath(); ctx.arc(310, 178, 22, 0, Math.PI); ctx.fill();
         ctx.fillStyle = sim.crafting.active ? '#34d399' : '#0ea5e9';
         ctx.beginPath(); ctx.ellipse(310, 178, 22, 6, 0, 0, Math.PI * 2); ctx.fill();
+        // Rising glowing alchemy bubbles
+        for (let b = 0; b < 4; b++) {
+            const cyOff = (clock * (sim.crafting.active ? 26 : 12) + b * 9) % 24;
+            const bx = 298 + b * 8 + Math.sin(clock * 4 + b) * 2.5;
+            const by = 175 - cyOff;
+            ctx.fillStyle = sim.crafting.active ? 'rgba(110, 231, 183, 0.65)' : 'rgba(125, 211, 252, 0.45)';
+            ctx.beginPath();
+            ctx.arc(bx, by, 2.6 - cyOff * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         const craftProg = sim.crafting.active ? sim.crafting.progress / sim.crafting.duration : 0;
         ctx.fillStyle = '#fde68a';

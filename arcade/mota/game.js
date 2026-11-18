@@ -1052,15 +1052,23 @@
                 ctx.fillText(isUp ? '▲上' : '▼下', cx, py + TILE - 6);
                 ctx.textAlign = 'left';
             } else if (ent.type === 'door') {
-                ctx.fillStyle = '#1e293b';
+                ctx.fillStyle = '#0f172a';
                 ctx.fillRect(px + 4, py + 4, TILE - 8, TILE - 8);
                 ctx.fillStyle = ent.color;
                 ctx.fillRect(px + 7, py + 6, TILE - 14, TILE - 12);
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+                // Ornate door frame & iron rivets
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.lineWidth = 1.2;
+                ctx.strokeRect(px + 7.5, py + 6.5, TILE - 15, TILE - 13);
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
                 ctx.fillRect(px + 11, py + 11, TILE - 22, 9);
                 ctx.fillStyle = '#0f172a';
                 ctx.beginPath();
-                ctx.arc(cx, cy + 6, 3, 0, Math.PI * 2);
+                ctx.arc(cx, cy + 6, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(254, 240, 138, 0.65)';
+                ctx.beginPath();
+                ctx.arc(cx, cy + 6, 1.3, 0, Math.PI * 2);
                 ctx.fill();
             } else if (ent.type === 'key') {
                 const bob = pulse * 1.4;
@@ -1076,6 +1084,12 @@
             } else if (ent.type === 'item') {
                 const bob = pulse * 1.4;
                 if (ent.sub === 'gem_red' || ent.sub === 'gem_blue') {
+                    const gemGlow = ctx.createRadialGradient(cx, cy + bob, 2, cx, cy + bob, 16);
+                    gemGlow.addColorStop(0, ent.sub === 'gem_red' ? 'rgba(248, 113, 113, 0.36)' : 'rgba(56, 189, 248, 0.36)');
+                    gemGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = gemGlow;
+                    ctx.beginPath(); ctx.arc(cx, cy + bob, 16, 0, Math.PI * 2); ctx.fill();
+
                     ctx.fillStyle = ent.color;
                     ctx.beginPath();
                     ctx.moveTo(cx, cy - 11 + bob);
@@ -1084,7 +1098,7 @@
                     ctx.lineTo(cx - 10, cy + bob);
                     ctx.closePath();
                     ctx.fill();
-                    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+                    ctx.fillStyle = 'rgba(255,255,255,0.52)';
                     ctx.beginPath();
                     ctx.moveTo(cx, cy - 8 + bob);
                     ctx.lineTo(cx + 4.5, cy - 2 + bob);
@@ -1153,6 +1167,14 @@
             } else if (ent.type === 'enemy') {
                 const bob = pulse * 1.3;
                 const sc = ent.isBoss ? 1.15 : 0.94;
+                if (ent.isBoss) {
+                    const bossHalo = ctx.createRadialGradient(cx, cy + 2, 3, cx, cy + 2, 22 + pulse * 2);
+                    bossHalo.addColorStop(0, 'rgba(250, 204, 21, 0.34)');
+                    bossHalo.addColorStop(0.65, 'rgba(239, 68, 68, 0.2)');
+                    bossHalo.addColorStop(1, 'rgba(239, 68, 68, 0)');
+                    ctx.fillStyle = bossHalo;
+                    ctx.beginPath(); ctx.arc(cx, cy + 2, 22 + pulse * 2, 0, Math.PI * 2); ctx.fill();
+                }
                 drawEnemyShape(ctx, ent, cx, cy + bob, sc);
 
                 if (showDamageOverlay) {

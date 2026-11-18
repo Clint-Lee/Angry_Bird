@@ -217,17 +217,22 @@
     }
 
     function drawCutRope(ctx) {
-        // Cozy Cardboard Box Interior
-        const bg = ctx.createLinearGradient(0, 0, 0, H);
-        bg.addColorStop(0, '#725238');
-        bg.addColorStop(1, '#4a3220');
+        // Cozy Cardboard Box Interior with warm vignette
+        const bg = ctx.createRadialGradient(W * 0.5, H * 0.45, 25, W * 0.5, H * 0.5, W * 0.72);
+        bg.addColorStop(0, '#856042');
+        bg.addColorStop(0.65, '#62452f');
+        bg.addColorStop(1, '#3b2718');
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, W, H);
 
-        // Subtle cardboard fold lines
+        // Stitched cardboard seam border
         ctx.strokeStyle = 'rgba(255, 224, 184, 0.14)';
         ctx.lineWidth = 2;
         ctx.strokeRect(20, 14, W - 40, H - 28);
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(255, 224, 184, 0.24)';
+        ctx.strokeRect(14, 9, W - 28, H - 18);
+        ctx.setLineDash([]);
 
         // Anchor pins
         for (const [ax, ay] of [[126, 26], [274, 26]]) {
@@ -581,8 +586,15 @@
         ctx.moveTo(312, 92); ctx.lineTo(324, 106); ctx.lineTo(312, 120); ctx.lineTo(300, 106);
         ctx.closePath(); ctx.fill();
 
-        // Demon Boss at top center
+        // Demon Boss at top center with arcane crimson aura
         const bx = 216, by = 114;
+        const bossAura = ctx.createRadialGradient(bx, by, 4, bx, by, 34);
+        bossAura.addColorStop(0, 'rgba(250, 204, 21, 0.34)');
+        bossAura.addColorStop(0.6, 'rgba(239, 68, 68, 0.14)');
+        bossAura.addColorStop(1, 'rgba(239, 68, 68, 0)');
+        ctx.fillStyle = bossAura;
+        ctx.beginPath(); ctx.arc(bx, by, 34, 0, Math.PI * 2); ctx.fill();
+
         ctx.fillStyle = '#facc15';
         ctx.beginPath();
         ctx.moveTo(bx - 16, by + 16); ctx.lineTo(bx - 16, by - 8); ctx.lineTo(bx - 8, by - 17);

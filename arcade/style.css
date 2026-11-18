@@ -96,6 +96,11 @@ body {
     }
 }
 
+@keyframes arcadeCardIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .game-card {
     background: #151b23;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -104,12 +109,21 @@ body {
     display: flex;
     flex-direction: column;
     transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    animation: arcadeCardIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.game-card:nth-child(2) { animation-delay: 0.03s; }
+.game-card:nth-child(3) { animation-delay: 0.06s; }
+.game-card:nth-child(4) { animation-delay: 0.09s; }
+.game-card:nth-child(5) { animation-delay: 0.12s; }
+.game-card:nth-child(6) { animation-delay: 0.15s; }
+.game-card:nth-child(7) { animation-delay: 0.18s; }
+.game-card:nth-child(8) { animation-delay: 0.21s; }
+
 .game-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36);
+    transform: translateY(-3px);
+    border-color: rgba(56, 189, 248, 0.34);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(56, 189, 248, 0.08);
 }
 
 .cover-link {
@@ -119,6 +133,20 @@ body {
     aspect-ratio: 16 / 9.2;
     overflow: hidden;
     background: #0b0f16;
+}
+
+.cover-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 25%, rgba(255, 255, 255, 0.18) 50%, transparent 75%);
+    transform: translateX(-120%);
+    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+}
+
+.game-card:hover .cover-link::after {
+    transform: translateX(120%);
 }
 
 .cover-canvas {
@@ -238,4 +266,117 @@ body {
 .btn-quiet:hover {
     background: rgba(255, 255, 255, 0.06);
     color: #e6edf3;
+}
+
+/* 8th Grid Card: All-in-one Stats & Random Picker */
+.summary-card {
+    background: linear-gradient(160deg, #161f2c 0%, #11161f 100%);
+    border-color: rgba(56, 189, 248, 0.22);
+}
+
+.summary-banner {
+    padding: 16px 16px 14px;
+    aspect-ratio: 16 / 9.2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background:
+        radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.22), transparent 55%),
+        radial-gradient(circle at 15% 85%, rgba(16, 185, 129, 0.18), transparent 55%),
+        #0d1420;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.summary-badge-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.summary-kicker {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #7dd3fc;
+}
+
+.summary-live-dot {
+    font-size: 11px;
+    color: #6ee7b7;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.summary-live-dot::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 8px #34d399;
+}
+
+.summary-star-total {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.summary-star-total strong {
+    font-size: 34px;
+    line-height: 1;
+    color: #f8fafc;
+    font-variant-numeric: tabular-nums;
+}
+
+.summary-star-total span {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.summary-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.sum-pill {
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sum-pill span {
+    display: block;
+    font-size: 10.5px;
+    color: #8b949e;
+}
+
+.sum-pill strong {
+    font-size: 12.5px;
+    color: #e6edf3;
+    font-variant-numeric: tabular-nums;
+}
+
+.btn-random-play {
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+}
+
+.btn-random-play:hover {
+    filter: brightness(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .game-card {
+        animation: none;
+        transition: none;
+    }
+    .cover-link::after {
+        display: none;
+    }
 }

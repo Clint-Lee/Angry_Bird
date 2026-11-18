@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>云檐趣阁 · 网页小游戏大厅</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%2311161f'/><text x='32' y='44' font-size='34' text-anchor='middle'>🕹️</text></svg>">
-    <link rel="stylesheet" href="style.css?v=20261118_1200">
+    <link rel="stylesheet" href="style.css?v=20261118_2200">
 </head>
 <body>
     <div class="arcade-shell">
@@ -155,10 +155,41 @@
                     </div>
                 </div>
             </article>
+
+            <!-- 8. 全馆战绩总览 & 随机开玩 -->
+            <article class="game-card summary-card">
+                <div class="summary-banner">
+                    <div class="summary-badge-row">
+                        <span class="summary-kicker">ALL-IN-ONE ARCADE</span>
+                        <span class="summary-live-dot">本地存档实时同步</span>
+                    </div>
+                    <div class="summary-star-total">
+                        <strong id="arcadeAllStars">0</strong>
+                        <span>/ 648 ⭐ 全馆累计集星</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="summary-stats-grid">
+                        <div class="sum-pill">
+                            <span>西瓜 / 跳一跳峰值</span>
+                            <strong id="arcadeBestScores">0 / 0</strong>
+                        </div>
+                        <div class="sum-pill">
+                            <span>冒险大亨 / 魔塔进度</span>
+                            <strong id="arcadeRpgMeta">Lv.1 · 1F</strong>
+                        </div>
+                    </div>
+                    <p class="brief">七款纯前端微端小游戏均已接入本地免登录存档与视听限幅保护，点击右侧按钮立即随机挑一款开玩。</p>
+                    <div class="card-foot">
+                        <span class="stat-text">7 款已全部就绪</span>
+                        <button type="button" class="btn-play btn-random-play" id="btnRandomGame">🎲 随机开玩</button>
+                    </div>
+                </div>
+            </article>
         </main>
     </div>
 
-    <script src="covers.js?v=20261118_1430"></script>
-    <script src="arcade.js?v=20261118_1430"></script>
+    <script src="covers.js?v=20261118_2200"></script>
+    <script src="arcade.js?v=20261118_2200"></script>
 </body>
 </html>

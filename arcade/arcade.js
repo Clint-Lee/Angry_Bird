@@ -165,6 +165,48 @@
         }
     }
 
+    function syncSummaryCard() {
+        const abData = readJson(AB_KEY);
+        let abStarsObj = abData.levelStars || {};
+        try {
+            const leg = JSON.parse(localStorage.getItem('ab_stars') || '{}');
+            abStarsObj = Object.assign({}, leg, abStarsObj);
+        } catch {}
+        const abStars = Object.values(abStarsObj).reduce((s, v) => s + (Number(v) || 0), 0);
+
+        const cr = readJson('cloudeave_cut_rope_v1');
+        const crStars = Object.values(cr.levelStars || {}).reduce((s, v) => s + Math.min(3, Math.max(0, Number(v) || 0)), 0);
+
+        const sk = readJson('cloudeave_sokoban_v1');
+        const skStars = Object.values(sk.levelStars || {}).reduce((s, v) => s + Math.min(3, Math.max(0, Number(v) || 0)), 0);
+
+        const fm = readJson('cloudeave_fruit_merge_v1');
+        const fmBest = Math.max(0, Math.floor(Number(fm.endlessHighScore) || 0));
+
+        const jj = readJson('cloudeave_jump_jump_v1');
+        const jjBest = Math.max(0, Math.floor(Number(jj.bestScore) || 0));
+
+        const at = readJson('cloudeave_adventure_tycoon_v1');
+        const shopLv = Math.max(1, Math.floor(Number(at.shopLevel) || 1));
+
+        const mt = readJson('cloudeave_mota_v2');
+        const mtFloor = (mt && mt.session) ? Math.max(1, Math.min(30, Number(mt.session.currentFloor) || 1)) : 1;
+
+        setText('arcadeAllStars', String(abStars + crStars + skStars));
+        setText('arcadeBestScores', `${fmBest.toLocaleString()} / ${jjBest.toLocaleString()}`);
+        setText('arcadeRpgMeta', `Lv.${shopLv} · ${mtFloor}F`);
+
+        const randomBtn = document.getElementById('btnRandomGame');
+        if (randomBtn && !randomBtn.dataset.bound) {
+            randomBtn.dataset.bound = '1';
+            randomBtn.addEventListener('click', () => {
+                const slugs = ['angry-birds', 'fruit-merge', 'cut-rope', 'adventure-tycoon', 'jump-jump', 'sokoban', 'mota'];
+                const chosen = slugs[Math.floor(Math.random() * slugs.length)];
+                window.location.href = resolveUrl(chosen);
+            });
+        }
+    }
+
     function syncLobby() {
         updateAngryBirds();
         updateFruitMerge();
@@ -173,6 +215,7 @@
         updateJumpJump();
         updateSokoban();
         updateMota();
+        syncSummaryCard();
     }
 
     if (document.readyState === 'loading') {

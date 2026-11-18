@@ -348,6 +348,14 @@
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, ARENA.width, ARENA.height);
 
+        // Soft stage spotlight depth so every box feels handcrafted & dimensional
+        const stageLight = ctx.createRadialGradient(ARENA.width * 0.5, ARENA.height * 0.42, 30, ARENA.width * 0.5, ARENA.height * 0.48, ARENA.height * 0.72);
+        stageLight.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+        stageLight.addColorStop(0.65, 'rgba(255, 255, 255, 0)');
+        stageLight.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+        ctx.fillStyle = stageLight;
+        ctx.fillRect(0, 0, ARENA.width, ARENA.height);
+
         if (chId === 2) {
             ctx.strokeStyle = 'rgba(125, 211, 252, 0.08)';
             ctx.lineWidth = 1;
@@ -777,24 +785,33 @@
             ctx.strokeStyle = 'rgba(224, 242, 254, 0.88)';
             ctx.lineWidth = 2;
             ctx.stroke();
+            // Iridescent specular highlight glint on bubble top-left
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.beginPath();
+            ctx.ellipse(b.x - b.r * 0.34, b.y - b.r * 0.36, b.r * 0.24, b.r * 0.11, -0.6, 0, Math.PI * 2);
+            ctx.fill();
             ctx.restore();
         }
     }
 
     function updateAndDrawFx(dt) {
-        // Slice ribbon
+        // Slice ribbon with outer cyan aura + crisp white core
         for (let i = sliceTrail.length - 1; i >= 0; i--) {
             sliceTrail[i].life -= dt;
             if (sliceTrail[i].life <= 0) sliceTrail.splice(i, 1);
         }
         if (sliceTrail.length > 1) {
             ctx.save();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 4;
             ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.beginPath();
             ctx.moveTo(sliceTrail[0].x, sliceTrail[0].y);
             for (let i = 1; i < sliceTrail.length; i++) ctx.lineTo(sliceTrail[i].x, sliceTrail[i].y);
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.52)';
+            ctx.lineWidth = 9;
+            ctx.stroke();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3.5;
             ctx.stroke();
             ctx.restore();
         }

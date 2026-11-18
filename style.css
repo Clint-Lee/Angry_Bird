@@ -797,10 +797,10 @@ canvas {
 
 .tutorial-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
-    overflow-x: auto;
     margin: 12px 0 14px;
-    padding-bottom: 4px;
+    padding-bottom: 2px;
     justify-content: center;
 }
 

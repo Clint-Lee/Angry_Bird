@@ -257,6 +257,19 @@
         g.addColorStop(1, bgStops[1]);
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, W, H);
+
+        // Soft ambient studio geometric bokeh
+        const t = performance.now() * 0.0006;
+        ctx.save();
+        for (let i = 0; i < 6; i++) {
+            const cx = ((i * 118) + Math.sin(t + i) * 18) % W;
+            const cy = 64 + ((i * 86) % (H - 140)) + Math.cos(t * 1.2 + i) * 12;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.24)';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 18 + (i % 3) * 11, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     }
 
     // Helper: Fill isometric parallelogram from affine top basis (origin + u + v)
@@ -634,8 +647,17 @@
             ctx.restore();
         }
 
-        // Authentic inward swirling white charge particles
+        // Authentic inward swirling white charge particles + shrinking tension ring
         if (s.state === 'charging') {
+            const chargeFrac = Math.min(1, s.chargeTime / CONFIG.maxChargeSec);
+            const ringR = 26 - chargeFrac * 12;
+            ctx.save();
+            ctx.strokeStyle = chargeFrac > 0.7 ? 'rgba(245, 158, 11, 0.65)' : 'rgba(15, 23, 42, 0.25)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(shadowPt.x, shadowPt.y + 1, ringR, ringR * 0.54, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
             if (Math.random() < 0.45) {
                 const ang = Math.random() * Math.PI * 2;
                 const r = 34 + Math.random() * 14;

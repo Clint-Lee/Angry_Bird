@@ -81,12 +81,26 @@
             const node = document.createElement('div');
             node.className = 'dex-node' + (unlocked ? ' unlocked' : '');
             node.title = `${def.tier + 1}阶 ${tierLabel(def.tier)}`;
-            const dot = document.createElement('span');
-            dot.className = 'dex-dot';
-            dot.style.background = `radial-gradient(circle at 32% 28%, ${def.rim}, ${def.colorA} 45%, ${def.colorB} 100%)`;
+            if (unlocked) {
+                const iconCanvas = document.createElement('canvas');
+                iconCanvas.width = 28;
+                iconCanvas.height = 28;
+                iconCanvas.className = 'dex-dot';
+                const ictx = iconCanvas.getContext('2d');
+                if (ictx) {
+                    drawEntityArt(ictx, 14, 15, 10, def.tier, 0, {
+                        happy: def.tier >= 7, worried: false, blinking: false, falling: false, frozen: false
+                    });
+                }
+                node.appendChild(iconCanvas);
+            } else {
+                const dot = document.createElement('span');
+                dot.className = 'dex-dot';
+                dot.style.background = `radial-gradient(circle at 32% 28%, ${def.rim}, ${def.colorA} 45%, ${def.colorB} 100%)`;
+                node.appendChild(dot);
+            }
             const lbl = document.createElement('span');
             lbl.textContent = unlocked ? tierLabel(def.tier).slice(0, 3) : '???';
-            node.appendChild(dot);
             node.appendChild(lbl);
             dexStripEl.appendChild(node);
         });
@@ -933,7 +947,20 @@
             ctx.restore();
         }
 
-        // Subtle glass glare highlight overlay
+        // Subtle glass glare highlight overlay + warm sunlit bokeh motes
+        const t = performance.now() * 0.001;
+        ctx.save();
+        for (let i = 0; i < 6; i++) {
+            const bx = 42 + ((i * 68) % (W - 84)) + Math.sin(t * 0.7 + i) * 10;
+            const by = 86 + ((i * 89) % (E.ARENA.floorY - 120)) + Math.cos(t * 0.6 + i * 1.3) * 8;
+            const br = 2.2 + Math.sin(t * 1.9 + i) * 0.8;
+            ctx.fillStyle = `rgba(255, 255, 255, ${(0.18 + 0.1 * Math.sin(t + i)).toFixed(2)})`;
+            ctx.beginPath();
+            ctx.arc(bx, by, br, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
         const glare = ctx.createLinearGradient(0, 0, 56, 0);
         glare.addColorStop(0, 'rgba(255,255,255,0.28)');
         glare.addColorStop(1, 'rgba(255,255,255,0)');

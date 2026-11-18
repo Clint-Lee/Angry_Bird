@@ -342,6 +342,18 @@
         const { tile, offX, offY } = getMetrics();
         const r = Math.max(4, Math.floor(tile * 0.14));
 
+        // Warm torchlight dungeon vignette framing the warehouse board
+        const cxBoard = offX + (s.cols * tile) * 0.5;
+        const cyBoard = offY + (s.rows * tile) * 0.5;
+        if (Number.isFinite(cxBoard) && Number.isFinite(cyBoard) && tile > 0) {
+            const torch = ctx.createRadialGradient(cxBoard, cyBoard, tile * 1.2, cxBoard, cyBoard, Math.max(W, H) * 0.65);
+            torch.addColorStop(0, 'rgba(245, 158, 11, 0.14)');
+            torch.addColorStop(0.55, 'rgba(180, 83, 9, 0.06)');
+            torch.addColorStop(1, 'rgba(0, 0, 0, 0.35)');
+            ctx.fillStyle = torch;
+            ctx.fillRect(0, 0, W, H);
+        }
+
         // 1. Floor tiles + Target Goal plates
         for (const fk of s.floors) {
             const [gx, gy] = fk.split(',').map(Number);
@@ -433,6 +445,18 @@
                 ctx.beginPath();
                 ctx.arc(rx, ry, 2, 0, Math.PI * 2);
                 ctx.fill();
+            }
+
+            if (onGoal) {
+                ctx.strokeStyle = '#dcfce7';
+                ctx.lineWidth = Math.max(2.2, tile * 0.06);
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x + sz * 0.3, y + sz * 0.52);
+                ctx.lineTo(x + sz * 0.45, y + sz * 0.67);
+                ctx.lineTo(x + sz * 0.72, y + sz * 0.35);
+                ctx.stroke();
             }
         }
 
