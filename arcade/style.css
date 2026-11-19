@@ -7,12 +7,13 @@
 body {
     min-height: 100vh;
     background:
-        radial-gradient(880px 420px at 50% -8%, rgba(56, 189, 248, 0.085), transparent 65%),
-        #0d1117;
+        radial-gradient(920px 440px at 18% -6%, rgba(17, 112, 88, 0.14), transparent 62%),
+        radial-gradient(760px 380px at 88% 0%, rgba(245, 158, 11, 0.08), transparent 60%),
+        #0b1016;
     color: #e6edf3;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
     line-height: 1.5;
-    padding: 20px 20px 34px;
+    padding: 22px 22px 36px;
 }
 
 .arcade-shell {
@@ -102,13 +103,14 @@ body {
 }
 
 .game-card {
-    background: #151b23;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
+    background: linear-gradient(180deg, #161e28 0%, #121821 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 15px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, box-shadow 0.2s ease;
     animation: arcadeCardIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -236,20 +238,23 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 14px;
-    border-radius: 8px;
-    background: #2f81f7;
+    padding: 7px 15px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #117058 0%, #0d5c48 100%);
+    border: 1px solid rgba(52, 211, 153, 0.28);
     color: #fff;
     font-size: 12.5px;
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: background 0.15s ease;
+    box-shadow: 0 4px 12px -4px rgba(17, 112, 88, 0.45);
+    transition: filter 0.15s ease, transform 0.15s ease;
 }
 
 .btn-play:hover {
-    background: #388bfd;
+    filter: brightness(1.12);
+    transform: translateY(-1px);
 }
 
 .btn-quiet {

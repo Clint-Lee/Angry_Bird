@@ -10,6 +10,9 @@ class SpriteRenderer {
             bg_meadow: 'assets/bg_meadow.jpg',
             bg_desert: 'assets/bg_desert.jpg',
             bg_castle: 'assets/bg_castle.jpg',
+            bg_bamboo: 'assets/bg_bamboo.jpg',
+            bg_sky: 'assets/bg_sky.jpg',
+            bg_space: 'assets/bg_space.jpg',
             tex_wood: 'assets/tex_wood.jpg',
             tex_stone: 'assets/tex_stone.jpg',
             tex_ice: 'assets/tex_ice.jpg',
@@ -215,15 +218,38 @@ class SpriteRenderer {
                 this._drawRidge(ctx, viewW, horizon - 22, 46, '#312e81', shift, 0.013, false);
                 break;
             case 'snow':
-                this._drawRidge(ctx, viewW, horizon - 34, 70, '#c7d2fe', shift, 0.016, false);
-                this._drawRidge(ctx, viewW, horizon - 10, 30, '#e2e8f0', shift, 0.02, false);
+                // Soft aurora ribbon in cold alpine sky
+                ctx.save();
+                ctx.fillStyle = 'rgba(52, 211, 153, 0.22)';
+                ctx.beginPath();
+                ctx.moveTo(0, horizon * 0.28);
+                ctx.quadraticCurveTo(viewW * 0.45, horizon * 0.1, viewW, horizon * 0.16);
+                ctx.lineTo(viewW, horizon * 0.34);
+                ctx.quadraticCurveTo(viewW * 0.45, horizon * 0.26, 0, horizon * 0.42);
+                ctx.closePath();
+                ctx.fill();
+                // Winter sun halo
+                ctx.fillStyle = 'rgba(254, 249, 195, 0.26)';
+                ctx.beginPath();
+                ctx.arc(viewW * 0.22 + shift, horizon * 0.38, 42, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                this._drawRidge(ctx, viewW, horizon - 40, 74, '#e2eef8', shift, 0.015, false);
+                this._drawRidge(ctx, viewW, horizon - 14, 34, '#bae6fd', shift, 0.02, false);
                 break;
             case 'volcano':
-                this._drawRidge(ctx, viewW, horizon - 26, 58, '#3b0a0a', shift, 0.014, false);
-                ctx.fillStyle = 'rgba(234, 88, 12, 0.18)';
+                this._drawRidge(ctx, viewW, horizon - 32, 62, '#3b0a0a', shift, 0.014, false);
+                // Glowing caldera halo & ash plume silhouette
+                ctx.save();
+                ctx.fillStyle = 'rgba(251, 146, 60, 0.28)';
                 ctx.beginPath();
-                ctx.arc(viewW * 0.5 + shift, horizon - 30, 26, 0, Math.PI * 2);
+                ctx.arc(viewW * 0.52 + shift, horizon - 46, 56, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.fillStyle = 'rgba(254, 240, 138, 0.36)';
+                ctx.beginPath();
+                ctx.ellipse(viewW * 0.52 + shift, horizon - 54, 36, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
                 break;
             case 'bamboo':
                 this._drawRidge(ctx, viewW, horizon - 38, 66, '#065f46', shift, 0.011, true);
