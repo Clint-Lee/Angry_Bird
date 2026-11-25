@@ -19,9 +19,17 @@
             </div>
         </header>
 
+        <div class="arcade-filters" id="arcadeFilters" role="tablist" aria-label="游戏分类筛选">
+            <button type="button" class="arcade-filter-btn active" data-filter="all" role="tab" aria-selected="true">全部 7 款</button>
+            <button type="button" class="arcade-filter-btn" data-filter="physics" role="tab" aria-selected="false">物理弹射</button>
+            <button type="button" class="arcade-filter-btn" data-filter="puzzle" role="tab" aria-selected="false">解谜策略</button>
+            <button type="button" class="arcade-filter-btn" data-filter="casual" role="tab" aria-selected="false">休闲无尽</button>
+            <button type="button" class="arcade-filter-btn" data-filter="rpg" role="tab" aria-selected="false">冒险养成</button>
+        </div>
+
         <main class="games-grid">
             <!-- 1. 愤怒的小鸟 -->
-            <article class="game-card">
+            <article class="game-card" data-genre="physics" data-slug="angry-birds">
                 <a href="./angry-birds/" class="cover-link" id="linkCoverAb" aria-label="开始愤怒的小鸟">
                     <canvas class="cover-canvas" data-cover="angry-birds" width="400" height="225"></canvas>
                     <span class="cover-tag">8 大章节 · 120 关</span>
@@ -43,7 +51,7 @@
             </article>
 
             <!-- 2. 合成大西瓜 -->
-            <article class="game-card">
+            <article class="game-card" data-genre="casual" data-slug="fruit-merge">
                 <a href="./fruit-merge/" class="cover-link" id="linkCoverFm" aria-label="开始合成大西瓜">
                     <canvas class="cover-canvas" data-cover="fruit-merge" width="400" height="225"></canvas>
                     <span class="cover-tag">无尽挑战 · 双皮肤</span>
@@ -62,7 +70,7 @@
             </article>
 
             <!-- 3. 割绳喂怪 -->
-            <article class="game-card">
+            <article class="game-card" data-genre="puzzle" data-slug="cut-rope">
                 <a href="./cut-rope/" class="cover-link" id="linkCoverCr" aria-label="开始割绳喂怪">
                     <canvas class="cover-canvas" data-cover="cut-rope" width="400" height="225"></canvas>
                     <span class="cover-tag">6 盒 · 36 关 · 108★</span>
@@ -81,7 +89,7 @@
             </article>
 
             <!-- 4. 冒险家商店物语 -->
-            <article class="game-card">
+            <article class="game-card" data-genre="rpg" data-slug="adventure-tycoon">
                 <a href="./adventure-tycoon/" class="cover-link" id="linkCoverAt" aria-label="开始冒险家商店物语">
                     <canvas class="cover-canvas" data-cover="adventure-tycoon" width="400" height="225"></canvas>
                     <span class="cover-tag">4 大秘境 · 挂机经营</span>
@@ -100,7 +108,7 @@
             </article>
 
             <!-- 5. 微信跳一跳 -->
-            <article class="game-card">
+            <article class="game-card" data-genre="casual" data-slug="jump-jump">
                 <a href="./jump-jump/" class="cover-link" id="linkCoverJj" aria-label="开始微信跳一跳">
                     <canvas class="cover-canvas" data-cover="jump-jump" width="400" height="225"></canvas>
                     <span class="cover-tag">鼠标 / 空格蓄力</span>
@@ -119,7 +127,7 @@
             </article>
 
             <!-- 6. 推格子 -->
-            <article class="game-card">
+            <article class="game-card" data-genre="puzzle" data-slug="sokoban">
                 <a href="./sokoban/" class="cover-link" id="linkCoverSk" aria-label="开始经典推格子">
                     <canvas class="cover-canvas" data-cover="sokoban" width="400" height="225"></canvas>
                     <span class="cover-tag">60 关 · 经典仓库番</span>
@@ -138,7 +146,7 @@
             </article>
 
             <!-- 7. 魔塔 -->
-            <article class="game-card">
+            <article class="game-card" data-genre="rpg" data-slug="mota">
                 <a href="./mota/" class="cover-link" id="linkCoverMt" aria-label="开始魔塔深渊试炼">
                     <canvas class="cover-canvas" data-cover="mota" width="400" height="225"></canvas>
                     <span class="cover-tag">30 层 · 每10层Boss</span>

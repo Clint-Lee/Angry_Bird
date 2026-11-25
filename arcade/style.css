@@ -385,3 +385,45 @@ body {
         display: none;
     }
 }
+
+.arcade-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.arcade-filter-btn {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #141b24;
+    color: #9ba3ae;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.arcade-filter-btn:hover {
+    color: #f0f6fc;
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+.arcade-filter-btn.active {
+    background: linear-gradient(135deg, #117058 0%, #0d5c48 100%);
+    border-color: rgba(52, 211, 153, 0.45);
+    color: #ffffff;
+}
+
+.game-card.is-filtered-out {
+    display: none;
+}
+
+.btn-play:focus-visible,
+.btn-portal:focus-visible,
+.btn-quiet:focus-visible,
+.arcade-filter-btn:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+}

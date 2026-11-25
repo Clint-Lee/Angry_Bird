@@ -200,9 +200,34 @@
         if (randomBtn && !randomBtn.dataset.bound) {
             randomBtn.dataset.bound = '1';
             randomBtn.addEventListener('click', () => {
-                const slugs = ['angry-birds', 'fruit-merge', 'cut-rope', 'adventure-tycoon', 'jump-jump', 'sokoban', 'mota'];
+                const visibleSlugs = Array.from(document.querySelectorAll('.game-card[data-slug]:not(.is-filtered-out)'))
+                    .map(el => el.getAttribute('data-slug'))
+                    .filter(Boolean);
+                const slugs = visibleSlugs.length > 0
+                    ? visibleSlugs
+                    : ['angry-birds', 'fruit-merge', 'cut-rope', 'adventure-tycoon', 'jump-jump', 'sokoban', 'mota'];
                 const chosen = slugs[Math.floor(Math.random() * slugs.length)];
                 window.location.href = resolveUrl(chosen);
+            });
+        }
+
+        const filterBar = document.getElementById('arcadeFilters');
+        if (filterBar && !filterBar.dataset.bound) {
+            filterBar.dataset.bound = '1';
+            const pills = Array.from(filterBar.querySelectorAll('.arcade-filter-btn'));
+            pills.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.getAttribute('data-filter') || 'all';
+                    pills.forEach(p => {
+                        const active = p === btn;
+                        p.classList.toggle('active', active);
+                        p.setAttribute('aria-selected', active ? 'true' : 'false');
+                    });
+                    document.querySelectorAll('.game-card[data-genre]').forEach(card => {
+                        const genre = card.getAttribute('data-genre');
+                        card.classList.toggle('is-filtered-out', target !== 'all' && genre !== target);
+                    });
+                });
             });
         }
     }
